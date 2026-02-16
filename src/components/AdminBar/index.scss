@@ -1,7 +1,18 @@
-@import '~@payloadcms/ui/scss';
+// @import '@payloadcms/ui/scss';
+
+// .admin-bar {
+//   @include small-break {
+//     display: none;
+//   }
+// }
 
 .admin-bar {
-  @include small-break {
+  display: block;
+}
+
+/* "small-break" versi aman */
+@media (max-width: 768px) {
+  .admin-bar {
     display: none;
   }
 }

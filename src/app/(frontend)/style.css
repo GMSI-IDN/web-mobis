@@ -1,0 +1,594 @@
+/* primary color */
+.primary-color {
+  color: #3BAC1F;
+}
+.nav-link {
+  color: #3BAC1F !important;
+  font-size: medium;
+}
+
+.text-about{
+  display: flex;
+  flex-direction: column;
+  width: 26rem;
+  margin: 0 auto;
+}
+
+.about-rounded {
+    border-radius: 22px;
+    width: 24rem;
+    margin: 0 auto;
+}
+
+.title-about{
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.carousel-height {
+  height: 53.8rem;
+}
+.program-rental-list li{
+    color: #159a06;
+    background-color: #fff;
+    padding-left: 0;
+    list-style: none;
+}
+
+
+.footer-mobis {
+  width: 100%;
+  background: linear-gradient(180deg, #8edc7c 0%, #2db300 60%, #1f8f00 100%);
+  color: #ffffff;
+}
+
+.footer-mobis__logo {
+  height: 42px;
+  width: auto;
+  margin: 0 auto;
+}
+
+.footer-mobis__icon {
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  text-decoration: none;
+}
+
+.footer-mobis__icon:hover {
+  transform: translateY(-2px);
+  opacity: 0.85;
+}
+
+
+.footer-mobis__icon:hover {
+  transform: translateY(-2px);
+  opacity: 0.85;
+}
+
+
+.area-section {
+  background: linear-gradient(#EDFBE9 0%, #48B414 40%, #48B414 80%);
+}
+
+.bg-success-gradient {
+  background: linear-gradient(179.88deg, #9CEA2A 9.4%, #159A06 99.89%);
+}
+.card-body p{
+  font-size: 1rem;
+  font-weight: 700;
+  opacity:1;
+}
+
+.opacity-75 {
+  opacity: 1 !important;
+}
+
+.bg-success-subtle {
+  background: #EDFBE9 !important;
+}
+
+.bg-success-subtle-gradient {
+  background: linear-gradient(#ffffff 0%, #edfbe9 100%);
+}
+
+.bg_gradient_city_location {
+  background: linear-gradient(360deg, #48B414 0%, rgba(255, 255, 255, 0.49) 100%);
+}
+.bg_gradient_avaliabel_programs {
+  background: linear-gradient(360deg, #3BAC1F 0%, rgba(255, 255, 255, 0.14) 100%);
+}
+
+.bg_gradient_programs {
+  background: linear-gradient(180deg, #209E12 0%, #8DD425 100%);
+}
+
+.bg_gradient_footer {
+  background: linear-gradient(180deg, #B1E888 0%, #09AF04 100%);
+}
+
+.navbar-nav .nav-link {
+  display: block;
+}
+
+
+.bg_gradient_avaliabel_programs {
+  background: linear-gradient(180deg, #e9f8e6 0%, #1fb44a 100%);
+  border-radius: 22px;
+}
+
+.btn-banner{
+  margin: 0 auto;
+  display: block;
+  width: 11rem
+}
+
+.btn-padding-top {
+  top: 6rem;
+}
+
+.small{
+  font-size: 1rem !important;
+}
+
+/* wrapper card */
+.unit-card {
+  border-radius: 22px;
+  padding: 16px;
+  margin-bottom: 1rem;
+}
+
+/* area gambar: ini yang boleh overflow hidden */
+.unit-card__media {
+  border-radius: 18px;
+  overflow: hidden;
+  background: transparent;
+  /* kasih tinggi fix biar konsisten */
+  height: 220px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* gambar mobil */
+.unit-card__img {
+  width: 70%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  transform: translateY(6px);
+  filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.25));
+}
+
+/* footer area untuk badge */
+.unit-card__footer {
+  display: flex;
+  justify-content: center;
+  margin-top: -14px; /* badge naik menempel ke card */
+  padding-bottom: 6px;
+}
+
+/* badge pill putih */
+.unit-card__badge {
+  background: #fff;
+  color: #16a34a;
+  margin-bottom: -2.5rem;
+  font-weight: 800;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  line-height: 1;
+}
+
+/* ===== ProgramDual (sticker title) ===== */
+
+.program-card {
+  position: relative;
+  overflow-x: clip;
+}
+
+/* header overlay (judul gambar) */
+.program-card__header {
+    z-index: 50;
+    pointer-events: none;
+    width: 18rem;
+    margin-top: -4rem;
+    margin-left: 11rem;
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
+.program-card__header img {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, .22));
+}
+
+
+/* body card di bawah header */
+.program-card__body {
+  position: relative;
+  z-index: 1;
+  border-radius: 28px;
+  margin: 0 auto;
+  max-width: 28rem;
+}
+
+/* fallback text jika tidak ada headerImage */
+.program-card__header--text {
+  font-weight: 800;
+  font-size: 24px;
+  line-height: 1.1;
+  color: #16a34a;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.6);
+}
+.list-unstyled li{
+    color: #159a06;
+    background-color: #fff;
+    padding-left: 0.5rem;
+    list-style: none;
+    border-radius: 5px;
+}
+
+
+/* ===== Registration Form styling ===== */
+
+.reg-form-card {
+  max-width: 520px;
+  border-radius: 16px;
+}
+
+/* label lebih rapi */
+.reg-label {
+  font-weight: 600;
+  color: #3b3b3b;
+}
+
+/* agar label panjang tidak bikin row melebar, dan enak dibaca */
+.reg-form .form-label {
+  line-height: 1.15;
+}
+
+/* ===== Requirements (match image + numbering 1.) ===== */
+
+.requirements-card {
+  background: #e9f8e6;
+  border-radius: 18px;
+  border: 0;
+  max-width: 55rem;
+  margin: 0 auto;
+}
+
+.requirements-card__body {
+  padding: 18px 18px 12px 18px;
+}
+
+.requirements-heading {
+  font-weight: 700;
+  font-size: 20px;
+  color: #1E5610;
+  margin-bottom: 10px;
+}
+
+/* ✅ custom numbering: 1. 2. 3. */
+.requirements-list {
+  list-style: none;          /* hilangkan bullet default */
+  margin: 0;
+  padding: 0;
+  counter-reset: req;        /* reset counter */
+  font-size: 12px;
+  color: #1f5f2c;
+  line-height: 1.45;
+}
+
+.requirements-list__item {
+  counter-increment: req;
+  display: flex;
+  margin-bottom: 8px;
+  font-size: 17px;
+  font-weight: 400;
+}
+
+/* angka "1." */
+.requirements-list__item::before {
+  content: counter(req) ".";
+  font-weight: 700;
+  min-width: 18px; /* supaya angka rata kiri */
+  color: #1f5f2c;
+}
+
+.testi-card p{
+ font-size: 1rem !important;
+ font-weight: 400;
+}
+
+.requirements-note {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 12px;
+  color: #1f5f2c;
+  opacity: 0.85;
+}
+
+.area-section {
+  background: linear-gradient(360deg, #48B414 54.33%, #EDFBE9 100%);
+}
+
+/* TITLE */
+.area-title {
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #1e9b1e; /* hijau judul */
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* CARD */
+.area-card {
+  display: block;
+  text-decoration: none;
+  border-radius: 12px;
+  overflow: hidden; /* penting biar radius kena ke gambar */
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+  background: transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.area-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+}
+
+/* IMAGE */
+.area-thumb {
+  background: #e9ecef;
+}
+
+.area-thumb img {
+  width: 100%;
+  height: 150px;           /* desktop */
+  object-fit: cover;
+  display: block;
+}
+
+/* GREEN BAR */
+.area-bar {
+  /* background: #1fa10d;     hijau bar */
+  color: #fff;
+  padding: 12px 10px 14px;
+  text-align: center;
+}
+
+.area-label {
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.area-cta {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.area-cta .arrow {
+  font-weight: 900;
+  margin-left: 6px;
+}
+
+.rf-img-wrap{
+  display: flex;
+  justify-content: center;
+}
+
+.rf-img{
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+
+/* carousel  */
+.banner-carousel-fullbleed {
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.banner-inner-fullbleed {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.banner-slide-fullbleed {
+  width: 100%;
+  height: 37rem;
+  margin: 0 !important;
+  padding: 0 !important;
+  aspect-ratio: 1724 / 617;
+  overflow: hidden;
+  background: #fff;
+}
+
+
+.banner-img-fullbleed {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* CTA */
+.banner-cta-fullbleed {
+  bottom: 14px;
+  z-index: 5;
+}
+
+
+.btn-banner-cta-fullbleed {
+  color: #3BAC1F;
+;
+  min-width: 190px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* .navbar-expand-lg .navbar-collapse {
+    display: flex !important;
+    flex-basis: auto;
+  } */
+
+/* carousel End  */
+
+@media (max-width: 1025px) {
+  .carousel-height {
+    height: 60rem;
+  }
+
+  .program-card__header{
+    margin-left: 6rem !important;
+  }
+
+}
+
+
+
+/* Fix: pastikan navbar-collapse tampil di desktop */
+@media (max-width: 992px) {
+
+  .program-card__header {
+    margin-left: 1.5rem !important;
+  }
+}
+
+@media (max-width: 769px) {
+  .banner-cta-fullbleed {
+    bottom: 22px;
+  }
+  .banner-slide-fullbleed {
+    aspect-ratio: 472 / 242;
+  }
+
+  .area-thumb img {
+    height: 210px;
+  }
+
+  .rf-img{
+    max-width: 420px !important;
+  }
+
+  .area-bar {
+    padding: 14px 12px 16px;
+  }
+
+  .area-label {
+    font-size: 15px;
+  }
+
+  .area-cta {
+    font-size: 12px;
+  }
+
+  .about-rounded {
+    width: 18rem !important;
+  }
+
+  .text-about {
+    width: 20rem;
+  }
+  .program-card__header {
+    margin-left: 1.5rem !important;
+  }
+  .unit-card__media {
+    height: 14rem !important;
+  }
+}
+
+
+@media (max-width:541) {
+  .about-rounded {
+    width: 15rem !important;
+  }
+
+  .banner-slide-fullbleed {
+    height: 16rem;
+    margin-top: 4rem !important;
+    overflow: hidden;
+  }
+  .text-about {
+    width: 16rem;
+  }
+  .program-card__header {
+    margin-left: 7.5rem !important;
+  }
+
+}
+
+
+@media  (max-width: 450px) {
+
+  .program-card__header img {
+    width: 50%;
+  }
+
+  .banner-slide-fullbleed {
+    height: 16rem;
+    margin-top: 4rem !important;
+    overflow: hidden;
+    }
+
+  .program-card__header {
+    width: 32rem;
+    margin-top: -3.5rem;
+    margin-left: -4rem !important;
+  }
+
+  .list-unstyled li{
+    padding-left: 7px;
+    font-size: 12px;
+  }
+
+  .requirements-card__body {
+    padding: 20px 22px 14px 22px;
+  }
+  .requirements-list {
+    font-size: 13px;
+  }
+
+  .program-card__header--text {
+    font-size: 22px;
+  }
+
+  .reg-label {
+    margin-bottom: 2px !important;
+  }
+
+  .about-rounded {
+    width: 11rem !important;
+  }
+
+  .text-about {
+    width: 11rem;
+  }
+
+  .title-about {
+    font-size: 1rem !important;
+    line-height: 1.2;
+  }
+  .text-about p{
+    font-size: 0.75rem !important;
+    line-height: 1.3;
+  }
+
+
+}
+

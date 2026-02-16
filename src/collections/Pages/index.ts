@@ -13,6 +13,18 @@ import { populatePublishedAt } from '../../hooks/populatePublishedAt'
 import { generatePreviewPath } from '../../utilities/generatePreviewPath'
 import { revalidateDelete, revalidatePage } from './hooks/revalidatePage'
 
+import { BannerCarouselBlock } from '@/blocks/Mobis/BannerCarousel'
+import { AreaChipsBlock } from '@/blocks/Mobis/AreaChips'
+import { AboutSplitConfig } from '@/blocks/Mobis/About'
+import { UnitsAvailableConfig } from '@/blocks/Mobis/UnitsAvailable'
+import { ProgramCardConfig } from '@/blocks/Mobis/ProgramCard'
+import { RequirementsConfig } from '@/blocks/Mobis/Requirements'
+import { RegistrationFlowConfig } from '@/blocks/Mobis/RegistrationFlow'
+import { TestimonialsConfig } from '@/blocks/Mobis/Testimonials'
+import { RegistrationFormConfig } from '@/blocks/Mobis/RegistrationForm'
+import { FooterSimpleConfig } from '@/blocks/Mobis/FooterSimple'
+import { ProgramDualConfig } from '@/blocks/Mobis/ProgramDual'
+
 import {
   MetaDescriptionField,
   MetaImageField,
@@ -72,7 +84,24 @@ export const Pages: CollectionConfig<'pages'> = {
             {
               name: 'layout',
               type: 'blocks',
-              blocks: [CallToAction, Content, MediaBlock, Archive, FormBlock],
+              blocks: [
+                CallToAction,
+                Content,
+                MediaBlock,
+                Archive,
+                FormBlock,
+                BannerCarouselBlock,
+                AreaChipsBlock,
+                AboutSplitConfig,
+                UnitsAvailableConfig,
+                ProgramCardConfig,
+                RequirementsConfig,
+                RegistrationFlowConfig,
+                TestimonialsConfig,
+                RegistrationFormConfig,
+                FooterSimpleConfig,
+                ProgramDualConfig,
+              ],
               required: true,
               admin: {
                 initCollapsed: true,

@@ -8,6 +8,15 @@ const NEXT_PUBLIC_SERVER_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  productionBrowserSourceMaps: false,
+  // ✅ ADD THIS
+  sassOptions: {
+    includePaths: [
+      'node_modules/@payloadcms/ui/dist/scss',
+      'node_modules/@payloadcms/ui/scss',
+      'node_modules',
+    ],
+  },
   images: {
     remotePatterns: [
       ...[NEXT_PUBLIC_SERVER_URL /* 'https://example.com' */].map((item) => {
