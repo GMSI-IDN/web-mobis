@@ -1,68 +1,73 @@
-import type { Block } from 'payload'
+import type { Block, Field } from 'payload'
 
 const optionFields = [
-  { name: 'label', type: 'text', required: true },
-  { name: 'value', type: 'text', required: true },
-] as const
+  {
+    name: 'label',
+    type: 'text',
+    required: true,
+    admin: {
+      placeholder: 'Contoh: SIM A',
+    },
+  },
+  {
+    name: 'value',
+    type: 'text',
+    required: true,
+    admin: {
+      placeholder: 'Contoh: sim_a',
+    },
+  },
+] satisfies Field[]
+
+const makeOptionArray = (name: string, label: string): Field => ({
+  name,
+  label,
+  type: 'array',
+
+  minRows: 0,
+  defaultValue: [],
+
+  admin: {
+    initCollapsed: true, // ✅ valid untuk array
+  },
+
+  fields: optionFields,
+})
 
 export const RegistrationFormConfig: Block = {
   slug: 'registrationForm',
   interfaceName: 'RegistrationFormBlock',
 
   fields: [
-    { name: 'title', type: 'text', required: true },
-    { name: 'submitLabel', type: 'text', required: true },
-    { name: 'successMessage', type: 'text', required: true },
-
-    // 🔽 rename group lebih pendek
     {
-      name: 'opts', // ⬅️ sebelumnya selectOptions
-      type: 'group',
-      admin: { initCollapsed: true },
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'submitLabel',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'successMessage',
+      type: 'text',
+      required: true,
+    },
 
+    {
+      name: 'opts',
+      type: 'group',
+      label: 'Select Options',
+      // ❌ tidak ada admin.initCollapsed di group
       fields: [
-        {
-          name: 'sim',
-          type: 'array',
-          dbName: 'rf_opt_sim',
-          fields: [...optionFields],
-        },
-        {
-          name: 'dom',
-          type: 'array',
-          dbName: 'rf_opt_dom',
-          fields: [...optionFields],
-        },
-        {
-          name: 'house',
-          type: 'array',
-          dbName: 'rf_opt_house',
-          fields: [...optionFields],
-        },
-        {
-          name: 'emRel',
-          type: 'array',
-          dbName: 'rf_opt_emrel',
-          fields: [...optionFields],
-        },
-        {
-          name: 'drvExp',
-          type: 'array',
-          dbName: 'rf_opt_drvexp',
-          fields: [...optionFields],
-        },
-        {
-          name: 'handover',
-          type: 'array',
-          dbName: 'rf_opt_hand',
-          fields: [...optionFields],
-        },
-        {
-          name: 'source',
-          type: 'array',
-          dbName: 'rf_opt_src',
-          fields: [...optionFields],
-        },
+        makeOptionArray('sim', 'SIM Type Options'),
+        makeOptionArray('dom', 'Domicile Options'),
+        makeOptionArray('house', 'House Ownership Options'),
+        makeOptionArray('emRel', 'Emergency Relation Options'),
+        makeOptionArray('drvExp', 'Driver Experience Options'),
+        makeOptionArray('handover', 'Handover Location Options'),
+        makeOptionArray('source', 'Source Info Options'),
       ],
     },
   ],

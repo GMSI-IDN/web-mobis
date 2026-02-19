@@ -13,7 +13,19 @@ function normalizeCode(v: unknown) {
     .replace(/\s+/g, '')
 }
 
-async function autoApplyPromo(params: { payload: any; customerId: string; promoCode: string }) {
+/**
+ * ✅ Discriminated Union untuk hasil promo
+ */
+type PromoResult =
+  | { provided: false }
+  | { provided: true; applied: true; code: string; voucherId: string; quota: number; used: number }
+  | { provided: true; applied: false; code: string; error: string }
+
+async function autoApplyPromo(params: {
+  payload: any
+  customerId: string
+  promoCode: string
+}): Promise<PromoResult> {
   const { payload, customerId } = params
   const promoCode = normalizeCode(params.promoCode)
 
@@ -22,18 +34,22 @@ async function autoApplyPromo(params: { payload: any; customerId: string; promoC
     where: { code: { equals: promoCode } },
     limit: 1,
   })
+
   const voucher = found?.docs?.[0]
   if (!voucher) throw new Error('Voucher tidak ditemukan')
   if (!voucher.enabled) throw new Error('Voucher tidak aktif')
 
   const now = Date.now()
-  if (voucher.startAt && now < new Date(voucher.startAt).getTime())
+  if (voucher.startAt && now < new Date(voucher.startAt).getTime()) {
     throw new Error('Voucher belum mulai berlaku')
-  if (voucher.endAt && now > new Date(voucher.endAt).getTime())
+  }
+  if (voucher.endAt && now > new Date(voucher.endAt).getTime()) {
     throw new Error('Voucher sudah expired')
+  }
 
   const quota = Number(voucher.quota ?? 0)
   const used = Number(voucher.used ?? 0)
+
   if (quota <= 0) throw new Error('Kuota voucher = 0')
   if (used >= quota) throw new Error('Kuota voucher habis')
 
@@ -48,8 +64,12 @@ async function autoApplyPromo(params: { payload: any; customerId: string; promoC
     },
     limit: 1,
   })
-  if ((existed?.totalDocs ?? 0) > 0) throw new Error('Voucher sudah dipakai untuk customer ini')
 
+  if ((existed?.totalDocs ?? 0) > 0) {
+    throw new Error('Voucher sudah dipakai untuk customer ini')
+  }
+
+  // create redemption
   await payload.create({
     collection: 'voucher_redemptions',
     data: {
@@ -60,12 +80,14 @@ async function autoApplyPromo(params: { payload: any; customerId: string; promoC
     },
   })
 
+  // increment used
   await payload.update({
     collection: 'vouchers',
     id: voucher.id,
     data: { used: used + 1 },
   })
 
+  // mark customer promo applied
   await payload.update({
     collection: 'customers',
     id: customerId,
@@ -77,14 +99,15 @@ async function autoApplyPromo(params: { payload: any; customerId: string; promoC
     },
   })
 
+  // ✅ FIX TS: voucherId wajib string + literal union
   return {
     provided: true,
     applied: true,
     code: promoCode,
-    voucherId: voucher.id,
+    voucherId: String(voucher.id),
     quota,
     used: used + 1,
-  }
+  } as const
 }
 
 export async function POST(req: Request) {
@@ -100,7 +123,7 @@ export async function POST(req: Request) {
     const sheetMeta = await appendLeadToSheet(reg)
     console.log('[API /registration] appended to Google Sheets', sheetMeta)
 
-    // ✅ 3) simpan ke DB (CUSTOMERS) — SIMPAN SEMUA
+    // ✅ 3) simpan ke DB (CUSTOMERS)
     const payload = await getPayload({ config })
 
     const promoCode = reg?.promoCode ? normalizeCode(reg.promoCode) : ''
@@ -140,24 +163,14 @@ export async function POST(req: Request) {
         promoApplied: false,
         promoError: promoCode ? 'PROMO_PENDING_VALIDATION' : undefined,
 
-        // ✅ SIMPAN SEMUA REQUEST + METADATA SHEET
+        // raw payload + sheet meta
         rawPayload: body,
         sheetMeta,
       },
     })
 
     // ✅ 4) auto apply promoCode (optional)
-    let promoResult:
-      | { provided: false }
-      | {
-          provided: true
-          applied: true
-          code: string
-          voucherId: string
-          quota: number
-          used: number
-        }
-      | { provided: true; applied: false; code: string; error: string }
+    let promoResult: PromoResult
 
     if (!promoCode) {
       promoResult = { provided: false }

@@ -44,13 +44,28 @@ export const seed = async ({
   payload.logger.info(`— Clearing collections and globals...`)
 
   // clear the database
+  // await Promise.all(
+  //   globals.map((global) =>
+  //     payload.updateGlobal({
+  //       slug: global,
+  //       data: {
+  //         navItems: [],
+  //       },
+  //       depth: 0,
+  //       context: {
+  //         disableRevalidate: true,
+  //       },
+  //     }),
+  //   ),
+  // )
+
   await Promise.all(
     globals.map((global) =>
       payload.updateGlobal({
         slug: global,
         data: {
-          navItems: [],
-        },
+          ...(global === 'header' || global === 'footer' ? { navItems: [] } : {}),
+        } as any,
         depth: 0,
         context: {
           disableRevalidate: true,
@@ -240,7 +255,7 @@ export const seed = async ({
             },
           },
         ],
-      },
+      } as any,
     }),
     payload.updateGlobal({
       slug: 'footer',
@@ -270,7 +285,7 @@ export const seed = async ({
             },
           },
         ],
-      },
+      } as any,
     }),
   ])
 

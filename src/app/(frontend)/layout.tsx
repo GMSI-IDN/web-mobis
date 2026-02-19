@@ -14,6 +14,7 @@ import { Providers } from '@/providers'
 import { InitTheme } from '@/providers/Theme/InitTheme'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { getServerSideURL } from '@/utilities/getURL'
+import MobisFloatingWidget from '@/components/MobisFloatingWidget'
 
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
   const { isEnabled } = await draftMode()
@@ -25,7 +26,10 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         <AdminBar adminBarProps={{ preview: isEnabled }} />
         <BootstrapClient />
         <Header />
+
         {children}
+
+        {/* <MobisFloatingWidget /> */}
         <Footer />
       </Providers>
     </>
