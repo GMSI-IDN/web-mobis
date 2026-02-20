@@ -49,7 +49,7 @@ export const RegistrationFlow: React.FC<Props> = ({
   }
 
   return (
-    <section className="bg-white">
+    <section id="alur_pendaftaran" className="bg-white">
       <div className="container py-4">
         <div className="text-center mb-3">
           <h3 className="h6 fw-bold text-success mb-0">{title}</h3>

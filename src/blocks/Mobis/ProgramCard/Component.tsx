@@ -15,7 +15,7 @@ export const ProgramCard: React.FC<Props> = ({ title, subtitle, bullets, note, s
   const textClass = style?.textClass ?? 'text-white'
 
   return (
-    <section className="bg-success-subtle">
+    <section id="program" className="bg-success-subtle">
       <div className="container py-4">
         <div className={`card border-0 shadow-sm ${bgClass} ${textClass}`}>
           <div className="card-body p-4">

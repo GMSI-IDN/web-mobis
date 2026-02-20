@@ -40,7 +40,7 @@ function Card({ t }: { t: Testi }) {
   const rating = t.rating ?? 5
 
   return (
-    <div className="card border-0 shadow-sm h-100 testi-card">
+    <div id="kata_mitra_kami" className="card border-0 shadow-sm h-100 testi-card">
       <div className="card-body p-3 p-md-4">
         <div className="d-flex gap-3 align-items-start">
           <div
