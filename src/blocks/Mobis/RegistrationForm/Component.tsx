@@ -183,7 +183,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   const fieldCol = 'col-12 col-md-8'
 
   return (
-    <section id="form" className="bg-white">
+    <section id="form" className="bg-gradient-form">
       <div className="container py-4">
         <div className="card border-0 shadow-sm mx-auto reg-form-card" style={{ maxWidth: 560 }}>
           <div className="card-body p-3 p-md-4">
@@ -509,7 +509,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
               {/* Submit */}
               <div className="mt-3">
                 <button
-                  className="btn btn-success w-100 rounded-pill"
+                  className="btn btn-register w-100 rounded-pill"
                   disabled={status === 'loading'}
                 >
                   {status === 'loading' ? 'Mengirim...' : (submitLabel ?? 'Kirim')}

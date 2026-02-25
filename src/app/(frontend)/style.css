@@ -1,6 +1,40 @@
+:root {
+  --bs-font-sans-serif: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+body {
+  font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
 /* primary color */
 .primary-color {
   color: #3BAC1F;
+}
+
+.bg-gradient-form {
+  background: linear-gradient(180deg, #FFFFFF 0%, #DAEDCC 100%);
+}
+
+.btn-register {
+  background: #3BAC1F;
+  color: #fff;
+  border: 0;
+  padding: 10px 20px;
+  border-radius: 8px;
+}
+
+.area-card-btn {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: inherit;
+}
+
+.area-card-btn:focus {
+  outline: none;
+}
+
+.text-justify {
+  text-align: justify;
 }
 .nav-link {
   color: #3BAC1F !important;
@@ -37,9 +71,10 @@
 
 
 .footer-mobis {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: linear-gradient(180deg, #daedcc 0%, #45c62b 50%, #09af04 100%);
   width: 100%;
-  background: linear-gradient(180deg, #8edc7c 0%, #2db300 60%, #1f8f00 100%);
-  color: #ffffff;
 }
 
 .footer-mobis__logo {
@@ -114,7 +149,7 @@
 
 
 .bg_gradient_avaliabel_programs {
-  background: linear-gradient(180deg, #e9f8e6 0%, #1fb44a 100%);
+  background: linear-gradient(#e9f8e6 41%, #3BAC1F 100%);
   border-radius: 22px;
 }
 
@@ -136,7 +171,7 @@
 .unit-card {
   border-radius: 22px;
   padding: 16px;
-  margin-bottom: 1rem;
+  margin: 2.5rem 1rem;
 }
 
 /* area gambar: ini yang boleh overflow hidden */
@@ -144,9 +179,7 @@
   border-radius: 18px;
   overflow: hidden;
   background: transparent;
-  /* kasih tinggi fix biar konsisten */
-  height: 220px;
-
+  height: 17rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -154,7 +187,7 @@
 
 /* gambar mobil */
 .unit-card__img {
-  width: 70%;
+  width: 87%;
   height: auto;
   object-fit: contain;
   display: block;
@@ -194,9 +227,9 @@
 .program-card__header {
     z-index: 50;
     pointer-events: none;
-    width: 18rem;
-    margin-top: -4rem;
-    margin-left: 11rem;
+    width: 23rem;
+    margin-top: -5rem;
+    margin-left: 9rem;
     position: absolute;
     left: 0;
     right: 0;
@@ -295,10 +328,9 @@
   font-weight: 400;
 }
 
-/* angka "1." */
 .requirements-list__item::before {
   content: counter(req) ".";
-  font-weight: 700;
+  font-weight: 300;
   min-width: 18px; /* supaya angka rata kiri */
   color: #1f5f2c;
 }
@@ -309,15 +341,16 @@
 }
 
 .requirements-note {
-  margin-top: 6px;
+  margin-left: 2rem;
+  padding-right: 0;
   text-align: center;
-  font-size: 12px;
-  color: #1f5f2c;
+  font-size: 15px;
+  color: #2D8217;
   opacity: 0.85;
 }
 
 .area-section {
-  background: linear-gradient(360deg, #48B414 54.33%, #EDFBE9 100%);
+  background: linear-gradient(360deg, #48b414 30%, #edfbe9 90%);
 }
 
 /* TITLE */
@@ -449,13 +482,19 @@
 
 /* carousel End  */
 
+@media (max-width:1281px) {
+  .program-card__header {
+    margin-left: 6rem;
+ }
+}
+
 @media (max-width: 1025px) {
   .carousel-height {
     height: 60rem;
   }
 
   .program-card__header{
-    margin-left: 6rem !important;
+    margin-left: 3rem !important;
   }
 
 }
@@ -468,6 +507,20 @@
   .program-card__header {
     margin-left: 1.5rem !important;
   }
+
+  .btn-banner-cta-fullbleed {
+    margin-bottom: 4rem;
+ }
+
+ .program-card__header img {
+    width: 75%;
+  }
+
+  .program-card__header{
+    margin-left: -1rem !important;
+    margin-top: -4rem;
+  }
+
 }
 
 @media (max-width: 769px) {
@@ -505,11 +558,14 @@
   .text-about {
     width: 20rem;
   }
-  .program-card__header {
-    margin-left: 1.5rem !important;
-  }
   .unit-card__media {
     height: 14rem !important;
+  }
+
+  .program-card__header {
+    width: 21rem;
+    margin-top: -4rem;
+      margin-left: 0rem !important;
   }
 }
 
@@ -528,9 +584,14 @@
     width: 16rem;
   }
   .program-card__header {
-    margin-left: 7.5rem !important;
+    width: 28rem;
+    margin-top: -4rem;
+    margin-left: 3rem !important;
   }
 
+  .requirements-note {
+    margin-left: -12rem;
+  }
 }
 
 
@@ -547,9 +608,9 @@
     }
 
   .program-card__header {
-    width: 32rem;
+    width: 36rem;
     margin-top: -3.5rem;
-    margin-left: -4rem !important;
+    margin-left: -5rem !important;
   }
 
   .list-unstyled li{
@@ -589,6 +650,14 @@
     line-height: 1.3;
   }
 
+  .requirements-note {
+        margin-left: -9rem;
+    }
+}
 
+@media  (max-width: 391px) {
+  .program-card__header {
+        margin-left: -6rem !important;
+    }
 }
 

@@ -232,8 +232,17 @@ export interface Page {
         title?: string | null;
         areas: {
           label: string;
-          href?: string | null;
           PoolImage?: (number | null) | Media;
+          pools?:
+            | {
+                name: string;
+                /**
+                 * Tempel link Google Maps (https://maps.google.com/... atau https://goo.gl/maps/...)
+                 */
+                mapUrl: string;
+                id?: string | null;
+              }[]
+            | null;
           id?: string | null;
         }[];
         id?: string | null;
@@ -834,7 +843,21 @@ export interface Form {
  */
 export interface AboutSplitBlock {
   title: string;
-  description: string;
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
   image?: (number | null) | Media;
   id?: string | null;
   blockName?: string | null;
@@ -1519,8 +1542,14 @@ export interface PagesSelect<T extends boolean = true> {
                 | T
                 | {
                     label?: T;
-                    href?: T;
                     PoolImage?: T;
+                    pools?:
+                      | T
+                      | {
+                          name?: T;
+                          mapUrl?: T;
+                          id?: T;
+                        };
                     id?: T;
                   };
               id?: T;

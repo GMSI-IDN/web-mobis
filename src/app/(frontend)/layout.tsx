@@ -1,4 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-icons/font/bootstrap-icons.css'
 import './globals.css'
 import './style.css'
 
@@ -14,33 +15,25 @@ import { Providers } from '@/providers'
 import { InitTheme } from '@/providers/Theme/InitTheme'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { getServerSideURL } from '@/utilities/getURL'
-import MobisFloatingWidget from '@/components/MobisFloatingWidget'
+import { inter } from './fonts'
 
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
   const { isEnabled } = await draftMode()
 
   return (
-    <>
-      <InitTheme />
-      <Providers>
-        <AdminBar adminBarProps={{ preview: isEnabled }} />
-        <BootstrapClient />
-        <Header />
+    <html lang="id" className={inter.variable}>
+      <body className={inter.className}>
+        <InitTheme />
+        <Providers>
+          <AdminBar adminBarProps={{ preview: isEnabled }} />
+          <BootstrapClient />
+          <Header />
 
-        {children}
+          {children}
 
-        {/* <MobisFloatingWidget /> */}
-        <Footer />
-      </Providers>
-    </>
+          <Footer />
+        </Providers>
+      </body>
+    </html>
   )
-}
-
-export const metadata: Metadata = {
-  metadataBase: new URL(getServerSideURL()),
-  openGraph: mergeOpenGraph(),
-  twitter: {
-    card: 'summary_large_image',
-    creator: '@payloadcms',
-  },
 }
