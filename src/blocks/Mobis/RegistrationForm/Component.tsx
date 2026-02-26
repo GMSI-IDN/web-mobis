@@ -507,7 +507,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
               </div>
 
               {/* Submit */}
-              <div className="mt-3">
+              <div className="mt-3 button-center">
                 <button
                   className="btn btn-register w-100 rounded-pill"
                   disabled={status === 'loading'}

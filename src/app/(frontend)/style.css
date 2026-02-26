@@ -17,8 +17,24 @@ body {
   background: #3BAC1F;
   color: #fff;
   border: 0;
+  max-width: 15rem;
+  margin: 0 auto;
   padding: 10px 20px;
   border-radius: 8px;
+  font-weight: 600;
+}
+.btn-register:hover {
+  background: #2a8c17;
+  color: #fff;
+}
+.btn-register:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.25rem rgba(59, 172, 31, 0.25);
+}
+
+.button-center{
+  display: flex;
+  justify-content: center;
 }
 
 .area-card-btn {
