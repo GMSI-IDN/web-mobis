@@ -111,7 +111,7 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
 
         {/* mobile stack, md+ 2 kolom */}
         <div className="row g-4 justify-content-center">
-          <div className="col-12 col-md-6 mt-5 mt-md-0">
+          <div className="col-12 col-md-6 mt-5 mt-md-0 m-mobis-button">
             <ProgramCard
               side={left}
               cardBgClass={cardBgClass}
@@ -122,7 +122,7 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
             />
           </div>
 
-          <div className="col-12 col-md-6 mt-5 mt-md-0">
+          <div className="col-12 col-md-6 mt-5 mt-md-0 m-mobis-button">
             <ProgramCard
               side={right}
               cardBgClass={cardBgClass}

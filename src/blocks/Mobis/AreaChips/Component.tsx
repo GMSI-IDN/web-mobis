@@ -154,7 +154,7 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
               <h5 id="areaPoolsModalLabel" className="modal-title w-100 text-center fw-bold">
                 {activeArea?.label ? `${String(activeArea.label).toUpperCase()}` : 'POOL'}
               </h5>
-              <button type="button" className="btn-close" onClick={closeModal} aria-label="Close" />
+              {/* <button type="button" className="btn-close" onClick={closeModal} aria-label="Close" /> */}
             </div>
 
             <div className="modal-body pt-2">

@@ -33,7 +33,7 @@ export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
             </div>
           </div>
 
-          <div className="col-6">
+          <div className="col-6 overflow-hidden">
             <div className="card border-0 shadow-sm overflow-hidden about-rounded">
               {imageUrl ? (
                 <img
