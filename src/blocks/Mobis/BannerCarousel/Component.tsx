@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useId } from 'react'
+import React, { useId, useEffect, useState } from 'react'
 import Link from 'next/link'
 
 type Media = { url?: string }
@@ -14,15 +14,54 @@ type Slide = {
 }
 
 export default function BannerCarouselBlockComponent({ slides }: { slides?: Slide[] }) {
-  const carouselId = useId().replace(/:/g, '')
+  // 1. SOLUSI HYDRATION: Berikan prefix manual agar ID konsisten antara Server & Client
+  const id = useId().replace(/:/g, '')
+  const carouselId = `carousel-${id}`
+
+  // State untuk memastikan inisialisasi hanya di client
+  const [mounted, setMounted] = useState(false)
+
   const activeSlides = (slides ?? []).filter((s) => s?.isActive !== false)
+
+  // 2. SOLUSI AUTO-PLAY: Inisialisasi Manual Bootstrap
+  useEffect(() => {
+    setMounted(true)
+
+    const initBootstrap = async () => {
+      // Import bootstrap hanya di browser
+      const bootstrap = await import('bootstrap')
+      const element = document.getElementById(carouselId)
+
+      if (element) {
+        // Hapus instance lama jika ada (mencegah memory leak/double init)
+        const existingInstance = bootstrap.Carousel.getInstance(element)
+        if (existingInstance) existingInstance.dispose()
+
+        // Buat instance baru dengan opsi autoplay
+        new bootstrap.Carousel(element, {
+          interval: 1500,
+          ride: 'carousel',
+          pause: false,
+        })
+      }
+    }
+
+    initBootstrap()
+  }, [carouselId, activeSlides.length])
+
   if (!activeSlides.length) return null
 
   return (
-    // ✅ FULL BLEED WRAPPER (no container)
     <section className="banner-carousel-fullbleed">
       <div className="container-fluid p-0 m-0">
-        <div id={carouselId} className="carousel slide" data-bs-ride="carousel">
+        <div
+          id={carouselId}
+          className="carousel slide"
+          // Kita tetap pasang data-attributes sebagai fallback
+          data-bs-ride="carousel"
+          data-bs-interval="2000"
+          data-bs-pause="false"
+        >
           {activeSlides.length > 1 && (
             <div className="carousel-indicators">
               {activeSlides.map((_, i) => (
@@ -39,7 +78,6 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
             </div>
           )}
 
-          {/* ✅ no padding, no margin */}
           <div className="carousel-inner banner-inner-fullbleed">
             {activeSlides.map((s, i) => {
               const desktopUrl = s?.backgroundImage?.url ?? ''
@@ -48,13 +86,17 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
               return (
                 <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
                   <div className="banner-slide-fullbleed position-relative">
-                    {/* tampilkan gambar utuh / sesuai file kamu */}
                     <picture>
                       <source media="(max-width: 767.98px)" srcSet={mobileUrl} />
-                      <img className="banner-img-fullbleed" src={desktopUrl} alt="Banner" />
+                      {/* Gunakan loading="eager" untuk slide pertama agar LCP bagus */}
+                      <img
+                        className="banner-img-fullbleed"
+                        src={desktopUrl}
+                        alt="Banner"
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                      />
                     </picture>
 
-                    {/* CTA overlay bottom-center */}
                     <div className="banner-cta-fullbleed position-absolute start-50 translate-middle-x text-center">
                       <Link
                         href={s?.ctaLink ?? '/'}

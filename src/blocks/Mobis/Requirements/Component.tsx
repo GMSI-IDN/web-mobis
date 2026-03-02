@@ -22,7 +22,7 @@ export const Requirements: React.FC<Props> = ({ title, left, right, note }) => {
         <div className="requirements-card shadow-sm">
           <div className="requirements-card__body">
             <div className="row g-4">
-              <div className="col-12 col-md-6">
+              <div className="col-12 col-md-6 p-reqruitments">
                 {left?.heading ? <div className="requirements-heading">{left.heading}</div> : null}
 
                 <ol className="requirements-list">
@@ -34,7 +34,7 @@ export const Requirements: React.FC<Props> = ({ title, left, right, note }) => {
                 </ol>
               </div>
 
-              <div className="col-12 col-md-6">
+              <div className="col-12 col-md-6 p-reqruitments">
                 {right?.heading ? (
                   <div className="requirements-heading">{right.heading}</div>
                 ) : null}
@@ -46,8 +46,9 @@ export const Requirements: React.FC<Props> = ({ title, left, right, note }) => {
                     </li>
                   ))}
                 </ol>
+                <div className="requirements-note">* S&K Berlaku</div>
               </div>
-              <div className="requirements-note">*S&K Berlaku</div>
+              {/* <div className="requirements-note">*S&K Berlaku</div> */}
             </div>
             {/* <div className="requirements-note">*S&K Berlaku</div> */}
             {note ? <div className="requirements-note">{note}</div> : null}

@@ -21,19 +21,21 @@ export default async function FrontendLayout({ children }: { children: React.Rea
   const { isEnabled } = await draftMode()
 
   return (
-    <html lang="id" className={inter.variable}>
-      <body className={inter.className}>
-        <InitTheme />
-        <Providers>
-          <AdminBar adminBarProps={{ preview: isEnabled }} />
-          <BootstrapClient />
-          <Header />
+    // <html lang="id" className={inter.variable}>
+    //   <body className={inter.className}>
+    <>
+      <InitTheme />
+      <Providers>
+        <AdminBar adminBarProps={{ preview: isEnabled }} />
+        <BootstrapClient />
+        <Header />
 
-          {children}
+        {children}
 
-          <Footer />
-        </Providers>
-      </body>
-    </html>
+        <Footer />
+      </Providers>
+    </>
+    //   </body>
+    // </html>
   )
 }

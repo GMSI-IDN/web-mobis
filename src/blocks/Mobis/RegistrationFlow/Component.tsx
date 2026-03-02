@@ -37,8 +37,8 @@ export const RegistrationFlow: React.FC<Props> = ({
     return (
       <section className="bg-white">
         <div className="container py-4">
-          <div className="text-center mb-3">
-            <h3 className="h6 fw-bold text-success mb-0">{title}</h3>
+          <div className="text-center mb-4">
+            <h3 className="h6 fw-bold text-success mb-4">{title}</h3>
           </div>
           <div className="text-center small text-muted">
             Gambar alur pendaftaran belum diisi di Payload.
@@ -51,7 +51,7 @@ export const RegistrationFlow: React.FC<Props> = ({
   return (
     <section id="alur_pendaftaran" className="bg-white">
       <div className="container py-4">
-        <div className="text-center mb-3">
+        <div className="text-center m-title-registration-flow">
           <h3 className="h6 fw-bold text-success mb-0">{title}</h3>
         </div>
 

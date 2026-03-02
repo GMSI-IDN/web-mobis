@@ -255,7 +255,7 @@ export const Testimonials: React.FC<Props> = ({ title, items, intervalMs }) => {
           >
             {groups.map((grp, i) => (
               <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
-                <div className="row g-3">
+                <div className="row m-carusel-testimoni  g-3">
                   {grp.map((t, idx) => (
                     <div key={idx} className={colClass}>
                       <Card t={t} />
