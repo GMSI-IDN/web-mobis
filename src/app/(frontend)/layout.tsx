@@ -21,8 +21,6 @@ export default async function FrontendLayout({ children }: { children: React.Rea
   const { isEnabled } = await draftMode()
 
   return (
-    // <html lang="id" className={inter.variable}>
-    //   <body className={inter.className}>
     <div className={`${inter.className} d-flex flex-column min-vh-100`}>
       <InitTheme />
       <Providers>
@@ -35,7 +33,5 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         <Footer />
       </Providers>
     </div>
-    //   </body>
-    // </html>
   )
 }

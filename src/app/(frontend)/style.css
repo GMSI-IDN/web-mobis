@@ -10,7 +10,7 @@ body {
 }
 
 .bg-gradient-form {
-  background: linear-gradient(180deg,#fff 25%, #daedcc 70%,#daedcc 80%,#45c62b 100%);
+  background: linear-gradient(180deg,#FFF 10%, #daedcc 50% , #45c62b 100%);
 }
 
 .btn-register {

@@ -39,7 +39,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
 
         // Buat instance baru dengan opsi autoplay
         new bootstrap.Carousel(element, {
-          interval: 1500,
+          interval: 6000,
           ride: 'carousel',
           pause: false,
         })
@@ -59,7 +59,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
           className="carousel slide"
           // Kita tetap pasang data-attributes sebagai fallback
           data-bs-ride="carousel"
-          data-bs-interval="2000"
+          data-bs-interval="6000"
           data-bs-pause="false"
         >
           {activeSlides.length > 1 && (
