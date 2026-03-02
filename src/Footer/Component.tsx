@@ -55,11 +55,15 @@ export async function Footer() {
     <footer className="footer-mobis">
       <div className="container-fluid py-4 text-center">
         {/* Logo */}
-        {logoUrl ? (
+        {/* {logoUrl ? (
           <div className="mb-2">
             <img src={logoUrl} alt="MOBIS" className="footer-mobis__logo" />
           </div>
-        ) : null}
+        ) : null} */}
+
+        <div className="mb-2">
+          <img src="./api/media/file/new-white-2.png" alt="MOBIS" className="footer-mobis__logo" />
+        </div>
 
         {/* Social icons */}
         <div className="d-flex justify-content-center gap-3">
