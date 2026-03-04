@@ -13,6 +13,7 @@ import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
 import { Providers } from '@/providers'
 import { InitTheme } from '@/providers/Theme/InitTheme'
+import { MobisWidgetProvider } from '@/components/MobisWidget'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { getServerSideURL } from '@/utilities/getURL'
 import { inter } from './fonts'
@@ -29,6 +30,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         <Header />
 
         {children}
+        <MobisWidgetProvider />
 
         <Footer />
       </Providers>

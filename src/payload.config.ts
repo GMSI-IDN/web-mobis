@@ -18,10 +18,17 @@ import { getServerSideURL } from './utilities/getURL'
 import { CustomerCollections } from './collections/Customers'
 import { VoucherPromoCollections } from './collections/VoucherPromo'
 
+// import { buildConfig } from 'payload'
+import { MobisWidgetsGlobal } from './components/MobisWidget/payload/MobisWidgets.global'
+
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default buildConfig({
+  routes: {
+    api: '/api',
+    admin: '/admin',
+  },
   admin: {
     components: {
       // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
@@ -76,7 +83,7 @@ export default buildConfig({
     ...VoucherPromoCollections,
   ],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer],
+  globals: [Header, Footer, MobisWidgetsGlobal],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,

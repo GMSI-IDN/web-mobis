@@ -120,10 +120,12 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    mobisWidgets: MobisWidget;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    mobisWidgets: MobisWidgetsSelect<false> | MobisWidgetsSelect<true>;
   };
   locale: null;
   user: User & {
@@ -2462,6 +2464,39 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mobisWidgets".
+ */
+export interface MobisWidget {
+  id: number;
+  enabled?: boolean | null;
+  floating?: {
+    registerAnchorId?: string | null;
+    showRegister?: boolean | null;
+    showStatus?: boolean | null;
+    showAssistant?: boolean | null;
+    buttonWidth?: number | null;
+  };
+  statusWidget?: {
+    title?: string | null;
+    areas?:
+      | {
+          label: string;
+          id?: string | null;
+        }[]
+      | null;
+    apiPath?: string | null;
+  };
+  assistantWidget?: {
+    title?: string | null;
+    brandText?: string | null;
+    greeting?: string | null;
+    apiBase?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -2495,6 +2530,45 @@ export interface FooterSelect<T extends boolean = true> {
         icon?: T;
         url?: T;
         id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mobisWidgets_select".
+ */
+export interface MobisWidgetsSelect<T extends boolean = true> {
+  enabled?: T;
+  floating?:
+    | T
+    | {
+        registerAnchorId?: T;
+        showRegister?: T;
+        showStatus?: T;
+        showAssistant?: T;
+        buttonWidth?: T;
+      };
+  statusWidget?:
+    | T
+    | {
+        title?: T;
+        areas?:
+          | T
+          | {
+              label?: T;
+              id?: T;
+            };
+        apiPath?: T;
+      };
+  assistantWidget?:
+    | T
+    | {
+        title?: T;
+        brandText?: T;
+        greeting?: T;
+        apiBase?: T;
       };
   updatedAt?: T;
   createdAt?: T;
