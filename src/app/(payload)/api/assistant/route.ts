@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 
-const UPSTREAM = process.env.MOBIS_ASSISTANT_API_BASE || '' // contoh: https://stg-api-chatbot.global-mobility-service.co.id/chats
+const UPSTREAM =
+  process.env.MOBIS_ASSISTANT_API_BASE ||
+  'https://stg-api-chatbot.global-mobility-service.co.id/chats' // contoh:
 
 export async function POST(req: Request) {
   try {
