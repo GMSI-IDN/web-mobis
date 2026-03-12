@@ -12,12 +12,24 @@ function getStepTextClass(status: StatusStep['status']) {
 }
 
 function StepIcon({ status }: { status: StatusStep['status'] }) {
-  if (status === 'success')
+  if (status === 'success') {
     return <i className="bi bi-check-circle-fill text-success fs-4 fw-bold" />
-  if (status === 'in-progress')
+  }
+  if (status === 'in-progress') {
     return <i className="bi bi-hourglass-split mobis-gold fs-4 fw-bold" />
-  if (status === 'failed') return <i className="bi bi-x-circle-fill text-danger fs-4 fw-bold" />
+  }
+  if (status === 'failed') {
+    return <i className="bi bi-x-circle-fill text-danger fs-4 fw-bold" />
+  }
   return <i className="bi bi-circle text-secondary fs-4" />
+}
+
+type StatusModalProps = {
+  title: string
+  areas: string[]
+  apiPath: string
+  modalRef: React.RefObject<HTMLDivElement | null>
+  onClose: () => void
 }
 
 export default function StatusModal({
@@ -26,13 +38,7 @@ export default function StatusModal({
   apiPath,
   modalRef,
   onClose,
-}: {
-  title: string
-  areas: string[]
-  apiPath: string
-  modalRef: React.RefObject<HTMLDivElement>
-  onClose: () => void
-}) {
+}: StatusModalProps) {
   const [area, setArea] = useState('')
   const [inputType, setInputType] = useState<'nik' | 'phone'>('nik')
   const [val, setVal] = useState('')
@@ -41,7 +47,9 @@ export default function StatusModal({
   const [steps, setSteps] = useState<StatusStep[] | null>(null)
 
   const meta = useMemo(() => {
-    if (inputType === 'nik') return { placeholder: 'Masukan NIK Terdaftar (16 digit)', max: 16 }
+    if (inputType === 'nik') {
+      return { placeholder: 'Masukan NIK Terdaftar (16 digit)', max: 16 }
+    }
     return { placeholder: 'Masukan Nomor Handphone Terdaftar (contoh: 0812...)', max: 15 }
   }, [inputType])
 
@@ -52,12 +60,16 @@ export default function StatusModal({
     const a = area.trim()
     const v = onlyDigits(val)
 
-    if (!a) return setAlert({ type: 'danger', message: 'Silakan pilih area.' })
-    if (!v)
+    if (!a) {
+      return setAlert({ type: 'danger', message: 'Silakan pilih area.' })
+    }
+
+    if (!v) {
       return setAlert({
         type: 'danger',
         message: inputType === 'nik' ? 'NIK harus diisi.' : 'Nomor Handphone harus diisi.',
       })
+    }
 
     setLoading(true)
     try {
@@ -66,6 +78,7 @@ export default function StatusModal({
         inputType,
         value: v,
       })
+
       if (res.success) {
         setAlert({ type: 'success', message: res.message || 'Data pendaftaran ditemukan.' })
         setSteps(res.steps ?? [])
@@ -182,7 +195,6 @@ export default function StatusModal({
                   key={i}
                   className="d-flex align-items-start justify-content-between py-2 border-bottom"
                 >
-                  {/* TEXT (kiri) */}
                   <div>
                     <div className={getStepTextClass(s.status)}>
                       {i + 1}. {s.title}
@@ -194,7 +206,6 @@ export default function StatusModal({
                     )}
                   </div>
 
-                  {/* ICON (kanan / belakang text) */}
                   <div className="ms-3" style={{ minWidth: 32, textAlign: 'right' }}>
                     <StepIcon status={s.status} />
                   </div>
