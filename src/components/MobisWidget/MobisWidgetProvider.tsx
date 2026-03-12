@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { inter } from '@/app/(frontend)/fonts'
 import './styles.css'
 
 import { useMobisWidgetConfig } from './config/useConfig'
@@ -21,29 +22,66 @@ export default function MobisWidgetProvider({
   const cfg = useMobisWidgetConfig(payloadGlobalUrl, overrideConfig)
 
   const [assistantOpen, setAssistantOpen] = useState(false)
-  const statusModalRef = useRef<HTMLDivElement>(null!)
+  const [hideWidget, setHideWidget] = useState(false)
 
-  if (!cfg || cfg.enabled === false) return null
+  const statusModalRef = useRef<HTMLDivElement>(null)
 
-  const floating = cfg.floating ?? {}
-  const status = cfg.statusWidget ?? {}
-  const assistant = cfg.assistantWidget ?? {}
+  useEffect(() => {
+    const sections = ['form', 'footerSection']
+
+    const elements = sections
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el instanceof HTMLElement)
+
+    if (!elements.length) {
+      setHideWidget(false)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const anyVisible = entries.some((entry) => entry.isIntersecting)
+        setHideWidget(anyVisible)
+      },
+      { threshold: 0.25 },
+    )
+
+    elements.forEach((el) => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [])
+
+  const floating = useMemo(() => cfg?.floating ?? {}, [cfg])
+  const status = useMemo(() => cfg?.statusWidget ?? {}, [cfg])
+  const assistant = useMemo(() => cfg?.assistantWidget ?? {}, [cfg])
 
   const anchor = floating.registerAnchorId || 'sectionForm'
   const width = floating.buttonWidth ?? 225
-  const areas = (status.areas?.length ? status.areas : [{ label: 'Jabodetabek' }]).map(
-    (a) => a.label,
+
+  const areas = useMemo(
+    () => (status.areas?.length ? status.areas : [{ label: 'Jabodetabek' }]).map((a) => a.label),
+    [status.areas],
   )
 
+  if (!cfg || cfg.enabled === false) return null
+
   return (
-    <section className="mobis-widget-root">
+    <section
+      className={`${inter.className} ${inter.variable} mobis-widget-root ${
+        hideWidget ? 'mobis-widget-hidden' : ''
+      }`}
+    >
       <FloatingButtons
         width={width}
         showRegister={floating.showRegister ?? true}
         showStatus={floating.showStatus ?? true}
         showAssistant={floating.showAssistant ?? true}
-        onRegister={() => (window.location.hash = `#${anchor}`)}
-        onStatus={() => bsModalShow(statusModalRef.current)}
+        onRegister={() => {
+          window.location.hash = `#${anchor}`
+        }}
+        onStatus={() => {
+          if (statusModalRef.current) bsModalShow(statusModalRef.current)
+        }}
         onAssistant={() => setAssistantOpen(true)}
       />
 
@@ -52,7 +90,9 @@ export default function MobisWidgetProvider({
         areas={areas}
         apiPath={status.apiPath || '/api/widget/status-check'}
         modalRef={statusModalRef}
-        onClose={() => bsModalHide(statusModalRef.current)}
+        onClose={() => {
+          if (statusModalRef.current) bsModalHide(statusModalRef.current)
+        }}
       />
 
       <AssistantWidget

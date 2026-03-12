@@ -6,6 +6,7 @@ import { bsModalHide, bsModalShow } from '../../shared/bootstrapModal'
 import { postJSON } from '../../shared/fetcher'
 import { linkifyText } from '../../shared/linkify'
 import { clampPhone, uid, isNoMessage, isThankYouMessage } from '../../shared/helpers'
+import { inter } from '@/app/(frontend)/fonts'
 import { sanitizeHtml } from '../../shared/sanitize'
 import type { ChatMsg, ChatResponse } from './types'
 
@@ -144,7 +145,8 @@ export default function AssistantWidget({
 
   return (
     <Portal>
-      <div className="mobis-chat-portal">
+      {/* <div className="mobis-chat-portal"> */}
+      <div className={`${inter.className} ${inter.variable} mobis-chat-portal`}>
         {/* CHAT BOX */}
         <div className="bg-white mobis-chatbox border">
           <div className="d-flex align-items-center justify-content-between p-3 border-bottom">

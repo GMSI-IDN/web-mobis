@@ -1,6 +1,42 @@
 /* Root widget jangan intercept click halaman */
 .mobis-widget-root { pointer-events: none; }
 
+:root {
+  --bs-font-sans-serif: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body {
+  font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.mobis-widget-root,
+.mobis-widget-root *,
+.mobis-chat-portal,
+.mobis-chat-portal *,
+.mobis-chatbox,
+.mobis-chatbox *,
+.mobis-widget-float,
+.mobis-widget-float * {
+  font-family: var(--font-inter), Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+}
+
+.hide-widget-area ~ .mobis-widget-root {
+  display: none;
+}
+
+/* hide widget ketika section tertentu terlihat */
+.mobis-widget-hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+}
+
+.mobis-widget-hidden {
+  display: none;
+}
+
 /* Floating buttons tetap clickable */
 .mobis-widget-float {
   pointer-events: auto;

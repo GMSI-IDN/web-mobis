@@ -183,7 +183,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   const fieldCol = 'col-12 col-md-8'
 
   return (
-    <section id="form" className="bg-gradient-form">
+    <section id="form" className="bg-gradient-form hide-widget-area">
       <div className="container py-4">
         <div className="card border-0 shadow-sm mx-auto reg-form-card" style={{ maxWidth: 560 }}>
           <div className="card-body p-3 p-md-4">

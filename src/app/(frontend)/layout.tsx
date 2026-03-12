@@ -22,7 +22,8 @@ export default async function FrontendLayout({ children }: { children: React.Rea
   const { isEnabled } = await draftMode()
 
   return (
-    <div className={`${inter.className} d-flex flex-column min-vh-100`}>
+    // <div className={`${inter.className} d-flex flex-column min-vh-100`}>
+    <div className={`${inter.className} ${inter.variable} d-flex flex-column min-vh-100`}>
       <InitTheme />
       <Providers>
         <AdminBar adminBarProps={{ preview: isEnabled }} />
