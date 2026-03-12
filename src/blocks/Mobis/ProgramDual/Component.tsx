@@ -101,7 +101,7 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
   const bodyTopPadding = typeof style?.bodyTopPadding === 'number' ? style.bodyTopPadding : 60
 
   return (
-    <section className={sectionBgClass}>
+    <section id="program" className={sectionBgClass}>
       <div className="container py-4">
         {title ? (
           <div className="text-center mb-3">

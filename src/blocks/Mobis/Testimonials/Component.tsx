@@ -40,7 +40,7 @@ function Card({ t }: { t: Testi }) {
   const rating = t.rating ?? 5
 
   return (
-    <div id="kata_mitra_kami" className="card border-0 shadow-sm h-100 testi-card">
+    <div className="card border-0 shadow-sm h-100 testi-card">
       <div className="card-body p-3 p-md-4">
         <div className="d-flex gap-3 align-items-start">
           <div
@@ -241,7 +241,7 @@ export const Testimonials: React.FC<Props> = ({ title, items, intervalMs }) => {
           : 'col-12 col-md-6 col-lg-3'
 
   return (
-    <section className="bg-white">
+    <div className="bg-white" id="kata_mitra_kami">
       <div className="container py-4">
         <div className="text-center mb-3">
           <h3 className="h6 fw-bold text-success mb-0">{title ?? 'KATA MITRA KAMI'}</h3>
@@ -330,6 +330,6 @@ export const Testimonials: React.FC<Props> = ({ title, items, intervalMs }) => {
           cursor: grabbing;
         }
       `}</style>
-    </section>
+    </div>
   )
 }
