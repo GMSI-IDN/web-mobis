@@ -720,3 +720,9 @@ body {
 
 }
 
+@media (max-width: 361px) {
+    .program-card__header {
+        margin-left: -8rem !important;
+    }
+}
+
