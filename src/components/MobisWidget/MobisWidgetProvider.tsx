@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { inter } from '@/app/(frontend)/fonts'
 import './styles.css'
 
+import useHideWidgetMobile from './hooks/useHideWidgetMobile'
 import { useMobisWidgetConfig } from './config/useConfig'
 import type { MobisWidgetConfig } from './config/types'
 import { bsModalHide, bsModalShow } from './shared/bootstrapModal'
@@ -22,40 +23,16 @@ export default function MobisWidgetProvider({
   const cfg = useMobisWidgetConfig(payloadGlobalUrl, overrideConfig)
 
   const [assistantOpen, setAssistantOpen] = useState(false)
-  const [hideWidget, setHideWidget] = useState(false)
-
   const statusModalRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const sections = ['form', 'footerSection']
-
-    const elements = sections
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el instanceof HTMLElement)
-
-    if (!elements.length) {
-      setHideWidget(false)
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const anyVisible = entries.some((entry) => entry.isIntersecting)
-        setHideWidget(anyVisible)
-      },
-      { threshold: 0.25 },
-    )
-
-    elements.forEach((el) => observer.observe(el))
-
-    return () => observer.disconnect()
-  }, [])
+  // Hide hanya di mobile saat section RegistrationForm masuk ke area bawah viewport
+  const hideOnMobileFormSection = useHideWidgetMobile('RegistrationForm')
 
   const floating = useMemo(() => cfg?.floating ?? {}, [cfg])
   const status = useMemo(() => cfg?.statusWidget ?? {}, [cfg])
   const assistant = useMemo(() => cfg?.assistantWidget ?? {}, [cfg])
 
-  const anchor = floating.registerAnchorId || 'sectionForm'
+  const anchor = floating.registerAnchorId || 'RegistrationForm'
   const width = floating.buttonWidth ?? 225
 
   const areas = useMemo(
@@ -66,24 +43,28 @@ export default function MobisWidgetProvider({
   if (!cfg || cfg.enabled === false) return null
 
   return (
-    <section
-      className={`${inter.className} ${inter.variable} mobis-widget-root ${
-        hideWidget ? 'mobis-widget-hidden' : ''
-      }`}
-    >
-      <FloatingButtons
-        width={width}
-        showRegister={floating.showRegister ?? true}
-        showStatus={floating.showStatus ?? true}
-        showAssistant={floating.showAssistant ?? true}
-        onRegister={() => {
-          window.location.hash = `#${anchor}`
-        }}
-        onStatus={() => {
-          if (statusModalRef.current) bsModalShow(statusModalRef.current)
-        }}
-        onAssistant={() => setAssistantOpen(true)}
-      />
+    <section className={`${inter.className} ${inter.variable} mobis-widget-root`}>
+      <div
+        className={`mobis-widget-floating-wrap ${
+          hideOnMobileFormSection ? 'is-hidden-mobile' : ''
+        }`}
+      >
+        <FloatingButtons
+          width={width}
+          showRegister={floating.showRegister ?? true}
+          showStatus={floating.showStatus ?? true}
+          showAssistant={floating.showAssistant ?? true}
+          onRegister={() => {
+            window.location.hash = `#${anchor}`
+          }}
+          onStatus={() => {
+            if (statusModalRef.current) void bsModalShow(statusModalRef.current)
+          }}
+          onAssistant={() => {
+            setAssistantOpen(true)
+          }}
+        />
+      </div>
 
       <StatusModal
         title={status.title || 'Registration Mobis Check'}
@@ -91,7 +72,7 @@ export default function MobisWidgetProvider({
         apiPath={status.apiPath || '/api/widget/status-check'}
         modalRef={statusModalRef}
         onClose={() => {
-          if (statusModalRef.current) bsModalHide(statusModalRef.current)
+          if (statusModalRef.current) void bsModalHide(statusModalRef.current)
         }}
       />
 

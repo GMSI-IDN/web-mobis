@@ -34,7 +34,7 @@ export default function FloatingButtons({
           style={btnStyle}
           onClick={onRegister}
         >
-          <i className="fa-solid fa-user-pen me-2" style={{ fontSize: 22 }} />
+          <i className="bi bi-person-vcard me-2" style={{ fontSize: 22 }} />
           <span>Daftar Sekarang</span>
         </button>
       )} */}
@@ -46,7 +46,7 @@ export default function FloatingButtons({
           style={btnStyle}
           onClick={onStatus}
         >
-          <i className="bi-solid bi-list-check me-2" style={{ fontSize: 22 }} />
+          <i className="bi bi-file-earmark-text me-2" style={{ fontSize: 22 }} />
           <span>Status Pendaftaran</span>
         </button>
       )}
@@ -58,7 +58,7 @@ export default function FloatingButtons({
           style={btnStyle}
           onClick={onAssistant}
         >
-          <i className="bi-solid bi-headset me-2" style={{ fontSize: 22 }} />
+          <i className="bi bi-headset me-2" style={{ fontSize: 22 }} />
           <span>Hubungi Kami</span>
         </button>
       )}
