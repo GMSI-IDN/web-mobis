@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useId, useEffect, useState } from 'react'
+import React, { useId, useEffect } from 'react'
 import Link from 'next/link'
+import ScrollButton from '@/components/ui/ScrollButton'
 
 type Media = { url?: string }
 
@@ -14,36 +15,26 @@ type Slide = {
 }
 
 export default function BannerCarouselBlockComponent({ slides }: { slides?: Slide[] }) {
-  // 1. SOLUSI HYDRATION: Berikan prefix manual agar ID konsisten antara Server & Client
   const id = useId().replace(/:/g, '')
   const carouselId = `carousel-${id}`
 
-  // State untuk memastikan inisialisasi hanya di client
-  const [mounted, setMounted] = useState(false)
-
   const activeSlides = (slides ?? []).filter((s) => s?.isActive !== false)
 
-  // 2. SOLUSI AUTO-PLAY: Inisialisasi Manual Bootstrap
   useEffect(() => {
-    setMounted(true)
-
     const initBootstrap = async () => {
-      // Import bootstrap hanya di browser
       const bootstrap = await import('bootstrap')
       const element = document.getElementById(carouselId)
 
-      if (element) {
-        // Hapus instance lama jika ada (mencegah memory leak/double init)
-        const existingInstance = bootstrap.Carousel.getInstance(element)
-        if (existingInstance) existingInstance.dispose()
+      if (!element) return
 
-        // Buat instance baru dengan opsi autoplay
-        new bootstrap.Carousel(element, {
-          interval: 6000,
-          ride: 'carousel',
-          pause: false,
-        })
-      }
+      const existingInstance = bootstrap.Carousel.getInstance(element)
+      if (existingInstance) existingInstance.dispose()
+
+      new bootstrap.Carousel(element, {
+        interval: 6000,
+        ride: 'carousel',
+        pause: false,
+      })
     }
 
     initBootstrap()
@@ -57,7 +48,6 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
         <div
           id={carouselId}
           className="carousel slide"
-          // Kita tetap pasang data-attributes sebagai fallback
           data-bs-ride="carousel"
           data-bs-interval="6000"
           data-bs-pause="false"
@@ -83,12 +73,15 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
               const desktopUrl = s?.backgroundImage?.url ?? ''
               const mobileUrl = s?.backgroundImageMobile?.url ?? desktopUrl
 
+              const ctaText = s?.ctaText ?? 'Daftar Sekarang'
+              const ctaLink = s?.ctaLink?.trim() || '#registration'
+              const isSectionLink = ctaLink.startsWith('#')
+
               return (
                 <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
                   <div className="banner-slide-fullbleed position-relative">
                     <picture>
                       <source media="(max-width: 767.98px)" srcSet={mobileUrl} />
-                      {/* Gunakan loading="eager" untuk slide pertama agar LCP bagus */}
                       <img
                         className="banner-img-fullbleed"
                         src={desktopUrl}
@@ -98,12 +91,21 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                     </picture>
 
                     <div className="banner-cta-fullbleed position-absolute start-50 translate-middle-x text-center">
-                      <Link
-                        href={s?.ctaLink ?? '/'}
-                        className="btn btn-light fw-bold rounded-pill px-4 btn-banner-cta-fullbleed"
-                      >
-                        {s?.ctaText ?? 'Daftar Sekarang'}
-                      </Link>
+                      {isSectionLink ? (
+                        <ScrollButton
+                          className="btn btn-light fw-bold rounded-pill px-4 btn-banner-cta-fullbleed"
+                          targetId={ctaLink}
+                        >
+                          {ctaText}
+                        </ScrollButton>
+                      ) : (
+                        <Link
+                          href={ctaLink}
+                          className="btn btn-light fw-bold rounded-pill px-4 btn-banner-cta-fullbleed"
+                        >
+                          {ctaText}
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>
