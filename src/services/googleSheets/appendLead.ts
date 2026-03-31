@@ -39,35 +39,72 @@ function resolveSpreadsheetId(domicile?: string): string {
 function buildRow(payload: RegistrationPayload): (string | null)[] {
   const now = new Date()
 
+  let ageDisplay: string = '' // Kita siapkan sebagai string
+
+  if (payload.birthDate) {
+    const birthDate = new Date(payload.birthDate)
+    let ageNum = now.getFullYear() - birthDate.getFullYear()
+    const m = now.getMonth() - birthDate.getMonth()
+
+    if (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) {
+      ageNum--
+    }
+
+    ageDisplay = ageNum.toString() // Ubah angka ke string agar tidak error
+  }
+
+  // 1. Variabel Tanggal: DD-MM-YYYY
+  const datePart = now
+    .toLocaleDateString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+    .replace(/\//g, '-') // Mengubah / menjadi -
+
+  // 2. Variabel Waktu: HH:mm
+  const timePart = now
+    .toLocaleTimeString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+    .replace('.', ':') // Pastikan menggunakan titik dua (id-ID defaultnya titik)
+
   return [
-    now.toISOString(),
-
     payload.name ?? '',
-    payload.birthPlace ?? '',
-    payload.birthDate ?? '',
-
     payload.phone ?? '',
+    ageDisplay, // <--- Sekarang ini sudah bertipe string, aman untuk TypeScript
     payload.ktpNumber ?? '',
-
-    payload.simNumber ?? '',
-    payload.simType ?? '',
     payload.domicile ?? '',
-    payload.simValidUntil ?? '',
-
     payload.currentAddress ?? '',
     payload.houseOwnership ?? '',
-
-    payload.emergencyName ?? '',
-    payload.emergencyPhone ?? '',
-    payload.emergencyRelation ?? '',
-
     payload.driverApps ?? '',
     payload.activeAccountSelf ?? '',
     payload.driverExperience ?? '',
-
     payload.handoverLocation ?? '',
     payload.sourceInfo ?? '',
-    payload.promoCode ?? '',
+    '',
+    '',
+    'Website Mobis',
+    '',
+    '',
+    datePart,
+    timePart,
+    payload.emergencyPhone ?? '',
+    payload.emergencyName ?? '',
+    payload.emergencyRelation ?? '',
+
+    payload.birthPlace ?? '',
+    payload.birthDate ?? '',
+
+    payload.simNumber ?? '',
+    payload.simType ?? '',
+    payload.simValidUntil ?? '',
+
+    // payload.promoCode ?? '',
   ]
 }
 
