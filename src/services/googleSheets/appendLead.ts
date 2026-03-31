@@ -100,9 +100,23 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
       break
   }
 
+  let phone = ''
+  if (payload.phone) {
+    phone = `http://api.whatsapp.com/send/?phone=62${payload.phone}`
+  } else {
+    phone = ''
+  }
+  let emergencyPhone = ''
+  if (payload.emergencyPhone) {
+    emergencyPhone = `http://api.whatsapp.com/send/?phone=62${payload.emergencyPhone}`
+  } else {
+    emergencyPhone = ''
+  }
+
   return [
     payload.name ?? '',
-    '0' + (payload.phone ?? ''),
+    // '0' + (payload.phone ?? ''),
+    phone,
     ageDisplay, // <--- Sekarang ini sudah bertipe string, aman untuk TypeScript
     payload.ktpNumber ?? '',
     payload.domicile ?? '',
@@ -120,7 +134,8 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
     '',
     datePart,
     timePart,
-    '0' + (payload.emergencyPhone ?? ''),
+    // '0' + (payload.emergencyPhone ?? ''),
+    emergencyPhone,
     payload.emergencyName ?? '',
     payload.emergencyRelation ?? '',
     payload.birthPlace ?? '',
