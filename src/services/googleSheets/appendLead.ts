@@ -126,7 +126,7 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
     payload.birthPlace ?? '',
     payload.birthDate ?? '',
     payload.simNumber ?? '',
-    payload.simType ?? '',
+    simType,
     payload.simValidUntil ?? '',
 
     // payload.promoCode ?? '',
