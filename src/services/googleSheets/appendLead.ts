@@ -12,15 +12,15 @@ function resolveSpreadsheetId(domicile?: string): string {
   }
 
   const validJabodetabek = [
-    'DKI Jakarta',
-    'Kota/Kab. Bogor',
-    'Kota/Kab. Bekasi',
-    'Kota/Kab. Tangerang',
-    'Kota Tangerang Selatan',
-    'Kota Depok',
+    'dki jakarta',
+    'kota/kab. bogor',
+    'kota/kab. bekasi',
+    'kota/kab. tangerang',
+    'kota tangerang selatan',
+    'kota depok',
   ]
-  const validSurabaya = ['Kota Surabaya', 'Sidoarjo', 'Kota Gresik']
-  const validBali = ['Provinsi Bali']
+  const validSurabaya = ['kota surabaya', 'sidoarjo', 'kota gresik']
+  const validBali = ['provinsi bali']
 
   if (validJabodetabek.includes(key)) {
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_JABODETABEK')
@@ -34,26 +34,6 @@ function resolveSpreadsheetId(domicile?: string): string {
     )
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_DEFAULT')
   }
-
-  // switch (key) {
-  //   case 'jabodetabek':
-  //     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_JABODETABEK')
-
-  //   case 'surabaya':
-  //     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_SURABAYA')
-
-  //   case 'bali':
-  //     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_BALI')
-
-  //   case 'sidoarjo':
-  //     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_SURABAYA')
-
-  //   case 'gresik':
-  //     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_SURABAYA')
-
-  //   default:
-  //     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_DEFAULT')
-  // }
 }
 
 function buildRow(payload: RegistrationPayload): (string | null)[] {
