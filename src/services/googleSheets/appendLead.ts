@@ -72,10 +72,37 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
       hour12: false,
     })
     .replace('.', ':') // Pastikan menggunakan titik dua (id-ID defaultnya titik)
+  let simType = ''
+  switch (payload.simType) {
+    case '1':
+      simType = 'SIM A UMUM'
+      break
+    case '2':
+      simType = 'SIM B'
+      break
+    case '3':
+      simType = 'SIM B2'
+      break
+    case '4':
+      simType = 'SIM B2 UMUM'
+      break
+    case '5':
+      simType = 'SIM C'
+      break
+    case '6':
+      simType = 'SIM B1'
+      break
+    case '7':
+      simType = 'SIM B1 UMUM'
+      break
+    default:
+      simType = 'SIM A'
+      break
+  }
 
   return [
     payload.name ?? '',
-    payload.phone ?? '',
+    '0' + (payload.phone ?? ''),
     ageDisplay, // <--- Sekarang ini sudah bertipe string, aman untuk TypeScript
     payload.ktpNumber ?? '',
     payload.domicile ?? '',
@@ -93,13 +120,11 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
     '',
     datePart,
     timePart,
-    payload.emergencyPhone ?? '',
+    '0' + (payload.emergencyPhone ?? ''),
     payload.emergencyName ?? '',
     payload.emergencyRelation ?? '',
-
     payload.birthPlace ?? '',
     payload.birthDate ?? '',
-
     payload.simNumber ?? '',
     payload.simType ?? '',
     payload.simValidUntil ?? '',
