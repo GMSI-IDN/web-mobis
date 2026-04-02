@@ -3,7 +3,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css'
 import './globals.css'
 import './style.css'
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import { draftMode } from 'next/headers'
 
 import { AdminBar } from '@/components/AdminBar'
@@ -25,11 +25,13 @@ export default async function FrontendLayout({ children }: { children: React.Rea
       <Providers>
         <AdminBar adminBarProps={{ preview: isEnabled }} />
         <BootstrapClient />
-        <PixelFacebook />
+
+        <Suspense fallback={null}>
+          <PixelFacebook />
+        </Suspense>
+
         <Header />
-
         {children}
-
         <MobisWidgetProvider />
         <Footer />
       </Providers>
