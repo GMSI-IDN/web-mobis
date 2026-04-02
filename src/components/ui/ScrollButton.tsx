@@ -1,41 +1,34 @@
 'use client'
 
+import React from 'react'
+
 type ScrollButtonProps = {
   targetId: string
-  children: React.ReactNode
   className?: string
-  offsetExtra?: number
+  children: React.ReactNode
+  onClick?: () => void
 }
 
 export default function ScrollButton({
   targetId,
-  children,
   className,
-  offsetExtra = 16,
+  children,
+  onClick,
 }: ScrollButtonProps) {
-  const handleClick = () => {
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const cleanTargetId = targetId.replace(/^#/, '')
-        const el = document.getElementById(cleanTargetId)
-        if (!el) return
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
 
-        const header = document.querySelector('.site-header') as HTMLElement | null
-        const adminBar = document.querySelector('.payload-admin-bar') as HTMLElement | null
+    onClick?.()
 
-        const totalOffset =
-          (header?.offsetHeight || 0) + (adminBar?.offsetHeight || 0) + offsetExtra
+    const cleanTarget = targetId.replace('#', '')
+    const element = document.getElementById(cleanTarget)
 
-        const top = el.getBoundingClientRect().top + window.scrollY - totalOffset
-
-        window.scrollTo({
-          top,
-          behavior: 'smooth',
-        })
-
-        window.history.replaceState(null, '', `#${cleanTargetId}`)
-      }, 50)
-    })
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }
   }
 
   return (
