@@ -30,6 +30,12 @@ export default function AssistantWidget({
   const [phone, setPhone] = useState('')
   const [token, setToken] = useState('')
 
+  const [nameError, setNameError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
+
+  const nameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const phoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const [messages, setMessages] = useState<ChatMsg[]>([{ id: uid(), role: 'bot', text: greeting }])
   const [input, setInput] = useState('')
 
@@ -41,6 +47,31 @@ export default function AssistantWidget({
   const [review, setReview] = useState('')
   const [ratingLoading, setRatingLoading] = useState(false)
 
+  function validateName(value: string) {
+    const trimmed = value.trim()
+
+    if (!trimmed) return 'Nama wajib diisi.'
+    if (trimmed.length < 2) return 'Nama minimal 2 karakter.'
+
+    return ''
+  }
+
+  function validatePhone(value: string) {
+    const trimmed = value.trim()
+
+    if (!trimmed) return 'Nomor telepon wajib diisi.'
+    if (trimmed.length < 8) return 'Nomor telepon minimal 8 digit.'
+    if (!/^[0-9+]+$/.test(trimmed)) return 'Nomor telepon hanya boleh berisi angka.'
+
+    return ''
+  }
+
+  const canStart =
+    name.trim().length >= 2 &&
+    phone.trim().length >= 8 &&
+    !validateName(name) &&
+    !validatePhone(phone)
+
   useEffect(() => {
     if (!scrollRef.current) return
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -49,6 +80,7 @@ export default function AssistantWidget({
   // reset state saat widget ditutup, supaya ketika dibuka lagi fresh
   useEffect(() => {
     if (isOpen) return
+
     setStage('register')
     setName('')
     setPhone('')
@@ -57,9 +89,19 @@ export default function AssistantWidget({
     setInput('')
     setRating(0)
     setReview('')
+    setNameError('')
+    setPhoneError('')
+
+    if (nameTimerRef.current) clearTimeout(nameTimerRef.current)
+    if (phoneTimerRef.current) clearTimeout(phoneTimerRef.current)
   }, [isOpen, greeting])
 
-  const canStart = name.trim().length >= 2 && phone.trim().length >= 8
+  useEffect(() => {
+    return () => {
+      if (nameTimerRef.current) clearTimeout(nameTimerRef.current)
+      if (phoneTimerRef.current) clearTimeout(phoneTimerRef.current)
+    }
+  }, [])
 
   function closeWidgetHard() {
     // close modal jika masih kebuka
@@ -79,6 +121,14 @@ export default function AssistantWidget({
   }
 
   async function startChat() {
+    const nameValidation = validateName(name)
+    const phoneValidation = validatePhone(phone)
+
+    setNameError(nameValidation)
+    setPhoneError(phoneValidation)
+
+    if (nameValidation || phoneValidation) return
+
     setStage('chat')
   }
 
@@ -177,23 +227,45 @@ export default function AssistantWidget({
               <div className="mb-3">
                 <label className="form-label">Nama</label>
                 <input
-                  className="form-control"
+                  className={`form-control ${nameError ? 'is-invalid' : ''}`}
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setName(value)
+                    setNameError('')
+
+                    if (nameTimerRef.current) clearTimeout(nameTimerRef.current)
+
+                    nameTimerRef.current = setTimeout(() => {
+                      setNameError(validateName(value))
+                    }, 1000)
+                  }}
                   placeholder="Masukkan nama Anda"
                   autoFocus
                 />
+                {nameError && <div className="invalid-feedback d-block">{nameError}</div>}
               </div>
 
               <div className="mb-3">
                 <label className="form-label">Nomor Telepon</label>
                 <input
-                  className="form-control"
+                  className={`form-control ${phoneError ? 'is-invalid' : ''}`}
                   value={phone}
-                  onChange={(e) => setPhone(clampPhone(e.target.value))}
+                  onChange={(e) => {
+                    const value = clampPhone(e.target.value)
+                    setPhone(value)
+                    setPhoneError('')
+
+                    if (phoneTimerRef.current) clearTimeout(phoneTimerRef.current)
+
+                    phoneTimerRef.current = setTimeout(() => {
+                      setPhoneError(validatePhone(value))
+                    }, 1000)
+                  }}
                   placeholder="Masukkan nomor telepon"
                   inputMode="tel"
                 />
+                {phoneError && <div className="invalid-feedback d-block">{phoneError}</div>}
               </div>
 
               <button
