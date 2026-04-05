@@ -62,7 +62,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
       page_path: window.location.pathname,
     }
 
-    trackFacebookEvent('Lead', payload)
+    trackFacebookEvent('Leads', payload)
 
     trackFacebookCustomEvent('ClickBannerCarouselCTA', {
       button_text: ctaText,

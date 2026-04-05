@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useId, useMemo, useState } from 'react'
+import { trackFacebookEvent, trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
 
 type Option = { label: string; value: string }
 
@@ -31,6 +32,47 @@ function normalizeOptions(input?: Option[]): Option[] {
     }))
     .filter((o) => o.label && o.value)
 }
+
+const handleBannerCTATrack = ({
+  ctaText,
+  ctaLink,
+  // slideIndex,
+  targetType,
+}: {
+  ctaText: string
+  ctaLink: string
+  // slideIndex: number
+  'section' 
+}) => {
+  const payload = {
+    content_name: ctaText,
+    content_category: 'Banner CTA',
+    section: 'Banner Carousel',
+    // slide_index: slideIndex + 1,
+    target: ctaLink,
+    target_type: targetType,
+    page_path: window.location.pathname,
+  }
+
+  trackFacebookEvent('Leads', payload)
+
+  trackFacebookCustomEvent('ClickBannerCarouselCTA', {
+    button_text: ctaText,
+    section: 'Banner Carousel',
+    // slide_index: slideIndex + 1,
+    target: ctaLink,
+    target_type: targetType,
+    page_path: window.location.pathname,
+  })
+}
+
+// const handleCarouselNavTrack = (direction: 'prev' | 'next') => {
+//   trackFacebookCustomEvent('ClickBannerCarouselNavigation', {
+//     direction,
+//     section: 'Banner Carousel',
+//     page_path: window.location.pathname,
+//   })
+// }
 
 function SelectField({
   name,

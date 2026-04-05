@@ -266,18 +266,17 @@ body {
     z-index: 50;
     pointer-events: none;
     width: 23rem;
+    position: relative;
+    margin: 0 auto;
+    margin-bottom: -4rem;
     margin-top: -5rem;
-    margin-left: 9rem;
-    position: absolute;
-    left: 0;
-    right: 0;
-}
+ }
 
 .program-card__header img {
   width: 100%;
   height: auto;
   display: block;
-  margin: 0 auto;
+  /* margin: 0 auto; */
   filter: drop-shadow(0 10px 12px rgba(0, 0, 0, .22));
 }
 
@@ -522,9 +521,7 @@ body {
 
 /* carousel End  */
 @media (max-width:1281px) {
-  .program-card__header {
-    margin-left: 6rem;
- }
+
 }
 
 @media (max-width: 1025px) {
@@ -532,9 +529,7 @@ body {
     height: 60rem;
   }
 
-  .program-card__header{
-    margin-left: 3rem !important;
-  }
+
 
 }
 
@@ -543,20 +538,16 @@ body {
 /* Fix: pastikan navbar-collapse tampil di desktop */
 @media (max-width: 992px) {
 
-  .program-card__header {
-    margin-left: 1.5rem !important;
-  }
-
   .btn-banner-cta-fullbleed {
     margin-bottom: 4rem;
  }
 
- .program-card__header img {
+ /* .program-card__header img {
     width: 75%;
-  }
+  } */
 
   .program-card__header{
-    margin-left: -1rem !important;
+     width: 21rem;
     margin-top: -4rem;
   }
 
@@ -602,9 +593,7 @@ body {
   }
 
   .program-card__header {
-    width: 21rem;
     margin-top: -4rem;
-      margin-left: 0rem !important;
   }
 }
 
@@ -631,9 +620,8 @@ body {
     width: 16rem;
   }
   .program-card__header {
-    width: 28rem;
+    /* width: 28rem; */
     margin-top: -4rem;
-    margin-left: 3rem !important;
   }
 
   .unit-card {
@@ -649,9 +637,9 @@ body {
 
 @media  (max-width: 450px) {
 
-  .program-card__header img {
+  /* .program-card__header img {
     width: 50%;
-  }
+  } */
 
   .banner-slide-fullbleed {
     height: 16rem;
@@ -660,9 +648,8 @@ body {
     }
 
   .program-card__header {
-    width: 36rem;
+    /* width: 36rem; */
     margin-top: -3.5rem;
-    margin-left: -5rem !important;
   }
 
   .list-unstyled li{
@@ -707,9 +694,6 @@ body {
 }
 
 @media  (max-width: 391px) {
-  .program-card__header {
-    margin-left: -7rem !important;
-  }
 
   .bg-success-subtle-gradient{
     margin-top: 0rem !important;
@@ -727,9 +711,4 @@ body {
 
 }
 
-@media (max-width: 361px) {
-    .program-card__header {
-        margin-left: -8rem !important;
-    }
-}
 
