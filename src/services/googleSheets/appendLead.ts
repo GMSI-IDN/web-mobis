@@ -102,13 +102,20 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
 
   let phone = ''
   if (payload.phone) {
-    phone = `http://api.whatsapp.com/send/?phone=62${payload.phone}`
+    // phone = `http://api.whatsapp.com/send/?phone=62${payload.phone}`
+    phone =
+      '=HYPERLINK("api.whatsapp.com/send/?phone=62' + payload.phone + '", "' + payload.phone + '")'
   } else {
     phone = ''
   }
   let emergencyPhone = ''
   if (payload.emergencyPhone) {
-    emergencyPhone = `http://api.whatsapp.com/send/?phone=62${payload.emergencyPhone}`
+    emergencyPhone =
+      '=HYPERLINK("api.whatsapp.com/send/?phone=62' +
+      payload.emergencyPhone +
+      '", "' +
+      payload.emergencyPhone +
+      '")'
   } else {
     emergencyPhone = ''
   }
