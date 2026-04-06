@@ -21,6 +21,7 @@ function resolveSpreadsheetId(domicile?: string): string {
   ]
   const validSurabaya = ['kota surabaya', 'sidoarjo', 'kota gresik']
   const validBali = ['provinsi bali']
+  const validBandung = ['Bandung']
 
   if (validJabodetabek.includes(key)) {
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_JABODETABEK')
@@ -28,6 +29,8 @@ function resolveSpreadsheetId(domicile?: string): string {
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_SURABAYA')
   } else if (validBali.includes(key)) {
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_BALI')
+  } else if (validBandung.includes(key)) {
+    return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_BANDUNG')
   } else {
     console.warn(
       `Domicile "${domicile}" does not match any specific area, using default spreadsheet ID`,
