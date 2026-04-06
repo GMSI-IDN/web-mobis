@@ -67,6 +67,7 @@ export const RegistrationFormConfig: Block = {
         makeOptionArray('emRel', 'Emergency Relation Options'),
         makeOptionArray('drvExp', 'Driver Experience Options'),
         makeOptionArray('handover', 'Handover Location Options'),
+        makeOptionArray('onlineApp', 'Online App Options'),
         makeOptionArray('source', 'Source Info Options'),
       ],
     },

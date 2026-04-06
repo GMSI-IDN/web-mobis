@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useId, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { trackFacebookEvent, trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
 
 type Option = { label: string; value: string }
@@ -16,6 +16,7 @@ type Props = {
     emRel?: Option[]
     drvExp?: Option[]
     handover?: Option[]
+    onlineApp?: Option[]
     source?: Option[]
   }
 }
@@ -129,7 +130,7 @@ function SelectField({
 export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successMessage, opts }) => {
   const [status, setStatus] = useState<Status>('idle')
 
-  const [values, setValues] = useState<FormValues>({
+  const initialValues: FormValues = {
     name: '',
     birthPlace: '',
     birthDate: '',
@@ -151,14 +152,23 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     sourceInfo: '',
     promoCode: '',
     agree: false,
-  })
+  }
 
+  const [values, setValues] = useState<FormValues>(initialValues)
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<TouchedState>({})
 
   const timersRef = useRef<Partial<Record<keyof FormValues, ReturnType<typeof setTimeout>>>>({})
 
   const uid = useId().replace(/:/g, '')
+
+  useEffect(() => {
+    return () => {
+      Object.values(timersRef.current).forEach((timer) => {
+        if (timer) clearTimeout(timer)
+      })
+    }
+  }, [])
 
   const defaults = useMemo(
     () => ({
@@ -195,6 +205,12 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         { label: '> 1 tahun', value: 'gt1th' },
       ],
       handover: [{ label: 'Pool MOBIS', value: 'pool' }],
+      onlineApp: [
+        { label: 'Gojek', value: 'gojek' },
+        { label: 'Grab', value: 'grab' },
+        { label: 'Maxim', value: 'maxim' },
+        { label: 'Lainnya', value: 'lainnya' },
+      ],
       source: [
         { label: 'Instagram', value: 'ig' },
         { label: 'Facebook', value: 'fb' },
@@ -235,6 +251,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   const HANDOVER_OPTS = (() => {
     const v = normalizeOptions(opts?.handover)
     return v.length ? v : defaults.handover
+  })()
+
+  const ONLINE_APP_OPTS = (() => {
+    const v = normalizeOptions(opts?.onlineApp)
+    return v.length ? v : defaults.onlineApp
   })()
 
   const SOURCE_OPTS = (() => {
@@ -314,8 +335,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         if (!v) return 'Nomor HP emergency wajib diisi.'
         if (v.length < 10) return 'Nomor HP emergency minimal 10 digit.'
         if (v.length > 15) return 'Nomor HP emergency maksimal 15 digit.'
-        if (v === onlyDigits(allValues.phone))
+        if (v === onlyDigits(allValues.phone)) {
           return 'Nomor emergency tidak boleh sama dengan nomor utama.'
+        }
         return ''
       }
 
@@ -324,7 +346,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         return ''
 
       case 'driverApps':
-        if (!String(value).trim()) return 'Aplikasi driver online wajib diisi.'
+        if (!String(value).trim()) return 'Aplikasi driver online wajib dipilih.'
         return ''
 
       case 'activeAccountSelf':
@@ -386,34 +408,25 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   }
 
   function setField<K extends keyof FormValues>(field: K, value: FormValues[K]) {
-    const nextValues = { ...values, [field]: value }
-    setValues(nextValues)
+    let nextValue = value
 
+    if (field === 'phone' || field === 'ktpNumber' || field === 'emergencyPhone') {
+      nextValue = onlyDigits(String(value)) as FormValues[K]
+    }
+
+    const nextValues = { ...values, [field]: nextValue }
+    setValues(nextValues)
     setErrors((prev) => ({ ...prev, [field]: '' }))
 
     if (field !== 'promoCode') {
-      scheduleValidation(field, value, nextValues)
+      scheduleValidation(field, nextValue, nextValues)
     }
 
     if (field === 'phone' && touched.emergencyPhone) {
-      setErrors((prev) => ({
-        ...prev,
-        emergencyPhone: '',
-      }))
-
+      setErrors((prev) => ({ ...prev, emergencyPhone: '' }))
       scheduleValidation('emergencyPhone', nextValues.emergencyPhone, nextValues)
     }
-
-    if (field === 'emergencyPhone' && touched.phone) {
-      setErrors((prev) => ({
-        ...prev,
-        emergencyPhone: '',
-      }))
-    }
   }
-
-  const formErrors = validateForm(values)
-  const canSubmit = Object.keys(formErrors).length === 0 && status !== 'loading'
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -450,29 +463,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
       if (!res.ok || !json?.ok) throw new Error(json?.message || 'Gagal')
 
       setStatus('success')
-      setValues({
-        name: '',
-        birthPlace: '',
-        birthDate: '',
-        phone: '',
-        ktpNumber: '',
-        simNumber: '',
-        simType: '',
-        domicile: '',
-        simValidUntil: '',
-        currentAddress: '',
-        houseOwnership: '',
-        emergencyName: '',
-        emergencyPhone: '',
-        emergencyRelation: '',
-        driverApps: '',
-        activeAccountSelf: '',
-        driverExperience: '',
-        handoverLocation: '',
-        sourceInfo: '',
-        promoCode: '',
-        agree: false,
-      })
+      setValues(initialValues)
       setErrors({})
       setTouched({})
     } catch {
@@ -572,6 +563,8 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                     name="ktpNumber"
                     className={`form-control form-control-sm ${touched.ktpNumber && errors.ktpNumber ? 'is-invalid' : ''}`}
                     placeholder="Ketik nomor KTP"
+                    inputMode="numeric"
+                    maxLength={16}
                     value={values.ktpNumber}
                     onChange={(e) => setField('ktpNumber', e.target.value)}
                   />
@@ -734,17 +727,16 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">
-                    Apa Aplikasi Driver Online Anda
-                  </label>
+                  <label className="form-label reg-label mb-0">Aplikasi Driver Online</label>
                 </div>
                 <div className={fieldCol}>
-                  <input
+                  <SelectField
                     name="driverApps"
-                    className={`form-control form-control-sm ${touched.driverApps && errors.driverApps ? 'is-invalid' : ''}`}
-                    placeholder="Pilih aplikasi yang Anda punya"
+                    placeholder="Pilih aplikasi driver online"
+                    options={ONLINE_APP_OPTS}
                     value={values.driverApps}
-                    onChange={(e) => setField('driverApps', e.target.value)}
+                    onChange={(value) => setField('driverApps', value)}
+                    isInvalid={!!(touched.driverApps && errors.driverApps)}
                   />
                   {touched.driverApps && errors.driverApps ? (
                     <div className="invalid-feedback d-block">{errors.driverApps}</div>
@@ -824,7 +816,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 <div className={fieldCol}>
                   <SelectField
                     name="handoverLocation"
-                    placeholder="Pilih Preferensi"
+                    placeholder="Pilih preferensi"
                     options={HANDOVER_OPTS}
                     value={values.handoverLocation}
                     onChange={(value) => setField('handoverLocation', value)}
@@ -881,7 +873,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                     checked={values.agree}
                     onChange={(e) => {
                       const checked = e.target.checked
-                      setValues((prev) => ({ ...prev, agree: checked }))
+                      const nextValues = { ...values, agree: checked }
+
+                      setValues(nextValues)
                       setErrors((prev) => ({ ...prev, agree: '' }))
 
                       if (timersRef.current.agree) {
@@ -892,7 +886,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                         setTouched((prev) => ({ ...prev, agree: true }))
                         setErrors((prev) => ({
                           ...prev,
-                          agree: validateField('agree', checked, { ...values, agree: checked }),
+                          agree: validateField('agree', checked, nextValues),
                         }))
                       }, 1000)
                     }}
@@ -916,7 +910,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 <button
                   type="submit"
                   className="btn btn-register w-100 rounded-pill"
-                  disabled={!canSubmit}
+                  disabled={status === 'loading'}
                 >
                   {status === 'loading' ? 'Mengirim...' : (submitLabel ?? 'Kirim')}
                 </button>

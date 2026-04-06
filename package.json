@@ -1,7 +1,7 @@
 {
   "name": "mobis-revamp",
   "version": "1.0.0",
-  "description": "Website template for Payload",
+  "description": "Website for Mobis, a Car rent company.",
   "license": "MIT",
   "type": "module",
   "scripts": {
