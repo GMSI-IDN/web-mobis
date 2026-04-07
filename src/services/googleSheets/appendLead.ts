@@ -2,12 +2,12 @@ import { getEnv } from '@/lib/env'
 import { getSheetsClient } from './client'
 import type { RegistrationPayload } from '@/types/registration'
 
-function resolveSpreadsheetId(domicile?: string): string {
-  const key = (domicile || '').toLowerCase().trim()
-  console.log(`Resolving spreadsheet ID for domicile: ${domicile} (key: ${key})`)
+function resolveSpreadsheetId(handoverLocation?: string): string {
+  const key = handoverLocation?.toLowerCase().trim() ?? ''
+  console.log(`Resolving spreadsheet ID for handoverLocation: ${handoverLocation} (key: ${key})`)
 
   if (!key) {
-    console.warn('No domicile provided, using default spreadsheet ID')
+    console.warn('No handoverLocation provided, using default spreadsheet ID')
   }
 
   const validJabodetabek = [
@@ -234,7 +234,7 @@ async function sendLeadToExternalApi(payload: RegistrationPayload) {
 }
 
 export async function appendLeadToSheet(payload: RegistrationPayload) {
-  const spreadsheetId = resolveSpreadsheetId(payload.domicile)
+  const spreadsheetId = resolveSpreadsheetId(payload.handoverLocation)
   const sheetName = process.env.GOOGLE_SHEETS_SHEET_NAME || 'Leads'
 
   console.log(`Appending lead to sheet: ${spreadsheetId} (${sheetName})`)
@@ -272,9 +272,10 @@ export async function appendLeadToSheet(payload: RegistrationPayload) {
   }
 
   return {
-    spreadsheetId,
-    sheetName,
-    area: payload.domicile ?? 'default',
+    // spreadsheetId,
+    // sheetName,
+    domicile: payload.domicile ?? 'default',
+    area: payload.handoverLocation ?? 'default',
     sheetSuccess: true,
     externalApiSuccess: Boolean(apiResponse),
     externalApi: apiResponse,
