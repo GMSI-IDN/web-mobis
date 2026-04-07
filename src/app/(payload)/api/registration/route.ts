@@ -12,30 +12,30 @@ export async function POST(req: NextRequest) {
     const payload = await getPayload({ config })
     const body = (await req.json()) as RegistrationBody
 
-    const rawCustomerId = body.customerId
+    // const rawCustomerId = body.customerId
     const voucherCode = body.voucherCode?.trim()
 
-    if (!rawCustomerId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'customerId wajib diisi',
-        },
-        { status: 400 },
-      )
-    }
+    // if (!rawCustomerId) {
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+    //       message: 'customerId wajib diisi',
+    //     },
+    //     { status: 400 },
+    //   )
+    // }
 
-    const customerId = typeof rawCustomerId === 'number' ? rawCustomerId : Number(rawCustomerId)
+    // const customerId = typeof rawCustomerId === 'number' ? rawCustomerId : Number(rawCustomerId)
 
-    if (!Number.isFinite(customerId) || Number.isNaN(customerId)) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'customerId tidak valid',
-        },
-        { status: 400 },
-      )
-    }
+    // if (!Number.isFinite(customerId) || Number.isNaN(customerId)) {
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+    //       message: 'customerId tidak valid',
+    //     },
+    //     { status: 400 },
+    //   )
+    // }
 
     if (!voucherCode) {
       return NextResponse.json(
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       collection: 'voucher_redemptions',
       data: {
         voucher: voucher.id,
-        customer: customerId,
+        customer: 0, // Karena kita belum punya data customer, kita set null dulu
         status: 'APPLIED',
         notes: 'Auto-applied on registration',
       },
