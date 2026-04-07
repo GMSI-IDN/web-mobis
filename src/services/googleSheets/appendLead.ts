@@ -172,6 +172,7 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
 }
 
 function buildExternalApiPayload(payload: RegistrationPayload) {
+  console.log('Building external API payload from registration payload:', payload)
   const age = calculateAge(payload.birthDate)
   const noAccount = isNoDriverAccount(payload.driverApps)
 
