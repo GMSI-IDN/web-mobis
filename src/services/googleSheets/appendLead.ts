@@ -137,7 +137,6 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
     .replace('.', ':')
 
   const simType = mapSimTypeForSheet(payload.simType)
-
   const noAccount = isNoDriverAccount(payload.driverApps)
 
   return [
@@ -205,7 +204,6 @@ function buildExternalApiPayload(payload: RegistrationPayload) {
 async function sendLeadToExternalApi(payload: RegistrationPayload) {
   // const url = getEnv('MOBIS_LEAD_API_URL')
   // const publicKey = getEnv('MOBIS_LEAD_API_PUBLIC_KEY')
-  //api.fleet-management-system.co.id/public/mobis/leads
   const url = 'https://stgapi.fleet-management-system.co.id/public/mobis/leads'
   const publicKey = 'R01TeE1TSWluZG9uZXNpYTIwMjQ='
 
@@ -244,26 +242,42 @@ export async function appendLeadToSheet(payload: RegistrationPayload) {
   const row = buildRow(payload)
   const sheets = getSheetsClient()
 
-  const [sheetResponse, apiResponse] = await Promise.all([
-    sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: `${sheetName}!A:Z`,
-      valueInputOption: 'USER_ENTERED',
-      insertDataOption: 'INSERT_ROWS',
-      requestBody: {
-        values: [row],
-      },
-    }),
-    sendLeadToExternalApi(payload),
-  ])
+  // WAJIB berhasil
+  const sheetResponse = await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${sheetName}!A:Z`,
+    valueInputOption: 'USER_ENTERED',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: [row],
+    },
+  })
 
   console.log('Append response data:', sheetResponse.data)
-  console.log('External API response:', apiResponse)
+
+  // OPTIONAL
+  let apiResponse: {
+    status: number
+    data: string
+  } | null = null
+
+  let externalApiError: string | null = null
+
+  try {
+    apiResponse = await sendLeadToExternalApi(payload)
+    console.log('External API response:', apiResponse)
+  } catch (error) {
+    externalApiError = error instanceof Error ? error.message : 'Unknown external API error'
+    console.error('External API failed but Google Sheets append succeeded:', externalApiError)
+  }
 
   return {
     spreadsheetId,
     sheetName,
     area: payload.domicile ?? 'default',
+    sheetSuccess: true,
+    externalApiSuccess: Boolean(apiResponse),
     externalApi: apiResponse,
+    externalApiError,
   }
 }
