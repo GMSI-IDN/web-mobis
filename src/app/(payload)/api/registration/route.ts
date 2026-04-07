@@ -56,7 +56,7 @@ async function validatePromoCode(params: {
     limit: 1,
   })
 
-  console.log('Voucher search result:', found)
+  // console.log('Voucher search result:', found)
 
   const voucher = found?.docs?.[0]
 
@@ -110,10 +110,10 @@ async function validatePromoCode(params: {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    console.log('[API /registration] payload received:', body)
+    // console.log('[API /registration] payload received:', body)
 
     const reg: RegistrationPayload = validateRegistrationPayload(body)
-    console.log('[API /registration] payload validated:', reg)
+    // console.log('[API /registration] payload validated:', reg)
 
     const payload = await getPayload({ config })
 
@@ -159,7 +159,7 @@ export async function POST(req: Request) {
       ...reg,
       promoCode,
     })
-    console.log('[API /registration] appended to Google Sheets', sheetMeta)
+    // console.log('[API /registration] appended to Google Sheets', sheetMeta)
 
     // 4. Simpan customer
     const customer = await payload.create({
@@ -195,7 +195,8 @@ export async function POST(req: Request) {
         promoApplied: promoResult.provided ? promoResult.valid : false,
         promoAppliedAt:
           promoResult.provided && promoResult.valid ? new Date().toISOString() : undefined,
-        voucher: promoResult.provided && promoResult.valid ? promoResult.voucherId : undefined,
+        voucher:
+          promoResult.provided && promoResult.valid ? Number(promoResult.voucherId) : undefined,
         promoError: undefined,
 
         rawPayload: body,
