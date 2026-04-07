@@ -2,93 +2,45 @@ import { NextRequest, NextResponse } from 'next/server'
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
-type RegistrationBody = {
-  customerId?: string | number
+type Body = {
   voucherCode?: string
 }
 
 export async function POST(req: NextRequest) {
   try {
     const payload = await getPayload({ config })
-    const body = (await req.json()) as RegistrationBody
+    const body = (await req.json()) as Body
 
-    const rawCustomerId = body.customerId
     const voucherCode = body.voucherCode?.trim()
 
-    if (!rawCustomerId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'customerId wajib diisi',
-        },
-        { status: 400 },
-      )
-    }
-
-    const customerId = typeof rawCustomerId === 'number' ? rawCustomerId : Number(rawCustomerId)
-
-    if (!Number.isFinite(customerId) || Number.isNaN(customerId)) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'customerId tidak valid',
-        },
-        { status: 400 },
-      )
-    }
-
-    // Validasi customer harus ada
-    const customerResult = await payload.find({
-      collection: 'customers',
-      where: {
-        id: {
-          equals: customerId,
-        },
-      },
-      limit: 1,
-    })
-
-    const customer = customerResult.docs[0]
-
-    if (!customer) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Customer tidak ditemukan',
-        },
-        { status: 404 },
-      )
-    }
-
-    // Jika voucher kosong, anggap registrasi tetap sukses tanpa voucher
+    // Jika voucher tidak diisi, langsung anggap lanjut tanpa voucher
     if (!voucherCode) {
       return NextResponse.json(
         {
           success: true,
-          message: 'Registrasi berhasil tanpa voucher',
+          message: 'Tidak menggunakan voucher',
           voucherApplied: false,
+          voucherValid: false,
+          data: null,
         },
         { status: 200 },
       )
     }
 
-    // Cek apakah collection voucher tersedia di Payload
+    // Cek apakah collection vouchers tersedia
     const hasVouchersCollection = Boolean(
       (payload.collections as Record<string, unknown>)['vouchers'],
     )
-    const hasVoucherRedemptionsCollection = Boolean(
-      (payload.collections as Record<string, unknown>)['voucher_redemptions'],
-    )
 
-    // Jika fitur voucher tidak tersedia, jangan error
-    if (!hasVouchersCollection || !hasVoucherRedemptionsCollection) {
+    if (!hasVouchersCollection) {
       return NextResponse.json(
         {
-          success: true,
-          message: 'Registrasi berhasil, fitur voucher tidak tersedia',
+          success: false,
+          message: 'Fitur voucher tidak tersedia',
           voucherApplied: false,
+          voucherValid: false,
         },
-        { status: 200 },
+        { status: 400 },
       )
     }
 
@@ -109,61 +61,58 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           message: 'Voucher tidak ditemukan',
+          voucherApplied: false,
+          voucherValid: false,
         },
         { status: 404 },
       )
     }
 
-    // Optional: cegah voucher yang sama dipakai customer yang sama lebih dari sekali
-    const existingRedemption = await payload.find({
-      collection: 'voucher_redemptions',
-      where: {
-        and: [
-          {
-            voucher: {
-              equals: voucher.id,
-            },
-          },
-          {
-            customer: {
-              equals: customerId,
-            },
-          },
-        ],
-      },
-      limit: 1,
-    })
-
-    if (existingRedemption.docs.length > 0) {
+    // Optional: cek status voucher jika field tersedia
+    if ('status' in voucher && voucher.status && voucher.status !== 'ACTIVE') {
       return NextResponse.json(
         {
           success: false,
-          message: 'Voucher sudah pernah digunakan oleh customer ini',
+          message: 'Voucher tidak aktif',
+          voucherApplied: false,
+          voucherValid: false,
         },
         { status: 400 },
       )
     }
 
-    await payload.create({
-      collection: 'voucher_redemptions',
-      data: {
-        voucher: voucher.id,
-        customer: customerId,
-        status: 'APPLIED',
-        notes: 'Auto-applied on registration',
-      },
-    })
+    // Optional: cek expired jika field tersedia
+    if (
+      'expiredAt' in voucher &&
+      voucher.expiredAt &&
+      new Date(String(voucher.expiredAt)) < new Date()
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Voucher sudah kadaluarsa',
+          voucherApplied: false,
+          voucherValid: false,
+        },
+        { status: 400 },
+      )
+    }
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Voucher berhasil diterapkan',
-        voucherApplied: true,
+        message: 'Voucher valid',
+        voucherApplied: false,
+        voucherValid: true,
+        data: {
+          id: voucher.id,
+          code: 'code' in voucher ? voucher.code : voucherCode,
+        },
       },
       { status: 200 },
     )
   } catch (error) {
-    console.error('Registration route error:', error)
+    console.error('Voucher validate error:', error)
 
     return NextResponse.json(
       {
