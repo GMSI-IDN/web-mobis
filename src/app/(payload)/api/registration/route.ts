@@ -204,6 +204,16 @@ export async function POST(req: Request) {
       },
     })
 
+    if (promoResult.provided && promoResult.valid) {
+      await payload.update({
+        collection: 'vouchers',
+        id: promoResult.voucherId,
+        data: {
+          used: promoResult.used + 1,
+        },
+      })
+    }
+
     return NextResponse.json({
       ok: true,
       message: 'Terkirim ke Google Sheets + tersimpan ke database.',
