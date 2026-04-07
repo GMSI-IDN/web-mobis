@@ -37,15 +37,15 @@ export async function POST(req: NextRequest) {
     //   )
     // }
 
-    if (!voucherCode) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'voucherCode wajib diisi',
-        },
-        { status: 400 },
-      )
-    }
+    // if (!voucherCode) {
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+    //       message: 'voucherCode wajib diisi',
+    //     },
+    //     { status: 400 },
+    //   )
+    // }
 
     const voucherResult = await payload.find({
       collection: 'vouchers',
