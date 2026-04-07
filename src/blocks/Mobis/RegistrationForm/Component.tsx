@@ -743,7 +743,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 </div>
                 <div className={fieldCol}>
                   <div className="row g-2">
-                    <div className="col-12 col-sm-6">
+                    <div className="col-12">
                       <input
                         name="simNumber"
                         className={`form-control form-control-sm ${touched.simNumber && errors.simNumber ? 'is-invalid' : ''}`}
@@ -770,7 +770,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                       ) : null}
                     </div>
 
-                    <div className="col-12 col-sm-6">
+                    {/* <div className="col-12 col-sm-6">
                       <SelectField
                         name="domicile"
                         placeholder="Pilih domisili"
@@ -782,7 +782,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                       {touched.domicile && errors.domicile ? (
                         <div className="invalid-feedback d-block">{errors.domicile}</div>
                       ) : null}
-                    </div>
+                    </div> */}
 
                     <div className="col-12 col-sm-6">
                       <input
@@ -797,6 +797,25 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                       ) : null}
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <div className="row g-2 align-items-md-center mb-2">
+                <div className={labelCol}>
+                  <label className="form-label reg-label mb-0">Domisili</label>
+                </div>
+                <div className={fieldCol}>
+                  <SelectField
+                    name="domicile"
+                    placeholder="Pilih domisili"
+                    options={DOMICILE_OPTS}
+                    value={values.domicile}
+                    onChange={(value) => setField('domicile', value)}
+                    isInvalid={!!(touched.domicile && errors.domicile)}
+                  />
+                  {touched.domicile && errors.domicile ? (
+                    <div className="invalid-feedback d-block">{errors.domicile}</div>
+                  ) : null}
                 </div>
               </div>
 
