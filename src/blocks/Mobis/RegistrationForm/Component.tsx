@@ -43,6 +43,7 @@ type FormValues = {
   driverExperience: string
   handoverLocation: string
   sourceInfo: string
+  sourceDetail: string
   promoCode: string
   agree: boolean
 }
@@ -57,6 +58,36 @@ function normalizeOptions(input?: Option[]): Option[] {
       value: String(o?.value ?? '').trim(),
     }))
     .filter((o) => o.label && o.value)
+}
+
+function onlyDigits(value: string) {
+  return String(value || '').replace(/\D/g, '')
+}
+
+function normalizeValue(value: string) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+}
+
+function formatDateInput(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getBirthDateRange(minAge: number, maxAge: number) {
+  const today = new Date()
+
+  const maxBirthDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate())
+  const minBirthDate = new Date(today.getFullYear() - maxAge, today.getMonth(), today.getDate())
+
+  return {
+    min: formatDateInput(minBirthDate),
+    max: formatDateInput(maxBirthDate),
+  }
 }
 
 const handleBannerCTATrack = ({
@@ -118,6 +149,7 @@ function SelectField({
       <option value="" disabled>
         {placeholder}
       </option>
+
       {options.map((opt, idx) => (
         <option key={`${name}-${opt.value}-${idx}`} value={opt.value}>
           {opt.label}
@@ -150,6 +182,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     driverExperience: '',
     handoverLocation: '',
     sourceInfo: '',
+    sourceDetail: '',
     promoCode: '',
     agree: false,
   }
@@ -159,7 +192,6 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   const [touched, setTouched] = useState<TouchedState>({})
 
   const timersRef = useRef<Partial<Record<keyof FormValues, ReturnType<typeof setTimeout>>>>({})
-
   const uid = useId().replace(/:/g, '')
 
   useEffect(() => {
@@ -209,13 +241,15 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         { label: 'Gojek', value: 'gojek' },
         { label: 'Grab', value: 'grab' },
         { label: 'Maxim', value: 'maxim' },
+        { label: 'Tidak Ada Akun', value: 'tidak_ada_akun' },
         { label: 'Lainnya', value: 'lainnya' },
       ],
       source: [
-        { label: 'Instagram', value: 'ig' },
-        { label: 'Facebook', value: 'fb' },
+        { label: 'Instagram', value: 'instagram' },
+        { label: 'Facebook', value: 'facebook' },
         { label: 'TikTok', value: 'tiktok' },
-        { label: 'Teman/Referensi', value: 'teman' },
+        { label: 'Refferal', value: 'refferal' },
+        { label: 'Dari Karyawan', value: 'dari_karyawan' },
         { label: 'Google', value: 'google' },
         { label: 'Lainnya', value: 'lainnya' },
       ],
@@ -263,15 +297,67 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     return v.length ? v : defaults.source
   })()
 
-  function onlyDigits(value: string) {
-    return value.replace(/\D/g, '')
-  }
+  const birthDateRange = useMemo(() => getBirthDateRange(18, 62), [])
+  const isNoDriverAccount = normalizeValue(values.driverApps) === 'tidak_ada_akun'
+
+  const sourceDetailConfig = useMemo(() => {
+    const key = normalizeValue(values.sourceInfo)
+
+    switch (key) {
+      case 'instagram':
+        return {
+          show: true,
+          label: 'Akun Instagram',
+          placeholder: 'Masukkan username / akun Instagram',
+        }
+      case 'facebook':
+        return {
+          show: true,
+          label: 'Akun Facebook',
+          placeholder: 'Masukkan nama akun / link Facebook',
+        }
+      case 'tiktok':
+        return {
+          show: true,
+          label: 'Akun TikTok',
+          placeholder: 'Masukkan username / akun TikTok',
+        }
+      case 'refferal':
+        return {
+          show: true,
+          label: 'Sumber Refferal',
+          placeholder: 'Masukkan nama teman / sumber refferal',
+        }
+      case 'dari_karyawan':
+        return {
+          show: true,
+          label: 'Nama Karyawan',
+          placeholder: 'Masukkan nama karyawan',
+        }
+      default:
+        return {
+          show: false,
+          label: '',
+          placeholder: '',
+        }
+    }
+  }, [values.sourceInfo])
 
   function validateField(
     name: keyof FormValues,
     value: string | boolean,
     allValues: FormValues,
   ): string {
+    const noDriverAccount = normalizeValue(allValues.driverApps) === 'tidak_ada_akun'
+    const sourceKey = normalizeValue(allValues.sourceInfo)
+    const needSourceDetail = [
+      'instagram',
+      'facebook',
+      'tiktok',
+      'refferal',
+      'dari_karyawan',
+    ].includes(sourceKey)
+
     switch (name) {
       case 'name':
         if (!String(value).trim()) return 'Nama wajib diisi.'
@@ -282,9 +368,14 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         if (!String(value).trim()) return 'Tempat lahir wajib diisi.'
         return ''
 
-      case 'birthDate':
-        if (!String(value).trim()) return 'Tanggal lahir wajib diisi.'
+      case 'birthDate': {
+        const v = String(value).trim()
+        if (!v) return 'Tanggal lahir wajib diisi.'
+        if (v < birthDateRange.min || v > birthDateRange.max) {
+          return 'Usia pendaftar harus 18 sampai 62 tahun.'
+        }
         return ''
+      }
 
       case 'phone': {
         const v = onlyDigits(String(value))
@@ -350,10 +441,12 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         return ''
 
       case 'activeAccountSelf':
+        if (noDriverAccount) return ''
         if (!String(value).trim()) return 'Pilih salah satu status akun driver online.'
         return ''
 
       case 'driverExperience':
+        if (noDriverAccount) return ''
         if (!String(value).trim()) return 'Lama bekerja wajib dipilih.'
         return ''
 
@@ -363,6 +456,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
       case 'sourceInfo':
         if (!String(value).trim()) return 'Sumber informasi wajib dipilih.'
+        return ''
+
+      case 'sourceDetail':
+        if (!needSourceDetail) return ''
+        if (!String(value).trim()) return 'Field ini wajib diisi.'
         return ''
 
       case 'agree':
@@ -414,9 +512,63 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
       nextValue = onlyDigits(String(value)) as FormValues[K]
     }
 
-    const nextValues = { ...values, [field]: nextValue }
+    let nextValues: FormValues = { ...values, [field]: nextValue }
+
+    if (field === 'driverApps') {
+      const noDriverAccount = normalizeValue(String(nextValue)) === 'tidak_ada_akun'
+      if (noDriverAccount) {
+        nextValues = {
+          ...nextValues,
+          activeAccountSelf: '',
+          driverExperience: '',
+        }
+      }
+    }
+
+    if (field === 'sourceInfo') {
+      const sourceKey = normalizeValue(String(nextValue))
+      const needSourceDetail = [
+        'instagram',
+        'facebook',
+        'tiktok',
+        'refferal',
+        'dari_karyawan',
+      ].includes(sourceKey)
+
+      if (!needSourceDetail) {
+        nextValues = {
+          ...nextValues,
+          sourceDetail: '',
+        }
+      }
+    }
+
     setValues(nextValues)
     setErrors((prev) => ({ ...prev, [field]: '' }))
+
+    if (field === 'driverApps') {
+      setErrors((prev) => ({
+        ...prev,
+        activeAccountSelf: '',
+        driverExperience: '',
+      }))
+      setTouched((prev) => ({
+        ...prev,
+        activeAccountSelf: false,
+        driverExperience: false,
+      }))
+    }
+
+    if (field === 'sourceInfo') {
+      setErrors((prev) => ({
+        ...prev,
+        sourceDetail: '',
+      }))
+      setTouched((prev) => ({
+        ...prev,
+        sourceDetail: false,
+      }))
+    }
 
     if (field !== 'promoCode') {
       scheduleValidation(field, nextValue, nextValues)
@@ -460,12 +612,21 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
       })
 
       const json = await res.json()
-      if (!res.ok || !json?.ok) throw new Error(json?.message || 'Gagal')
+
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.message || 'Gagal')
+      }
 
       setStatus('success')
       setValues(initialValues)
       setErrors({})
       setTouched({})
+
+      handleBannerCTATrack({
+        ctaText: submitLabel ?? 'Kirim',
+        ctaLink: '/api/registration',
+        targetType: 'submit',
+      })
     } catch {
       setStatus('error')
     }
@@ -523,6 +684,8 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                       <input
                         name="birthDate"
                         type="date"
+                        min={birthDateRange.min}
+                        max={birthDateRange.max}
                         className={`form-control form-control-sm ${touched.birthDate && errors.birthDate ? 'is-invalid' : ''}`}
                         value={values.birthDate}
                         onChange={(e) => setField('birthDate', e.target.value)}
@@ -744,70 +907,74 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 </div>
               </div>
 
-              <div className="row g-2 align-items-md-center mb-2">
-                <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">
-                    Akun driver online aktif atas nama diri sendiri?
-                  </label>
-                </div>
-                <div className={fieldCol}>
-                  <div className="d-flex flex-wrap gap-3">
-                    <div className="form-check">
-                      <input
-                        className={`form-check-input ${touched.activeAccountSelf && errors.activeAccountSelf ? 'is-invalid' : ''}`}
-                        type="radio"
-                        name="activeAccountSelf"
-                        value="ya"
-                        id={`acc-ya-${uid}`}
-                        checked={values.activeAccountSelf === 'ya'}
-                        onChange={(e) => setField('activeAccountSelf', e.target.value)}
-                      />
-                      <label className="form-check-label small" htmlFor={`acc-ya-${uid}`}>
-                        Ya
+              {!isNoDriverAccount ? (
+                <>
+                  <div className="row g-2 align-items-md-center mb-2">
+                    <div className={labelCol}>
+                      <label className="form-label reg-label mb-0">
+                        Akun driver online aktif atas nama diri sendiri?
                       </label>
                     </div>
+                    <div className={fieldCol}>
+                      <div className="d-flex flex-wrap gap-3">
+                        <div className="form-check">
+                          <input
+                            className={`form-check-input ${touched.activeAccountSelf && errors.activeAccountSelf ? 'is-invalid' : ''}`}
+                            type="radio"
+                            name="activeAccountSelf"
+                            value="ya"
+                            id={`acc-ya-${uid}`}
+                            checked={values.activeAccountSelf === 'ya'}
+                            onChange={(e) => setField('activeAccountSelf', e.target.value)}
+                          />
+                          <label className="form-check-label small" htmlFor={`acc-ya-${uid}`}>
+                            Ya
+                          </label>
+                        </div>
 
-                    <div className="form-check">
-                      <input
-                        className={`form-check-input ${touched.activeAccountSelf && errors.activeAccountSelf ? 'is-invalid' : ''}`}
-                        type="radio"
-                        name="activeAccountSelf"
-                        value="tidak"
-                        id={`acc-tidak-${uid}`}
-                        checked={values.activeAccountSelf === 'tidak'}
-                        onChange={(e) => setField('activeAccountSelf', e.target.value)}
-                      />
-                      <label className="form-check-label small" htmlFor={`acc-tidak-${uid}`}>
-                        Tidak
-                      </label>
+                        <div className="form-check">
+                          <input
+                            className={`form-check-input ${touched.activeAccountSelf && errors.activeAccountSelf ? 'is-invalid' : ''}`}
+                            type="radio"
+                            name="activeAccountSelf"
+                            value="tidak"
+                            id={`acc-tidak-${uid}`}
+                            checked={values.activeAccountSelf === 'tidak'}
+                            onChange={(e) => setField('activeAccountSelf', e.target.value)}
+                          />
+                          <label className="form-check-label small" htmlFor={`acc-tidak-${uid}`}>
+                            Tidak
+                          </label>
+                        </div>
+                      </div>
+                      {touched.activeAccountSelf && errors.activeAccountSelf ? (
+                        <div className="invalid-feedback d-block">{errors.activeAccountSelf}</div>
+                      ) : null}
                     </div>
                   </div>
-                  {touched.activeAccountSelf && errors.activeAccountSelf ? (
-                    <div className="invalid-feedback d-block">{errors.activeAccountSelf}</div>
-                  ) : null}
-                </div>
-              </div>
 
-              <div className="row g-2 align-items-md-center mb-2">
-                <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">
-                    Sudah berapa lama bekerja sebagai driver online?
-                  </label>
-                </div>
-                <div className={fieldCol}>
-                  <SelectField
-                    name="driverExperience"
-                    placeholder="Pilih jangka waktu"
-                    options={EXP_OPTS}
-                    value={values.driverExperience}
-                    onChange={(value) => setField('driverExperience', value)}
-                    isInvalid={!!(touched.driverExperience && errors.driverExperience)}
-                  />
-                  {touched.driverExperience && errors.driverExperience ? (
-                    <div className="invalid-feedback d-block">{errors.driverExperience}</div>
-                  ) : null}
-                </div>
-              </div>
+                  <div className="row g-2 align-items-md-center mb-2">
+                    <div className={labelCol}>
+                      <label className="form-label reg-label mb-0">
+                        Sudah berapa lama bekerja sebagai driver online?
+                      </label>
+                    </div>
+                    <div className={fieldCol}>
+                      <SelectField
+                        name="driverExperience"
+                        placeholder="Pilih jangka waktu"
+                        options={EXP_OPTS}
+                        value={values.driverExperience}
+                        onChange={(value) => setField('driverExperience', value)}
+                        isInvalid={!!(touched.driverExperience && errors.driverExperience)}
+                      />
+                      {touched.driverExperience && errors.driverExperience ? (
+                        <div className="invalid-feedback d-block">{errors.driverExperience}</div>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
+              ) : null}
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
@@ -846,6 +1013,26 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                   ) : null}
                 </div>
               </div>
+
+              {sourceDetailConfig.show ? (
+                <div className="row g-2 align-items-md-center mb-2">
+                  <div className={labelCol}>
+                    <label className="form-label reg-label mb-0">{sourceDetailConfig.label}</label>
+                  </div>
+                  <div className={fieldCol}>
+                    <input
+                      name="sourceDetail"
+                      className={`form-control form-control-sm ${touched.sourceDetail && errors.sourceDetail ? 'is-invalid' : ''}`}
+                      placeholder={sourceDetailConfig.placeholder}
+                      value={values.sourceDetail}
+                      onChange={(e) => setField('sourceDetail', e.target.value)}
+                    />
+                    {touched.sourceDetail && errors.sourceDetail ? (
+                      <div className="invalid-feedback d-block">{errors.sourceDetail}</div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>

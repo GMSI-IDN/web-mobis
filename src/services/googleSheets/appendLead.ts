@@ -1,10 +1,9 @@
 import { getEnv } from '@/lib/env'
 import { getSheetsClient } from './client'
 import type { RegistrationPayload } from '@/types/registration'
-import { array } from 'payload/shared'
 
 function resolveSpreadsheetId(domicile?: string): string {
-  const key = (domicile || '').toLowerCase()
+  const key = (domicile || '').toLowerCase().trim()
   console.log(`Resolving spreadsheet ID for domicile: ${domicile} (key: ${key})`)
 
   if (!key) {
@@ -19,9 +18,10 @@ function resolveSpreadsheetId(domicile?: string): string {
     'kota tangerang selatan',
     'kota depok',
   ]
+
   const validSurabaya = ['kota surabaya', 'sidoarjo', 'kota gresik']
   const validBali = ['provinsi bali']
-  const validBandung = ['Bandung']
+  const validBandung = ['bandung']
 
   if (validJabodetabek.includes(key)) {
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_JABODETABEK')
@@ -39,24 +39,85 @@ function resolveSpreadsheetId(domicile?: string): string {
   }
 }
 
-function buildRow(payload: RegistrationPayload): (string | null)[] {
+function calculateAge(birthDate?: string): string {
+  if (!birthDate) return ''
+
   const now = new Date()
+  const dob = new Date(birthDate)
 
-  let ageDisplay: string = '' // Kita siapkan sebagai string
+  let age = now.getFullYear() - dob.getFullYear()
+  const monthDiff = now.getMonth() - dob.getMonth()
 
-  if (payload.birthDate) {
-    const birthDate = new Date(payload.birthDate)
-    let ageNum = now.getFullYear() - birthDate.getFullYear()
-    const m = now.getMonth() - birthDate.getMonth()
-
-    if (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) {
-      ageNum--
-    }
-
-    ageDisplay = ageNum.toString() // Ubah angka ke string agar tidak error
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) {
+    age--
   }
 
-  // 1. Variabel Tanggal: DD-MM-YYYY
+  return age.toString()
+}
+
+function mapSimTypeForSheet(simType?: string): string {
+  switch (simType) {
+    case '1':
+      return 'SIM A UMUM'
+    case '2':
+      return 'SIM B'
+    case '3':
+      return 'SIM B2'
+    case '4':
+      return 'SIM B2 UMUM'
+    case '5':
+      return 'SIM C'
+    case '6':
+      return 'SIM B1'
+    case '7':
+      return 'SIM B1 UMUM'
+    default:
+      return 'SIM A'
+  }
+}
+
+function mapSimTypeForApi(simType?: string): string {
+  return mapSimTypeForSheet(simType)
+}
+
+function normalizePhone(phone?: string): string {
+  if (!phone) return ''
+
+  const clean = phone.replace(/\D/g, '')
+
+  if (clean.startsWith('62')) return clean
+  if (clean.startsWith('0')) return `62${clean.slice(1)}`
+  return `62${clean}`
+}
+
+function buildWhatsappHyperlink(phone?: string): string {
+  if (!phone) return ''
+
+  const normalized = normalizePhone(phone)
+  const localFormat = normalized.startsWith('62') ? `0${normalized.slice(2)}` : normalized
+
+  return `=HYPERLINK("https://api.whatsapp.com/send/?phone=${normalized}", "${localFormat}")`
+}
+
+function normalizeDriverApps(driverApps?: string): string {
+  return (driverApps || '').trim()
+}
+
+function isNoDriverAccount(driverApps?: string): boolean {
+  const value = normalizeDriverApps(driverApps).toLowerCase()
+  return value === 'tidak ada akun'
+}
+
+function buildSourceDetail(payload: RegistrationPayload): string {
+  const sourceDetail = (payload as any).sourceDetail ?? ''
+  const otherSourceInfo = (payload as any).otherSourceInfo ?? ''
+  return [sourceDetail, otherSourceInfo].filter(Boolean).join(' | ')
+}
+
+function buildRow(payload: RegistrationPayload): (string | null)[] {
+  const now = new Date()
+  const ageDisplay = calculateAge(payload.birthDate)
+
   const datePart = now
     .toLocaleDateString('id-ID', {
       timeZone: 'Asia/Jakarta',
@@ -64,9 +125,8 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
       month: '2-digit',
       year: 'numeric',
     })
-    .replace(/\//g, '-') // Mengubah / menjadi -
+    .replace(/\//g, '-')
 
-  // 2. Variabel Waktu: HH:mm
   const timePart = now
     .toLocaleTimeString('id-ID', {
       timeZone: 'Asia/Jakarta',
@@ -74,78 +134,33 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
       minute: '2-digit',
       hour12: false,
     })
-    .replace('.', ':') // Pastikan menggunakan titik dua (id-ID defaultnya titik)
-  let simType = ''
-  switch (payload.simType) {
-    case '1':
-      simType = 'SIM A UMUM'
-      break
-    case '2':
-      simType = 'SIM B'
-      break
-    case '3':
-      simType = 'SIM B2'
-      break
-    case '4':
-      simType = 'SIM B2 UMUM'
-      break
-    case '5':
-      simType = 'SIM C'
-      break
-    case '6':
-      simType = 'SIM B1'
-      break
-    case '7':
-      simType = 'SIM B1 UMUM'
-      break
-    default:
-      simType = 'SIM A'
-      break
-  }
+    .replace('.', ':')
 
-  let phone = ''
-  if (payload.phone) {
-    // phone = `http://api.whatsapp.com/send/?phone=62${payload.phone}`
-    phone =
-      '=HYPERLINK("api.whatsapp.com/send/?phone=62' + payload.phone + '", "' + payload.phone + '")'
-  } else {
-    phone = ''
-  }
-  let emergencyPhone = ''
-  if (payload.emergencyPhone) {
-    emergencyPhone =
-      '=HYPERLINK("api.whatsapp.com/send/?phone=62' +
-      payload.emergencyPhone +
-      '", "' +
-      payload.emergencyPhone +
-      '")'
-  } else {
-    emergencyPhone = ''
-  }
+  const simType = mapSimTypeForSheet(payload.simType)
+
+  const noAccount = isNoDriverAccount(payload.driverApps)
 
   return [
     payload.name ?? '',
-    // '0' + (payload.phone ?? ''),
-    phone,
-    ageDisplay, // <--- Sekarang ini sudah bertipe string, aman untuk TypeScript
+    buildWhatsappHyperlink(payload.phone),
+    ageDisplay,
     payload.ktpNumber ?? '',
     payload.domicile ?? '',
     payload.currentAddress ?? '',
     payload.houseOwnership ?? '',
     payload.driverApps ?? '',
-    payload.activeAccountSelf ?? '',
-    payload.driverExperience ?? '',
+    noAccount ? '' : (payload.activeAccountSelf ?? ''),
+    noAccount ? '' : (payload.driverExperience ?? ''),
     payload.handoverLocation ?? '',
     payload.sourceInfo ?? '',
-    '',
+    (payload as any).sourceDetail ?? '',
     '',
     'Website Mobis',
     '',
     '',
     datePart,
     timePart,
-    // '0' + (payload.emergencyPhone ?? ''),
-    emergencyPhone,
+    buildWhatsappHyperlink(payload.emergencyPhone),
     payload.emergencyName ?? '',
     payload.emergencyRelation ?? '',
     payload.birthPlace ?? '',
@@ -153,9 +168,71 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
     payload.simNumber ?? '',
     simType,
     payload.simValidUntil ?? '',
-
-    // payload.promoCode ?? '',
   ]
+}
+
+function buildExternalApiPayload(payload: RegistrationPayload) {
+  const age = calculateAge(payload.birthDate)
+  const noAccount = isNoDriverAccount(payload.driverApps)
+
+  return {
+    name: payload.name ?? '',
+    phone_number: normalizePhone(payload.phone),
+    age,
+    identity_number: payload.ktpNumber ?? '',
+    domicile: payload.domicile ?? '',
+    address: payload.currentAddress ?? '',
+    home_ownership_status: payload.houseOwnership ?? '',
+    online_driver_app: payload.driverApps ?? '',
+    personal_online_driver_app: noAccount ? '' : (payload.activeAccountSelf ?? ''),
+    online_driver_duration: noAccount ? '' : (payload.driverExperience ?? ''),
+    pool_preference: payload.handoverLocation ?? '',
+    information_source: payload.sourceInfo ?? '',
+    detail_information_source: buildSourceDetail(payload),
+    promo_code: (payload as any).promoCode ?? '',
+    registered_from: 'Website Mobis',
+    emergency_phone_number: normalizePhone(payload.emergencyPhone),
+    emergency_contact_name: payload.emergencyName ?? '',
+    emergency_contact_relation: payload.emergencyRelation ?? '',
+    lead_place_of_birth: payload.birthPlace ?? '',
+    lead_date_of_birth: payload.birthDate ?? '',
+    lead_sim_no: payload.simNumber ?? '',
+    lead_sim_type: mapSimTypeForApi(payload.simType),
+    lead_sim_expire_date: payload.simValidUntil ?? '',
+  }
+}
+
+async function sendLeadToExternalApi(payload: RegistrationPayload) {
+  // const url = getEnv('MOBIS_LEAD_API_URL')
+  // const publicKey = getEnv('MOBIS_LEAD_API_PUBLIC_KEY')
+  //api.fleet-management-system.co.id/public/mobis/leads
+  const url = 'https://api.fleet-management-system.co.id/public/mobis/leads'
+  const publicKey = 'R01TeE1TSWluZG9uZXNpYTIwMjQ='
+
+  const body = buildExternalApiPayload(payload)
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-public-keys': publicKey,
+    },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  })
+
+  const responseText = await response.text()
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to send lead to external API. Status: ${response.status}. Response: ${responseText}`,
+    )
+  }
+
+  return {
+    status: response.status,
+    data: responseText,
+  }
 }
 
 export async function appendLeadToSheet(payload: RegistrationPayload) {
@@ -165,24 +242,28 @@ export async function appendLeadToSheet(payload: RegistrationPayload) {
   console.log(`Appending lead to sheet: ${spreadsheetId} (${sheetName})`)
 
   const row = buildRow(payload)
-
   const sheets = getSheetsClient()
 
-  const responData = await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range: `${sheetName}!A:Z`,
-    valueInputOption: 'USER_ENTERED',
-    insertDataOption: 'INSERT_ROWS',
-    requestBody: {
-      values: [row],
-    },
-  })
+  const [sheetResponse, apiResponse] = await Promise.all([
+    sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${sheetName}!A:Z`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: {
+        values: [row],
+      },
+    }),
+    sendLeadToExternalApi(payload),
+  ])
 
-  console.log('Append response data:', responData.data)
+  console.log('Append response data:', sheetResponse.data)
+  console.log('External API response:', apiResponse)
 
   return {
     spreadsheetId,
     sheetName,
     area: payload.domicile ?? 'default',
+    externalApi: apiResponse,
   }
 }
