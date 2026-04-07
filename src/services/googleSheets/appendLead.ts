@@ -206,7 +206,7 @@ async function sendLeadToExternalApi(payload: RegistrationPayload) {
   // const url = getEnv('MOBIS_LEAD_API_URL')
   // const publicKey = getEnv('MOBIS_LEAD_API_PUBLIC_KEY')
   //api.fleet-management-system.co.id/public/mobis/leads
-  const url = 'https://api.fleet-management-system.co.id/public/mobis/leads'
+  const url = 'https://stgapi.fleet-management-system.co.id/public/mobis/leads'
   const publicKey = 'R01TeE1TSWluZG9uZXNpYTIwMjQ='
 
   const body = buildExternalApiPayload(payload)
