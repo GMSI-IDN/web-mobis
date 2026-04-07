@@ -19,7 +19,7 @@ function resolveSpreadsheetId(handoverLocation?: string): string {
     'kota depok',
   ]
 
-  const validSurabaya = ['kota surabaya', 'sidoarjo', 'kota gresik']
+  const validSurabaya = ['kota surabaya', 'kab, sidoarjo', 'kab. gresik']
   const validBali = ['provinsi bali']
   const validBandung = ['bandung']
 
