@@ -190,6 +190,10 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   const [values, setValues] = useState<FormValues>(initialValues)
   const [errors, setErrors] = useState<FormErrors>({})
   const [touched, setTouched] = useState<TouchedState>({})
+  const [submitError, setSubmitError] = useState('')
+  const [serverFieldErrors, setServerFieldErrors] = useState<
+    Partial<Record<keyof FormValues, string>>
+  >({})
 
   const timersRef = useRef<Partial<Record<keyof FormValues, ReturnType<typeof setTimeout>>>>({})
   const uid = useId().replace(/:/g, '')
@@ -545,6 +549,8 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
     setValues(nextValues)
     setErrors((prev) => ({ ...prev, [field]: '' }))
+    setServerFieldErrors((prev) => ({ ...prev, [field]: '' }))
+    setSubmitError('')
 
     if (field === 'driverApps') {
       setErrors((prev) => ({
@@ -595,6 +601,8 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     if (Object.keys(nextErrors).length > 0) return
 
     setStatus('loading')
+    setSubmitError('')
+    setServerFieldErrors({})
 
     try {
       const payload = {
@@ -611,13 +619,77 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         body: JSON.stringify(payload),
       })
 
-      const json = await res.json()
+      let json: any = null
+
+      try {
+        json = await res.json()
+      } catch {
+        json = null
+      }
 
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message || 'Gagal')
+        const message = json?.message || json?.error || 'Gagal mengirim data. Silakan coba lagi.'
+
+        const code = String(json?.code || '')
+        const apiErrors = json?.errors && typeof json.errors === 'object' ? json.errors : {}
+
+        const nextServerFieldErrors: Partial<Record<keyof FormValues, string>> = {}
+
+        if (typeof apiErrors.promoCode === 'string') {
+          nextServerFieldErrors.promoCode = apiErrors.promoCode
+        }
+
+        if (typeof apiErrors.phone === 'string') {
+          nextServerFieldErrors.phone = apiErrors.phone
+        }
+
+        if (typeof apiErrors.ktpNumber === 'string') {
+          nextServerFieldErrors.ktpNumber = apiErrors.ktpNumber
+        }
+
+        if (typeof apiErrors.birthDate === 'string') {
+          nextServerFieldErrors.birthDate = apiErrors.birthDate
+        }
+
+        if (typeof apiErrors.simNumber === 'string') {
+          nextServerFieldErrors.simNumber = apiErrors.simNumber
+        }
+
+        if (typeof apiErrors.emergencyPhone === 'string') {
+          nextServerFieldErrors.emergencyPhone = apiErrors.emergencyPhone
+        }
+
+        if (!nextServerFieldErrors.promoCode && values.promoCode.trim()) {
+          if (
+            code === 'INVALID_PROMO_CODE' ||
+            code === 'PROMO_NOT_FOUND' ||
+            code === 'PROMO_EXPIRED' ||
+            code === 'PROMO_USED' ||
+            /promo/i.test(message) ||
+            /voucher/i.test(message)
+          ) {
+            nextServerFieldErrors.promoCode = message
+          }
+        }
+
+        if (Object.keys(nextServerFieldErrors).length > 0) {
+          setServerFieldErrors(nextServerFieldErrors)
+
+          const touchedFields = { ...allTouched }
+          ;(Object.keys(nextServerFieldErrors) as Array<keyof FormValues>).forEach((key) => {
+            touchedFields[key] = true
+          })
+          setTouched(touchedFields)
+        }
+
+        setSubmitError(message)
+        setStatus('error')
+        return
       }
 
       setStatus('success')
+      setSubmitError('')
+      setServerFieldErrors({})
       setValues(initialValues)
       setErrors({})
       setTouched({})
@@ -627,7 +699,12 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         ctaLink: '/api/registration',
         targetType: 'submit',
       })
-    } catch {
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Gagal mengirim data. Silakan coba lagi.'
+
+      setSubmitError(message)
+      setServerFieldErrors({})
       setStatus('error')
     }
   }
@@ -1060,11 +1137,16 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 <div className={fieldCol}>
                   <input
                     name="promoCode"
-                    className="form-control form-control-sm"
+                    className={`form-control form-control-sm ${
+                      serverFieldErrors.promoCode ? 'is-invalid' : ''
+                    }`}
                     placeholder="Masukkan promo code yang dimiliki"
                     value={values.promoCode}
                     onChange={(e) => setField('promoCode', e.target.value)}
                   />
+                  {serverFieldErrors.promoCode ? (
+                    <div className="invalid-feedback d-block">{serverFieldErrors.promoCode}</div>
+                  ) : null}
                 </div>
               </div>
 
@@ -1129,7 +1211,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
               ) : null}
 
               {status === 'error' ? (
-                <div className="alert alert-danger mt-3 mb-0">Gagal mengirim. Coba lagi.</div>
+                <div className="alert alert-danger mt-3 mb-0">
+                  {submitError || 'Gagal mengirim. Coba lagi.'}
+                </div>
               ) : null}
             </form>
           </div>
