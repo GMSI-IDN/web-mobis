@@ -33,7 +33,7 @@ function resolveSpreadsheetId(handoverLocation?: string): string {
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_BANDUNG')
   } else {
     console.warn(
-      `Domicile "${domicile}" does not match any specific area, using default spreadsheet ID`,
+      `Domicile "${handoverLocation}" does not match any specific area, using default spreadsheet ID`,
     )
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_DEFAULT')
   }
