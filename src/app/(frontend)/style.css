@@ -712,4 +712,13 @@ body {
 
 }
 
+@media  (max-width: 375px) {
+    .text-about {
+        width: 10rem;
+    }
+
+}
+
+
+
 
