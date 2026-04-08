@@ -520,8 +520,10 @@ body {
 }
 
 /* carousel End  */
-@media (max-width:1281px) {
-
+@media (min-width:1281px) {
+  .banner-img-fullbleed {
+    object-fit: contain !important;
+  }
 }
 
 @media (max-width: 1025px) {
@@ -550,7 +552,6 @@ body {
      width: 21rem;
     margin-top: -4rem;
   }
-
 }
 
 @media (max-width: 769px) {
