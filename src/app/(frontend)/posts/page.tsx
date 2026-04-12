@@ -32,7 +32,7 @@ export default async function Page() {
       <PageClient />
       <div className="container mb-16">
         <div className="prose dark:prose-invert max-w-none">
-          <h1>Posts</h1>
+          <h1>Artikel Mobis</h1>
         </div>
       </div>
 
@@ -58,6 +58,11 @@ export default async function Page() {
 
 export function generateMetadata(): Metadata {
   return {
-    title: `Mobis Website | Posts`,
+    title: 'Artikel Mobis',
+    description:
+      'Baca artikel, panduan, dan informasi terbaru seputar program rental mobil Mobis untuk driver online.',
+    alternates: {
+      canonical: '/posts',
+    },
   }
 }

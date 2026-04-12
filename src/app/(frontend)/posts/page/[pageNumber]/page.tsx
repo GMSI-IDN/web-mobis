@@ -38,7 +38,7 @@ export default async function Page({ params: paramsPromise }: Args) {
       <PageClient />
       <div className="container mb-16">
         <div className="prose dark:prose-invert max-w-none">
-          <h1>Posts</h1>
+          <h1>Artikel Mobis</h1>
         </div>
       </div>
 
@@ -64,8 +64,19 @@ export default async function Page({ params: paramsPromise }: Args) {
 
 export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
   const { pageNumber } = await paramsPromise
+  const canonical = pageNumber === '1' ? '/posts' : `/posts/page/${pageNumber}`
+
   return {
-    title: `Mobis Posts Page ${pageNumber || ''}`,
+    title: `Artikel Mobis Halaman ${pageNumber || ''}`,
+    description:
+      'Jelajahi artikel dan informasi terbaru dari Mobis untuk driver online dan mitra rental mobil.',
+    alternates: {
+      canonical,
+    },
+    robots: {
+      index: false,
+      follow: true,
+    },
   }
 }
 

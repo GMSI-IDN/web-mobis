@@ -1,24 +1,61 @@
 // @import '~@payloadcms/ui/scss';
 
-.dashboard .before-dashboard {
-  margin-bottom: base(1.5);
+.before-dashboard {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(30, 136, 229, 0.12), transparent 28%),
+    linear-gradient(180deg, var(--theme-elevation-0), var(--theme-elevation-50));
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
 
   &__banner {
-    & h4 {
+    margin-bottom: 0.9rem;
+
+    h4 {
       margin: 0;
     }
   }
 
-  &__instructions {
-    list-style: decimal;
-    margin-bottom: base(0.5);
-
-    & li {
-      width: 100%;
-    }
+  &__intro {
+    max-width: 70ch;
+    margin: 0;
+    color: var(--theme-text);
+    line-height: 1.6;
   }
 
-  & a:hover {
-    opacity: 0.85;
+  &__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  &__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 42px;
+    padding: 0.65rem 0.95rem;
+    border: 1px solid var(--theme-elevation-200);
+    border-radius: 999px;
+    background: var(--theme-elevation-0);
+    color: var(--theme-text);
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      transform 0.18s ease,
+      border-color 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  &__links a:hover {
+    border-color: var(--theme-success-500);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.16);
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
   }
 }

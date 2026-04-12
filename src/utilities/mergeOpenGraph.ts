@@ -1,16 +1,21 @@
 import type { Metadata } from 'next'
-import { getServerSideURL } from './getURL'
+import { getPublicURL } from './getURL'
 
 const defaultOpenGraph: Metadata['openGraph'] = {
   type: 'website',
-  description: 'WeBSITE for Mobis, a Car rent company.',
+  locale: 'id_ID',
+  description:
+    'Mobis menyediakan program rental mobil untuk driver online dengan proses pendaftaran yang cepat dan informasi program yang jelas.',
   images: [
     {
-      url: `${getServerSideURL()}/website-template-OG.webp`,
+      url: `${getPublicURL()}/website-template-OG.webp`,
+      width: 1200,
+      height: 630,
+      alt: 'Mobis',
     },
   ],
-  siteName: 'Mobis Website',
-  title: 'Mobis Website',
+  siteName: 'Mobis',
+  title: 'Mobis',
 }
 
 export const mergeOpenGraph = (og?: Metadata['openGraph']): Metadata['openGraph'] => {

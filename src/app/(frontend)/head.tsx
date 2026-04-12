@@ -1,10 +1,8 @@
 export default function Head() {
   return (
     <>
-      <title>Mobis</title>
-      <link rel="icon" href="./mobis/img/favicon.ico" sizes="32x32" />
-      <link rel="icon" href="./mobis/img/favicon.svg" type="image/svg+xml" />
-      <link rel="stylesheet" href="./mobis/style/style.css" />
+      <meta name="theme-color" content="#3BAC1F" />
+      <meta name="apple-mobile-web-app-title" content="Mobis" />
     </>
   )
 }

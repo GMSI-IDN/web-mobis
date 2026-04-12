@@ -24,7 +24,7 @@ function getUrl(input?: Media | string | null): string | undefined {
 
 export const RegistrationFlow: React.FC<Props> = ({
   title = 'ALUR PENDAFTARAN',
-  alt = 'Alur pendaftaran MOBIS',
+  alt = 'Alur pendaftaran rental mobil Mobis untuk driver online',
   desktopImage,
   mobileImage,
   maxWidth = 1200,
@@ -67,6 +67,8 @@ export const RegistrationFlow: React.FC<Props> = ({
               src={fallback}
               alt={alt}
               loading="lazy"
+              decoding="async"
+              fetchPriority="low"
               style={{ maxWidth: `${maxWidth}px` }}
             />
           </picture>

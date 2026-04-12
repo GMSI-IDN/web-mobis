@@ -1091,6 +1091,8 @@ export interface ProgramDualBlock {
   blockType: 'programDual';
 }
 /**
+ * Data user yang sudah mendaftar melalui form pendaftaran Mobis.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "customers".
  */

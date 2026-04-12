@@ -3,6 +3,11 @@ import type { CollectionConfig } from 'payload'
 export const Customers: CollectionConfig = {
   slug: 'customers',
   admin: {
+    components: {
+      beforeList: ['@/components/Customers/BeforeList'],
+    },
+    description: 'Data user yang sudah mendaftar melalui form pendaftaran Mobis.',
+    listSearchableFields: ['name', 'phone', 'ktpNumber', 'domicile', 'promoCode'],
     useAsTitle: 'name',
     defaultColumns: [
       'name',
@@ -14,9 +19,13 @@ export const Customers: CollectionConfig = {
       'createdAt',
     ],
   },
+  labels: {
+    singular: 'Pendaftar',
+    plural: 'Pendaftar',
+  },
   access: {
     read: ({ req }) => !!req.user,
-    create: () => true,
+    create: () => false,
     update: ({ req }) => !!req.user,
     delete: ({ req }) => !!req.user,
   },

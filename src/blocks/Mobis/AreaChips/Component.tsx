@@ -97,7 +97,8 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
           {(areas ?? []).map((a, i) => {
             const imgUrl = getMediaUrl(a?.PoolImage)
             const alt =
-              (typeof a?.PoolImage === 'string' ? '' : a?.PoolImage?.alt) || a?.label || 'Area'
+              (typeof a?.PoolImage === 'string' ? '' : a?.PoolImage?.alt) ||
+              (a?.label ? `Lokasi pool Mobis ${a.label}` : 'Lokasi pool Mobis')
 
             return (
               <div className="col-12 col-md-4" key={i}>
@@ -109,7 +110,7 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
                 >
                   <div className="area-thumb">
                     {imgUrl ? (
-                      <img src={imgUrl} alt={alt} />
+                      <img src={imgUrl} alt={alt} loading="lazy" decoding="async" fetchPriority="low" />
                     ) : (
                       <div
                         style={{
@@ -184,8 +185,13 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
             </div>
 
             <div className="modal-footer border-0 pt-0">
-              <button type="button" className="btn btn-light w-100" onClick={closeModal}>
-                Tutup
+              <button
+                type="button"
+                className="btn area-modal-close-btn"
+                onClick={closeModal}
+                aria-label="Tutup modal area"
+              >
+                X
               </button>
             </div>
           </div>

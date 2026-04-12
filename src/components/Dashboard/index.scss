@@ -1,0 +1,338 @@
+.mobis-admin-dashboard {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding-bottom: 2rem;
+}
+
+.mobis-admin-dashboard__panel {
+  padding: 1.2rem;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 20px;
+  background: var(--theme-elevation-0);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.07);
+}
+
+.mobis-admin-dashboard__panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mobis-admin-dashboard__eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--theme-success-600);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mobis-admin-dashboard__title {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.mobis-admin-dashboard__description {
+  max-width: 64ch;
+  margin: 0.45rem 0 0;
+  color: var(--theme-text);
+  opacity: 0.8;
+  line-height: 1.6;
+}
+
+.mobis-admin-dashboard__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-height: 38px;
+  padding: 0.6rem 0.95rem;
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 999px;
+  background: var(--theme-elevation-0);
+  color: var(--theme-text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.mobis-admin-dashboard__action:hover {
+  border-color: var(--theme-success-500);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.16);
+}
+
+.mobis-admin-dashboard__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mobis-admin-dashboard__stat {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--theme-elevation-0), var(--theme-elevation-50));
+}
+
+.mobis-admin-dashboard__stat span {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--theme-text);
+  opacity: 0.72;
+  font-size: 0.84rem;
+}
+
+.mobis-admin-dashboard__stat strong {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.mobis-admin-dashboard__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--theme-elevation-0), var(--theme-elevation-25));
+}
+
+.mobis-admin-dashboard__table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+
+.mobis-admin-dashboard__table thead th {
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid var(--theme-elevation-150);
+  background: var(--theme-elevation-50);
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.mobis-admin-dashboard__table tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--theme-elevation-100);
+  vertical-align: middle;
+}
+
+.mobis-admin-dashboard__table tbody tr {
+  transition: background-color 0.18s ease;
+}
+
+.mobis-admin-dashboard__table tbody tr:hover {
+  background: rgba(14, 165, 233, 0.03);
+}
+
+.mobis-admin-dashboard__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.mobis-admin-dashboard__table .text-end {
+  text-align: right;
+}
+
+.mobis-admin-dashboard__name-cell {
+  font-weight: 700;
+}
+
+.mobis-admin-dashboard__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: var(--theme-elevation-100);
+  color: var(--theme-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.mobis-admin-dashboard__badge--success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.mobis-admin-dashboard__row-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.1);
+  color: #0369a1;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.mobis-admin-dashboard__empty {
+  padding: 1.2rem;
+  color: var(--theme-text);
+  opacity: 0.72;
+  text-align: center;
+}
+
+.mobis-admin-dashboard__alert {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: 16px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+}
+
+.mobis-admin-dashboard__table-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.mobis-admin-dashboard__table-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.mobis-admin-dashboard__table-description {
+  margin: 0.35rem 0 0;
+  color: var(--theme-text);
+  opacity: 0.74;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.mobis-admin-dashboard__table-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.mobis-admin-dashboard__table-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--theme-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.mobis-admin-dashboard__table-select {
+  min-width: 84px;
+  height: 40px;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 12px;
+  background: var(--theme-elevation-0);
+  color: var(--theme-text);
+}
+
+.mobis-admin-dashboard__table-meta {
+  color: var(--theme-text);
+  opacity: 0.68;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.mobis-admin-dashboard__pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.mobis-admin-dashboard__page-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobis-admin-dashboard__page-button,
+.mobis-admin-dashboard__page-action {
+  min-height: 40px;
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 12px;
+  background: var(--theme-elevation-0);
+  color: var(--theme-text);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.mobis-admin-dashboard__page-button {
+  min-width: 40px;
+  padding: 0.45rem 0.75rem;
+}
+
+.mobis-admin-dashboard__page-action {
+  padding: 0.55rem 0.9rem;
+}
+
+.mobis-admin-dashboard__page-button:hover:not(:disabled),
+.mobis-admin-dashboard__page-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(14, 165, 233, 0.28);
+  background: rgba(14, 165, 233, 0.06);
+}
+
+.mobis-admin-dashboard__page-button--active {
+  border-color: rgba(2, 132, 199, 0.28);
+  background: linear-gradient(135deg, #0284c7, #0ea5e9);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(14, 165, 233, 0.18);
+}
+
+.mobis-admin-dashboard__page-button:disabled,
+.mobis-admin-dashboard__page-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mobis-admin-dashboard__page-ellipsis {
+  color: var(--theme-text);
+  opacity: 0.5;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 768px) {
+  .mobis-admin-dashboard__panel {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  .mobis-admin-dashboard__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .mobis-admin-dashboard__action {
+    width: 100%;
+  }
+
+  .mobis-admin-dashboard__table-tools,
+  .mobis-admin-dashboard__pagination {
+    justify-content: flex-start;
+  }
+}

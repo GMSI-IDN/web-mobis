@@ -56,22 +56,25 @@ export const getClientSideURL = (): string => {
  * PUBLIC SITE URL (frontend)
  */
 export const getPublicURL = (): string => {
-  return (
+  return trim(
     trim(process.env.NEXT_PUBLIC_SITE_URL) ||
-    (process.env.NODE_ENV === 'production' ? 'https://rentalmobis.com/' : 'http://localhost:3000')
-  )
+      trim(process.env.NEXT_PUBLIC_SERVER_URL) ||
+      trim(process.env.PAYLOAD_PUBLIC_SERVER_URL) ||
+      (process.env.NODE_ENV === 'production' ? 'https://rentalmobis.com' : 'http://localhost:3000'),
+  )!
 }
 
 /**
  * CMS URL (admin dashboard)
  */
 export const getCMSURL = (): string => {
-  return (
+  return trim(
     trim(process.env.PAYLOAD_PUBLIC_SERVER_URL) ||
-    (process.env.NODE_ENV === 'production'
-      ? 'https://admin.rentalmobis.com/'
-      : 'http://localhost:3000')
-  )
+      trim(process.env.NEXT_PUBLIC_SERVER_URL) ||
+      (process.env.NODE_ENV === 'production'
+        ? 'https://admin.rentalmobis.com'
+        : 'http://localhost:3000'),
+  )!
 }
 
 /**

@@ -121,6 +121,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
             {activeSlides.map((s, i) => {
               const desktopUrl = s?.backgroundImage?.url ?? ''
               const mobileUrl = s?.backgroundImageMobile?.url ?? desktopUrl
+              const isFirstSlide = i === 0
 
               const ctaText = s?.ctaText ?? 'Daftar Sekarang'
               const ctaLink = s?.ctaLink?.trim() || '#registration'
@@ -131,11 +132,14 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                   <div className="banner-slide-fullbleed position-relative">
                     <picture>
                       <source media="(max-width: 767.98px)" srcSet={mobileUrl} />
+                      <source media="(min-width: 768px)" srcSet={desktopUrl} />
                       <img
                         className="banner-img-fullbleed"
                         src={desktopUrl}
-                        alt="Banner"
-                        loading={i === 0 ? 'eager' : 'lazy'}
+                        alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
+                        loading={isFirstSlide ? 'eager' : 'lazy'}
+                        fetchPriority={isFirstSlide ? 'high' : 'auto'}
+                        decoding="async"
                       />
                     </picture>
 

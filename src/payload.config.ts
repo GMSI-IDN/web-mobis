@@ -33,7 +33,11 @@ export default buildConfig({
   admin: {
     components: {
       beforeLogin: ['@/components/BeforeLogin'],
-      beforeDashboard: ['@/components/BeforeDashboard', '@/components/VoucherPromo'],
+      views: {
+        dashboard: {
+          Component: '@/components/Dashboard',
+        },
+      },
     },
     importMap: {
       baseDir: path.resolve(dirname),

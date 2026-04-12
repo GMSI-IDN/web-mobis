@@ -49,7 +49,7 @@ function ProgramCard({
 
   const headerUrl = side.headerImage?.url
   const headerAlt =
-    side.headerImage?.alt || side.headerImage?.filename || side.title || 'Program title'
+    side.headerImage?.alt || side.headerImage?.filename || side.title || 'Program Mobis'
 
   return (
     <div className="program-card position-relative">

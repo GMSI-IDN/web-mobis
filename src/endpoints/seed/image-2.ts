@@ -1,7 +1,7 @@
 import type { Media } from '@/payload-types'
 
 export const image2: Omit<Media, 'createdAt' | 'id' | 'updatedAt'> = {
-  alt: 'Curving abstract shapes with an orange and blue gradient',
+  alt: 'Informasi promo dan program rental mobil Mobis untuk driver online',
   caption: {
     root: {
       type: 'root',
