@@ -8,11 +8,12 @@ import { getPublicURL } from './getURL'
 const HOMEPAGE_TITLE = 'Rental Mobil Driver Online Calya & Sigra Jabodetabek'
 const HOMEPAGE_DESCRIPTION =
   'Mobis adalah website penyewaan kendaraan untuk driver online dengan pilihan mobil Calya dan Sigra, promo code pendaftaran, serta program kepemilikan.'
+const DEFAULT_SOCIAL_IMAGE = '/opengraph-image'
 
 const getImageURL = (image?: Media | Config['db']['defaultIDType'] | null) => {
   const publicUrl = getPublicURL()
 
-  let url = publicUrl + '/website-template-OG.webp'
+  let url = publicUrl + DEFAULT_SOCIAL_IMAGE
 
   if (image && typeof image === 'object' && 'url' in image) {
     const ogUrl = image.sizes?.og?.url

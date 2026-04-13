@@ -8,10 +8,10 @@ const defaultOpenGraph: Metadata['openGraph'] = {
     'Mobis menyediakan program rental mobil untuk driver online dengan proses pendaftaran yang cepat dan informasi program yang jelas.',
   images: [
     {
-      url: `${getPublicURL()}/website-template-OG.webp`,
+      url: `${getPublicURL()}/opengraph-image`,
       width: 1200,
       height: 630,
-      alt: 'Mobis',
+      alt: 'Mobis rental mobil untuk driver online',
     },
   ],
   siteName: 'Mobis',

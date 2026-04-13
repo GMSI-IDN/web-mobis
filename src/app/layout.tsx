@@ -5,6 +5,7 @@ import { getPublicURL } from '@/utilities/getURL'
 
 const siteURL = getPublicURL()
 const siteName = 'Mobis'
+const socialImagePath = '/opengraph-image'
 const defaultTitle = 'Sewa Mobil untuk Driver Online'
 const defaultDescription =
   'Mobis menyediakan program rental mobil untuk driver online dengan proses pendaftaran yang cepat, informasi program yang jelas, dan dukungan operasional untuk mitra.'
@@ -58,10 +59,10 @@ export const metadata: Metadata = {
     description: defaultDescription,
     images: [
       {
-        url: '/website-template-OG.webp',
+        url: socialImagePath,
         width: 1200,
         height: 630,
-        alt: 'Mobis',
+        alt: 'Mobis rental mobil untuk driver online',
       },
     ],
   },
@@ -69,7 +70,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: `${defaultTitle} | ${siteName}`,
     description: defaultDescription,
-    images: ['/website-template-OG.webp'],
+    images: [socialImagePath],
   },
 }
 
@@ -81,6 +82,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       name: siteName,
       url: siteURL,
       logo: `${siteURL}/favicon.png`,
+      description:
+        'Mobis adalah website penyewaan kendaraan untuk driver online dengan pilihan mobil Calya dan Sigra, promo pendaftaran, dan program kepemilikan.',
     },
     {
       '@context': 'https://schema.org',
