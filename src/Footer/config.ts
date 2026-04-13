@@ -19,7 +19,7 @@ export const Footer: GlobalConfig = {
       label: 'Social Media',
       admin: {
         components: {
-          RowLabel: '@/Footer/RowLabel',
+          RowLabel: '@/Footer/RowLabel#RowLabel',
         },
       },
       fields: [
