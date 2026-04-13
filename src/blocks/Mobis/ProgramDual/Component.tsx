@@ -105,7 +105,7 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
       <div className="container py-4">
         {title ? (
           <div className="text-center mb-3">
-            {/* <h2 className="h6 fw-bold text-success mb-0">{title}</h2> */}
+            <h2 className="h6 fw-bold text-success mb-0">{title}</h2>
           </div>
         ) : null}
 

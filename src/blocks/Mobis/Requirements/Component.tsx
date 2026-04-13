@@ -15,7 +15,7 @@ export const Requirements: React.FC<Props> = ({ title, left, right, note }) => {
       <div className="container py-4">
         {title ? (
           <div className="text-center mb-3">
-            {/* <h3 className="h6 fw-bold requirements-title mb-0">{title}</h3> */}
+            <h2 className="h6 fw-bold requirements-title mb-0">{title}</h2>
           </div>
         ) : null}
 
@@ -23,7 +23,7 @@ export const Requirements: React.FC<Props> = ({ title, left, right, note }) => {
           <div className="requirements-card__body">
             <div className="row g-4">
               <div className="col-12 col-md-6 p-reqruitments">
-                {left?.heading ? <div className="requirements-heading">{left.heading}</div> : null}
+                {left?.heading ? <h3 className="requirements-heading">{left.heading}</h3> : null}
 
                 <ol className="requirements-list">
                   {(left?.items ?? []).map((it, idx) => (
@@ -36,7 +36,7 @@ export const Requirements: React.FC<Props> = ({ title, left, right, note }) => {
 
               <div className="col-12 col-md-6 p-reqruitments">
                 {right?.heading ? (
-                  <div className="requirements-heading">{right.heading}</div>
+                  <h3 className="requirements-heading">{right.heading}</h3>
                 ) : null}
 
                 <ol className="requirements-list">

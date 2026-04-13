@@ -19,7 +19,7 @@ export const ProgramCard: React.FC<Props> = ({ title, subtitle, bullets, note, s
       <div className="container py-4">
         <div className={`card border-0 shadow-sm ${bgClass} ${textClass}`}>
           <div className="card-body p-4">
-            <h3 className="h4 fw-bold mb-2">{title}</h3>
+            <h2 className="h4 fw-bold mb-2">{title}</h2>
             {subtitle ? <p className=" mb-3 opacity-75">{subtitle}</p> : null}
 
             <ul className="program-rental-list mb-3">

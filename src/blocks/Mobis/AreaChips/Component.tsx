@@ -91,7 +91,7 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
   return (
     <section className="area-section">
       <div className="container py-4 text-center">
-        {title ? <div className="area-title">{title}</div> : null}
+        {title ? <h2 className="area-title">{title}</h2> : null}
 
         <div className="row g-3 g-lg-4 justify-content-center">
           {(areas ?? []).map((a, i) => {

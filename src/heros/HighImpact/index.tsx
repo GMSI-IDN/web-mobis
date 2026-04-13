@@ -28,7 +28,13 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, media, richText 
               {links.map(({ link }, i) => {
                 return (
                   <li key={i}>
-                    <CMSLink {...link} />
+                    <CMSLink
+                      {...link}
+                      registrationTracking={{
+                        section: 'High Impact Hero',
+                        placement: `hero-cta-${i + 1}`,
+                      }}
+                    />
                   </li>
                 )
               })}

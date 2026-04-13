@@ -28,6 +28,8 @@ export const generateMeta = async (args: {
   doc: Partial<Page> | Partial<Post> | null
   pathname?: string
 }): Promise<Metadata> => {
+  // Tambahkan metadata dinamis per halaman di return object fungsi ini.
+  // Cocok untuk title, description, canonical, Open Graph, Twitter, robots, dan metadata page-specific lain.
   const { doc, pathname } = args
   const publicUrl = getPublicURL()
   const normalizedPath =

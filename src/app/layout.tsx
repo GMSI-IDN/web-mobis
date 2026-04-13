@@ -13,6 +13,8 @@ const defaultDescription =
 export const metadata: Metadata = {
   metadataBase: new URL(siteURL),
   applicationName: siteName,
+  // Tambahkan metadata global website di sini jika ingin berlaku untuk seluruh halaman.
+  // Contoh yang cocok: verification, app metadata, robots policy global, alternates global.
   title: {
     default: `${defaultTitle} | ${siteName}`,
     template: `%s | ${siteName}`,
@@ -101,6 +103,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" suppressHydrationWarning>
       <body>
+        {/* Tambahkan script/meta global non-standar di area layout/head terkait bila diperlukan. */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}

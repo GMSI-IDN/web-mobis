@@ -717,7 +717,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
       <div className="container py-4">
         <div className="card border-0 shadow-sm mx-auto reg-form-card" style={{ maxWidth: 560 }}>
           <div className="card-body p-3 p-md-4">
-            <h3 className="h6 fw-bold text-center mb-3">{title ?? 'Form Pendaftaran'}</h3>
+            <h2 className="h6 fw-bold text-center mb-3">{title ?? 'Form Pendaftaran'}</h2>
 
             <form onSubmit={onSubmit} className="reg-form" noValidate>
               <div className="row g-2 align-items-md-center mb-2">

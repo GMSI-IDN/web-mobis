@@ -64,3 +64,45 @@ export const trackFacebookCustomEvent = async (
 
   pixel.trackCustom(eventName, params || {})
 }
+
+export type RegistrationCTATracking = {
+  ctaText?: string
+  ctaLink?: string
+  section?: string
+  placement?: string
+  targetType?: 'section' | 'link' | 'modal' | 'submit'
+}
+
+export const trackRegistrationCTAClick = async ({
+  ctaText,
+  ctaLink,
+  section = 'General CTA',
+  placement,
+  targetType,
+}: {
+  ctaText: string
+  ctaLink: string
+  section?: string
+  placement?: string
+  targetType?: 'section' | 'link' | 'modal' | 'submit'
+}) => {
+  const payload = {
+    content_name: ctaText,
+    content_category: 'Registration CTA',
+    section,
+    placement: placement || section,
+    target: ctaLink,
+    target_type: targetType || (ctaLink.startsWith('#') ? 'section' : 'link'),
+    page_path: typeof window !== 'undefined' ? window.location.pathname : '',
+  }
+
+  await trackFacebookEvent('Lead', payload)
+  await trackFacebookCustomEvent('ClickRegistrationCTA', {
+    button_text: ctaText,
+    section,
+    placement: placement || section,
+    target: ctaLink,
+    target_type: payload.target_type,
+    page_path: payload.page_path,
+  })
+}

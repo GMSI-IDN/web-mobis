@@ -46,8 +46,8 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
                   detail: 0,
                   format: 0,
                   mode: 'normal',
-                    style: '',
-                    text: 'Rental Mobil Calya & Sigra untuk Driver Online',
+                  style: '',
+                  text: 'Rental Mobil Calya & Sigra untuk Driver Online',
                   version: 1,
                 },
               ],
@@ -144,7 +144,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
                     direction: 'ltr',
                     format: '',
                     indent: 0,
-                    tag: 'h3',
+                    tag: 'h2',
                     version: 1,
                   },
                   {
@@ -418,7 +418,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
                 direction: 'ltr',
                 format: '',
                 indent: 0,
-                tag: 'h3',
+                tag: 'h2',
                 version: 1,
               },
               {
@@ -483,7 +483,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
                 direction: 'ltr',
                 format: '',
                 indent: 0,
-                tag: 'h3',
+                tag: 'h2',
                 version: 1,
               },
               {
@@ -516,9 +516,9 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
     ],
     meta: {
       description:
-        'Mobis adalah website penyewaan kendaraan untuk driver online dengan pilihan mobil Calya dan Sigra, promo code pendaftaran, serta program kepemilikan.',
+        'MOBIS menyediakan layanan rental mobil fleksibel khusus driver taksi online (Gocar, Grab). Tersedia sewa harian/mingguan, lepas kunci, dan opsi kepemilikan (Rent to Own) di Jabodetabek, Jatim, dan Bali. Daftar sekarang!',
       image: heroImage.id,
-      title: 'Rental Mobil Driver Online Calya & Sigra Jabodetabek',
+      title: 'Sewa Mobil Taksi Online & Rent to Own Murah',
     },
     title: 'Home',
   }

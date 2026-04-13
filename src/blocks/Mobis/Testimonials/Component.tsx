@@ -244,7 +244,7 @@ export const Testimonials: React.FC<Props> = ({ title, items, intervalMs }) => {
     <div className="bg-white" id="kata_mitra_kami">
       <div className="container py-4">
         <div className="text-center mb-3">
-          <h3 className="h6 fw-bold text-success mb-0">{title ?? 'KATA MITRA KAMI'}</h3>
+          <h2 className="h6 fw-bold text-success mb-0">{title ?? 'KATA MITRA KAMI'}</h2>
         </div>
 
         <div id={`${baseId}-carousel`} ref={rootRef} className="carousel slide testi-carousel">
