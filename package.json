@@ -1,7 +1,7 @@
 {
   "name": "mobis-revamp",
   "version": "1.0.0",
-  "description": "Website template for Payload",
+  "description": "Website for Mobis, a Car rent company.",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -37,7 +37,9 @@
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slot": "^1.0.2",
+    "bcryptjs": "^3.0.3",
     "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cross-env": "^7.0.3",
@@ -52,6 +54,7 @@
     "prism-react-renderer": "^2.3.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
+    "react-facebook-pixel": "^1.0.4",
     "react-hook-form": "7.45.4",
     "sharp": "0.34.2",
     "tailwind-merge": "^3.4.0"
@@ -70,9 +73,11 @@
     "@vitejs/plugin-react": "4.5.2",
     "autoprefixer": "^10.4.19",
     "copyfiles": "^2.4.1",
+    "crypto": "^1.0.1",
     "eslint": "^9.16.0",
     "eslint-config-next": "15.4.7",
     "jsdom": "26.1.0",
+    "pg": "^8.19.0",
     "playwright": "1.56.1",
     "playwright-core": "1.56.1",
     "postcss": "^8.4.38",

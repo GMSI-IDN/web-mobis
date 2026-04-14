@@ -1,10 +1,12 @@
 'use client'
 
 import React from 'react'
+import { RichText } from '@payloadcms/richtext-lexical/react'
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 
 type Props = {
   title?: string
-  description?: string
+  description?: SerializedEditorState | string // ✅ nama tetap "description"
   image?: any
 }
 
@@ -18,11 +20,20 @@ export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
           <div className="col-6 ">
             <div className="text-about">
               <h2 className="fw-bold primary-color text-center title-about">{title}</h2>
-              <p className=" mb-0 primary-color text-justify">{description}</p>
+
+              {/* ✅ RichText output (bold/italic/underline) */}
+              <div className="mb-0 primary-color text-justify">
+                {typeof description === 'string' ? (
+                  // fallback kalau ada data lama yang masih string
+                  <p className="mb-0">{description}</p>
+                ) : description ? (
+                  <RichText data={description} />
+                ) : null}
+              </div>
             </div>
           </div>
 
-          <div className="col-6">
+          <div className="col-6 overflow-hidden">
             <div className="card border-0 shadow-sm overflow-hidden about-rounded">
               {imageUrl ? (
                 <img

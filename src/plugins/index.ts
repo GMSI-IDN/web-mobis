@@ -14,7 +14,8 @@ import { Page, Post } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
 
 const generateTitle: GenerateTitle<Post | Page> = ({ doc }) => {
-  return doc?.title ? `${doc.title} | Payload Website Template` : 'Payload Website Template'
+  return doc?.title ? `${doc.title} | Mobis` : 'Mobis' // return the title of the page or post, followed by the site name. If no title exists, return the site name alone.
+  // return `Mobis`
 }
 
 const generateURL: GenerateURL<Post | Page> = ({ doc }) => {

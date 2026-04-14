@@ -1,1 +1,1 @@
-export { default } from './VoucherDashboard'
+export { default } from './VoucherDashboardView'

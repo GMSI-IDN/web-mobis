@@ -49,7 +49,7 @@ function ProgramCard({
 
   const headerUrl = side.headerImage?.url
   const headerAlt =
-    side.headerImage?.alt || side.headerImage?.filename || side.title || 'Program title'
+    side.headerImage?.alt || side.headerImage?.filename || side.title || 'Program Mobis'
 
   return (
     <div className="program-card position-relative">
@@ -101,17 +101,17 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
   const bodyTopPadding = typeof style?.bodyTopPadding === 'number' ? style.bodyTopPadding : 60
 
   return (
-    <section className={sectionBgClass}>
+    <section id="program" className={sectionBgClass}>
       <div className="container py-4">
         {title ? (
           <div className="text-center mb-3">
-            {/* <h2 className="h6 fw-bold text-success mb-0">{title}</h2> */}
+            <h2 className="h6 fw-bold text-success mb-0">{title}</h2>
           </div>
         ) : null}
 
         {/* mobile stack, md+ 2 kolom */}
         <div className="row g-4 justify-content-center">
-          <div className="col-12 col-md-6 mt-5 mt-md-0">
+          <div className="col-12 col-md-6 mt-5 mt-md-0 m-mobis-button">
             <ProgramCard
               side={left}
               cardBgClass={cardBgClass}
@@ -122,7 +122,7 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
             />
           </div>
 
-          <div className="col-12 col-md-6 mt-5 mt-md-0">
+          <div className="col-12 col-md-6 mt-5 mt-md-0 m-mobis-button">
             <ProgramCard
               side={right}
               cardBgClass={cardBgClass}

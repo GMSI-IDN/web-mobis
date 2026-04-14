@@ -13,125 +13,158 @@ function normalizeCode(v: unknown) {
     .replace(/\s+/g, '')
 }
 
-/**
- * ✅ Discriminated Union untuk hasil promo
- */
 type PromoResult =
   | { provided: false }
-  | { provided: true; applied: true; code: string; voucherId: string; quota: number; used: number }
-  | { provided: true; applied: false; code: string; error: string }
+  | {
+      provided: true
+      valid: true
+      code: string
+      voucherId: string
+      quota: number
+      used: number
+      remaining: number
+    }
+  | {
+      provided: true
+      valid: false
+      code: string
+      error: string
+    }
 
-async function autoApplyPromo(params: {
+async function validatePromoCode(params: {
   payload: any
-  customerId: string
   promoCode: string
 }): Promise<PromoResult> {
-  const { payload, customerId } = params
+  const { payload } = params
   const promoCode = normalizeCode(params.promoCode)
+
+  const hasVouchersCollection = Boolean(
+    (payload.collections as Record<string, unknown>)['vouchers'],
+  )
+
+  if (!hasVouchersCollection) {
+    throw new Error('Fitur voucher tidak tersedia')
+  }
 
   const found = await payload.find({
     collection: 'vouchers',
-    where: { code: { equals: promoCode } },
+    where: {
+      code: {
+        equals: promoCode,
+      },
+    },
     limit: 1,
   })
 
+  // console.log('Voucher search result:', found)
+
   const voucher = found?.docs?.[0]
-  if (!voucher) throw new Error('Voucher tidak ditemukan')
-  if (!voucher.enabled) throw new Error('Voucher tidak aktif')
+
+  if (!voucher) {
+    throw new Error('Voucher tidak ditemukan')
+  }
+
+  if ('enabled' in voucher && !voucher.enabled) {
+    throw new Error('Voucher tidak aktif')
+  }
 
   const now = Date.now()
-  if (voucher.startAt && now < new Date(voucher.startAt).getTime()) {
+
+  if ('startAt' in voucher && voucher.startAt && now < new Date(voucher.startAt).getTime()) {
     throw new Error('Voucher belum mulai berlaku')
   }
-  if (voucher.endAt && now > new Date(voucher.endAt).getTime()) {
+
+  if ('endAt' in voucher && voucher.endAt && now > new Date(voucher.endAt).getTime()) {
     throw new Error('Voucher sudah expired')
   }
 
   const quota = Number(voucher.quota ?? 0)
   const used = Number(voucher.used ?? 0)
+  const remaining = Math.max(quota - used, 0)
 
-  if (quota <= 0) throw new Error('Kuota voucher = 0')
-  if (used >= quota) throw new Error('Kuota voucher habis')
-
-  const existed = await payload.find({
-    collection: 'voucher_redemptions',
-    where: {
-      and: [
-        { voucher: { equals: voucher.id } },
-        { customer: { equals: customerId } },
-        { status: { equals: 'APPLIED' } },
-      ],
-    },
-    limit: 1,
-  })
-
-  if ((existed?.totalDocs ?? 0) > 0) {
-    throw new Error('Voucher sudah dipakai untuk customer ini')
+  if (quota <= 0) {
+    throw new Error('Kuota voucher = 0')
   }
 
-  // create redemption
-  await payload.create({
-    collection: 'voucher_redemptions',
-    data: {
-      voucher: voucher.id,
-      customer: customerId,
-      status: 'APPLIED',
-      notes: 'Auto-applied on registration',
-    },
-  })
+  if (used >= quota) {
+    throw new Error('Kuota voucher habis')
+  }
 
-  // increment used
-  await payload.update({
-    collection: 'vouchers',
-    id: voucher.id,
-    data: { used: used + 1 },
-  })
+  // VALIDASI SAJA
+  // TIDAK cek voucher_redemptions
+  // TIDAK create voucher_redemptions
+  // TIDAK update vouchers.used
+  // TIDAK update customers
 
-  // mark customer promo applied
-  await payload.update({
-    collection: 'customers',
-    id: customerId,
-    data: {
-      promoApplied: true,
-      promoAppliedAt: new Date().toISOString(),
-      voucher: voucher.id,
-      promoError: null,
-    },
-  })
-
-  // ✅ FIX TS: voucherId wajib string + literal union
   return {
     provided: true,
-    applied: true,
+    valid: true,
     code: promoCode,
     voucherId: String(voucher.id),
     quota,
-    used: used + 1,
-  } as const
+    used,
+    remaining,
+  }
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    console.log('[API /registration] payload received:', body)
+    // console.log('[API /registration] payload received:', body)
 
-    // ✅ 1) validasi (punya kamu)
     const reg: RegistrationPayload = validateRegistrationPayload(body)
-    console.log('[API /registration] payload validated:', reg)
+    // console.log('[API /registration] payload validated:', reg)
 
-    // ✅ 2) kirim ke Google Sheets (punya kamu)
-    const sheetMeta = await appendLeadToSheet(reg)
-    console.log('[API /registration] appended to Google Sheets', sheetMeta)
-
-    // ✅ 3) simpan ke DB (CUSTOMERS)
     const payload = await getPayload({ config })
 
     const promoCode = reg?.promoCode ? normalizeCode(reg.promoCode) : ''
 
+    let promoResult: PromoResult
+
+    // 1. Validasi promo dulu
+    if (!promoCode) {
+      promoResult = { provided: false }
+    } else {
+      try {
+        promoResult = await validatePromoCode({
+          payload,
+          promoCode,
+        })
+      } catch (e: any) {
+        const msg = String(e?.message ?? 'Promo code tidak valid')
+
+        promoResult = {
+          provided: true,
+          valid: false,
+          code: promoCode,
+          error: msg,
+        }
+      }
+    }
+
+    // 2. Kalau promo diisi tapi tidak valid, hentikan
+    if (promoResult.provided && !promoResult.valid) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: promoResult.error,
+          promo: promoResult,
+        },
+        { status: 400 },
+      )
+    }
+
+    // 3. Kirim ke Google Sheets
+    const sheetMeta = await appendLeadToSheet({
+      ...reg,
+      promoCode,
+    })
+    // console.log('[API /registration] appended to Google Sheets', sheetMeta)
+
+    // 4. Simpan customer
     const customer = await payload.create({
       collection: 'customers',
       data: {
-        // structured (match RegistrationPayload)
         name: reg.name ?? '',
         birthPlace: reg.birthPlace ?? '',
         birthDate: reg.birthDate ?? '',
@@ -157,48 +190,35 @@ export async function POST(req: Request) {
 
         handoverLocation: reg.handoverLocation ?? '',
         sourceInfo: reg.sourceInfo ?? '',
+
         promoCode: promoCode || undefined,
+        promoApplied: promoResult.provided ? promoResult.valid : false,
+        promoAppliedAt:
+          promoResult.provided && promoResult.valid ? new Date().toISOString() : undefined,
+        voucher:
+          promoResult.provided && promoResult.valid ? Number(promoResult.voucherId) : undefined,
+        promoError: undefined,
 
-        // promo tracking default
-        promoApplied: false,
-        promoError: promoCode ? 'PROMO_PENDING_VALIDATION' : undefined,
-
-        // raw payload + sheet meta
         rawPayload: body,
         sheetMeta,
       },
     })
 
-    // ✅ 4) auto apply promoCode (optional)
-    let promoResult: PromoResult
-
-    if (!promoCode) {
-      promoResult = { provided: false }
-    } else {
-      try {
-        promoResult = await autoApplyPromo({
-          payload,
-          customerId: String(customer.id),
-          promoCode,
-        })
-      } catch (e: any) {
-        const msg = String(e?.message ?? 'Promo code tidak valid')
-
-        await payload.update({
-          collection: 'customers',
-          id: customer.id,
-          data: { promoApplied: false, promoError: msg },
-        })
-
-        promoResult = { provided: true, applied: false, code: promoCode, error: msg }
-      }
+    if (promoResult.provided && promoResult.valid) {
+      await payload.update({
+        collection: 'vouchers',
+        id: promoResult.voucherId,
+        data: {
+          used: promoResult.used + 1,
+        },
+      })
     }
 
     return NextResponse.json({
       ok: true,
       message: 'Terkirim ke Google Sheets + tersimpan ke database.',
       customerId: customer.id,
-      sheet: sheetMeta,
+      // sheet: sheetMeta,
       promo: promoResult,
     })
   } catch (err: any) {

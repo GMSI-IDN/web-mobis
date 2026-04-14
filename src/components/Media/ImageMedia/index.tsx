@@ -77,12 +77,18 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
 
   const loading = loadingFromProps || (!priority ? 'lazy' : undefined)
 
-  // NOTE: this is used by the browser to determine which image to download at different screen sizes
   const sizes = sizeFromProps
     ? sizeFromProps
-    : Object.entries(breakpoints)
-        .map(([, value]) => `(max-width: ${value}px) ${value * 2}w`)
-        .join(', ')
+    : fill
+      ? '100vw'
+      : [
+          `(max-width: ${breakpoints.sm}px) 100vw`,
+          `(max-width: ${breakpoints.md}px) 92vw`,
+          `(max-width: ${breakpoints.lg}px) 80vw`,
+          '1200px',
+        ].join(', ')
+
+  const fetchPriority = priority || loading === 'eager' ? 'high' : 'auto'
 
   return (
     <picture className={cn(pictureClassName)}>
@@ -93,8 +99,10 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
         height={!fill ? height : undefined}
         placeholder="blur"
         blurDataURL={placeholderBlur}
+        decoding="async"
+        fetchPriority={fetchPriority}
         priority={priority}
-        quality={100}
+        quality={82}
         loading={loading}
         sizes={sizes}
         src={src}

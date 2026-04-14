@@ -24,7 +24,7 @@ function getUrl(input?: Media | string | null): string | undefined {
 
 export const RegistrationFlow: React.FC<Props> = ({
   title = 'ALUR PENDAFTARAN',
-  alt = 'Alur pendaftaran MOBIS',
+  alt = 'Alur pendaftaran rental mobil Mobis untuk driver online',
   desktopImage,
   mobileImage,
   maxWidth = 1200,
@@ -37,9 +37,9 @@ export const RegistrationFlow: React.FC<Props> = ({
     return (
       <section className="bg-white">
         <div className="container py-4">
-          <div className="text-center mb-3">
-            <h3 className="h6 fw-bold text-success mb-0">{title}</h3>
-          </div>
+        <div className="text-center mb-4">
+            <h2 className="h6 fw-bold text-success mb-4">{title}</h2>
+        </div>
           <div className="text-center small text-muted">
             Gambar alur pendaftaran belum diisi di Payload.
           </div>
@@ -49,10 +49,10 @@ export const RegistrationFlow: React.FC<Props> = ({
   }
 
   return (
-    <section className="bg-white">
+    <section id="alur_pendaftaran" className="bg-white">
       <div className="container py-4">
-        <div className="text-center mb-3">
-          <h3 className="h6 fw-bold text-success mb-0">{title}</h3>
+        <div className="text-center m-title-registration-flow">
+          <h2 className="h6 fw-bold text-success mb-0">{title}</h2>
         </div>
 
         <div className="rf-img-wrap">
@@ -67,6 +67,8 @@ export const RegistrationFlow: React.FC<Props> = ({
               src={fallback}
               alt={alt}
               loading="lazy"
+              decoding="async"
+              fetchPriority="low"
               style={{ maxWidth: `${maxWidth}px` }}
             />
           </picture>

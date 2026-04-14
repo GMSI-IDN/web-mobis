@@ -26,7 +26,12 @@ function iconToBootstrapClass(icon?: string) {
 function toAbsURL(url?: string) {
   if (!url) return ''
   if (url.startsWith('http://') || url.startsWith('https://')) return url
-  const base = getServerSideURL().replace(/\/$/, '')
+
+  // Prioritas: URL Payload (jika frontend & payload beda host)
+  const payloadBase =
+    process.env.NEXT_PUBLIC_PAYLOAD_URL || process.env.PAYLOAD_PUBLIC_SERVER_URL || ''
+
+  const base = (payloadBase || getServerSideURL()).replace(/\/$/, '')
   const path = url.startsWith('/') ? url : `/${url}`
   return `${base}${path}`
 }
@@ -37,7 +42,6 @@ function toAbsURL(url?: string) {
  *   <Footer />
  *
  * Jadi wajib named export "Footer" dan tanpa props.
- * Footer di sini fetch data sendiri via getFooterCached().
  */
 export async function Footer() {
   const data = (await getFooterCached()) as FooterData | null
@@ -51,11 +55,15 @@ export async function Footer() {
     <footer className="footer-mobis">
       <div className="container-fluid py-4 text-center">
         {/* Logo */}
-        {logoUrl ? (
+        {/* {logoUrl ? (
           <div className="mb-2">
             <img src={logoUrl} alt="MOBIS" className="footer-mobis__logo" />
           </div>
-        ) : null}
+        ) : null} */}
+
+        <div className="mb-2">
+          <img src="./api/media/file/new-white-2.png" alt="MOBIS" className="footer-mobis__logo" />
+        </div>
 
         {/* Social icons */}
         <div className="d-flex justify-content-center gap-3">

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { trackRegistrationCTAClick } from '@/utilities/pixelFacebook'
 import './mobis-widget.css'
 
 type Active = 'none' | 'register' | 'status' | 'chat'
@@ -79,7 +80,16 @@ export default function MobisFloatingWidget() {
         <button
           type="button"
           className="mobis-btn mobis-btn--green"
-          onClick={() => open('register')}
+          onClick={() => {
+            void trackRegistrationCTAClick({
+              ctaText: 'Daftar Sekarang',
+              ctaLink: '#mobis-floating-register',
+              section: 'Floating Widget',
+              placement: 'floating-register-button',
+              targetType: 'modal',
+            })
+            open('register')
+          }}
           aria-label="Daftar Sekarang"
         >
           Daftar Sekarang
@@ -218,7 +228,17 @@ function Modal({
 ======================= */
 function RegisterForm() {
   return (
-    <form>
+    <form
+      onSubmit={() => {
+        void trackRegistrationCTAClick({
+          ctaText: 'Daftar Sekarang',
+          ctaLink: '#mobis-floating-register-submit',
+          section: 'Floating Widget',
+          placement: 'floating-register-submit',
+          targetType: 'submit',
+        })
+      }}
+    >
       <label className="form-label">Nama</label>
       <input className="form-control mb-3" placeholder="Masukkan nama Anda" required />
 

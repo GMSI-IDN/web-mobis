@@ -1,16 +1,20 @@
 import type { Metadata } from 'next'
-import { getServerSideURL } from './getURL'
 
 const defaultOpenGraph: Metadata['openGraph'] = {
   type: 'website',
-  description: 'An open-source website built with Payload and Next.js.',
+  locale: 'id_ID',
+  description:
+    'Solusi punya mobil untuk taksi online tanpa ribet. Gratis servis rutin, bayar mingguan, dan tersedia opsi jadi hak milik.',
   images: [
     {
-      url: `${getServerSideURL()}/website-template-OG.webp`,
+      url: 'https://rentalmobis.com/assets/img/Banner.webp',
+      width: 1200,
+      height: 630,
+      alt: 'Program Sewa & Kredit Mobil Taksi Online',
     },
   ],
-  siteName: 'Payload Website Template',
-  title: 'Payload Website Template',
+  siteName: 'Rental MOBIS',
+  title: 'Program Sewa & Kredit Mobil Taksi Online | Rental MOBIS',
 }
 
 export const mergeOpenGraph = (og?: Metadata['openGraph']): Metadata['openGraph'] => {

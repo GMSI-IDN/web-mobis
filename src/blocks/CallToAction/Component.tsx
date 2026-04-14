@@ -14,7 +14,17 @@ export const CallToActionBlock: React.FC<CTABlockProps> = ({ links, richText }) 
         </div>
         <div className="flex flex-col gap-8">
           {(links || []).map(({ link }, i) => {
-            return <CMSLink key={i} size="lg" {...link} />
+            return (
+              <CMSLink
+                key={i}
+                size="lg"
+                {...link}
+                registrationTracking={{
+                  section: 'Call To Action Block',
+                  placement: `cta-block-link-${i + 1}`,
+                }}
+              />
+            )
           })}
         </div>
       </div>

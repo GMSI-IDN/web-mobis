@@ -17,7 +17,13 @@ export const MediumImpactHero: React.FC<Page['hero']> = ({ links, media, richTex
             {links.map(({ link }, i) => {
               return (
                 <li key={i}>
-                  <CMSLink {...link} />
+                  <CMSLink
+                    {...link}
+                    registrationTracking={{
+                      section: 'Medium Impact Hero',
+                      placement: `hero-cta-${i + 1}`,
+                    }}
+                  />
                 </li>
               )
             })}
