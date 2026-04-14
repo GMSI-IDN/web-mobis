@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { trackFacebookEvent, trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
+import { trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
 
 type Option = { label: string; value: string }
 
@@ -90,31 +90,22 @@ function getBirthDateRange(minAge: number, maxAge: number) {
   }
 }
 
-const handleBannerCTATrack = ({
-  ctaText,
-  ctaLink,
-  targetType,
-}: {
-  ctaText: string
-  ctaLink: string
-  targetType: string
-}) => {
-  const payload = {
-    content_name: ctaText,
-    content_category: 'Banner CTA',
-    section: 'Banner Carousel',
-    target: ctaLink,
-    target_type: targetType,
+const trackRegistrationSubmitClick = ({ buttonText }: { buttonText: string }) => {
+  trackFacebookCustomEvent('ClickRegistrationSubmit', {
+    button_text: buttonText + '-submit',
+    section: 'Registration Form',
+    target: '/api/registration',
+    target_type: 'submit',
     page_path: window.location.pathname,
-  }
+  })
+}
 
-  trackFacebookEvent('Leads', payload)
-
-  trackFacebookCustomEvent('ClickBannerCarouselCTA', {
-    button_text: ctaText,
-    section: 'Banner Carousel',
-    target: ctaLink,
-    target_type: targetType,
+const trackRegistrationSuccess = ({ buttonText }: { buttonText: string }) => {
+  trackFacebookCustomEvent('RegistrationSuccess', {
+    button_text: buttonText + '-success',
+    section: 'Registration Form',
+    target: '/api/registration',
+    target_type: 'submit',
     page_path: window.location.pathname,
   })
 }
@@ -589,6 +580,10 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
+    trackRegistrationSubmitClick({
+      buttonText: submitLabel ?? 'Kirim',
+    })
+
     const nextErrors = validateForm(values)
     setErrors(nextErrors)
 
@@ -694,10 +689,8 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
       setErrors({})
       setTouched({})
 
-      handleBannerCTATrack({
-        ctaText: submitLabel ?? 'Kirim',
-        ctaLink: '/api/registration',
-        targetType: 'submit',
+      trackRegistrationSuccess({
+        buttonText: submitLabel ?? 'Kirim',
       })
     } catch (error) {
       const message =

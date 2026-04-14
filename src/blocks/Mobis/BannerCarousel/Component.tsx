@@ -3,7 +3,7 @@
 import React, { useId, useEffect } from 'react'
 import Link from 'next/link'
 import ScrollButton from '@/components/ui/ScrollButton'
-import { trackFacebookEvent, trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
+import { trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
 
 type Media = { url?: string }
 
@@ -44,40 +44,17 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
   const handleBannerCTATrack = ({
     ctaText,
     ctaLink,
-    slideIndex,
     targetType,
   }: {
     ctaText: string
     ctaLink: string
-    slideIndex: number
     targetType: 'section' | 'link'
   }) => {
-    const payload = {
-      content_name: ctaText,
-      content_category: 'Banner CTA',
-      section: 'Banner Carousel',
-      slide_index: slideIndex + 1,
-      target: ctaLink,
-      target_type: targetType,
-      page_path: window.location.pathname,
-    }
-
-    trackFacebookEvent('Leads', payload)
-
     trackFacebookCustomEvent('ClickBannerCarouselCTA', {
       button_text: ctaText,
       section: 'Banner Carousel',
-      slide_index: slideIndex + 1,
       target: ctaLink,
       target_type: targetType,
-      page_path: window.location.pathname,
-    })
-  }
-
-  const handleCarouselNavTrack = (direction: 'prev' | 'next') => {
-    trackFacebookCustomEvent('ClickBannerCarouselNavigation', {
-      direction,
-      section: 'Banner Carousel',
       page_path: window.location.pathname,
     })
   }
@@ -105,13 +82,6 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                   className={i === 0 ? 'active' : ''}
                   aria-current={i === 0 ? 'true' : undefined}
                   aria-label={`Slide ${i + 1}`}
-                  onClick={() => {
-                    trackFacebookCustomEvent('ClickBannerCarouselIndicator', {
-                      indicator_index: i + 1,
-                      section: 'Banner Carousel',
-                      page_path: window.location.pathname,
-                    })
-                  }}
                 />
               ))}
             </div>
@@ -152,7 +122,6 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                             handleBannerCTATrack({
                               ctaText,
                               ctaLink,
-                              slideIndex: i,
                               targetType: 'section',
                             })
                           }}
@@ -169,7 +138,6 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                             handleBannerCTATrack({
                               ctaText,
                               ctaLink,
-                              slideIndex: i,
                               targetType: 'link',
                             })
 
@@ -195,7 +163,6 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                 type="button"
                 data-bs-target={`#${carouselId}`}
                 data-bs-slide="prev"
-                onClick={() => handleCarouselNavTrack('prev')}
               >
                 <span className="carousel-control-prev-icon" aria-hidden="true" />
                 <span className="visually-hidden">Previous</span>
@@ -206,7 +173,6 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                 type="button"
                 data-bs-target={`#${carouselId}`}
                 data-bs-slide="next"
-                onClick={() => handleCarouselNavTrack('next')}
               >
                 <span className="carousel-control-next-icon" aria-hidden="true" />
                 <span className="visually-hidden">Next</span>

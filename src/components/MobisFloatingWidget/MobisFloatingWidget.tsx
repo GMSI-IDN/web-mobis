@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { trackRegistrationCTAClick } from '@/utilities/pixelFacebook'
+import { trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
 import './mobis-widget.css'
 
 type Active = 'none' | 'register' | 'status' | 'chat'
@@ -10,6 +10,22 @@ type ChatState = 'open' | 'minimized'
 type ChatMsg = {
   from: 'bot' | 'user'
   text: string
+}
+
+const trackFloatingWidgetClick = ({
+  buttonText,
+  target,
+}: {
+  buttonText: string
+  target: '#mobis-floating-status' | '#mobis-floating-chat'
+}) => {
+  void trackFacebookCustomEvent('ClickFloatingWidgetCTA', {
+    button_text: buttonText,
+    section: 'Floating Widget',
+    target,
+    target_type: 'modal',
+    page_path: window.location.pathname,
+  })
 }
 
 export default function MobisFloatingWidget() {
@@ -80,16 +96,7 @@ export default function MobisFloatingWidget() {
         <button
           type="button"
           className="mobis-btn mobis-btn--green"
-          onClick={() => {
-            void trackRegistrationCTAClick({
-              ctaText: 'Daftar Sekarang',
-              ctaLink: '#mobis-floating-register',
-              section: 'Floating Widget',
-              placement: 'floating-register-button',
-              targetType: 'modal',
-            })
-            open('register')
-          }}
+          onClick={() => open('register')}
           aria-label="Daftar Sekarang"
         >
           Daftar Sekarang
@@ -98,7 +105,13 @@ export default function MobisFloatingWidget() {
         <button
           type="button"
           className="mobis-btn mobis-btn--yellow"
-          onClick={() => open('status')}
+          onClick={() => {
+            trackFloatingWidgetClick({
+              buttonText: 'Check Status Pendaftaran',
+              target: '#mobis-floating-status',
+            })
+            open('status')
+          }}
           aria-label="Status Pendaftaran"
         >
           Status Pendaftaran
@@ -107,7 +120,13 @@ export default function MobisFloatingWidget() {
         <button
           type="button"
           className="mobis-btn mobis-btn--green"
-          onClick={() => open('chat')}
+          onClick={() => {
+            trackFloatingWidgetClick({
+              buttonText: 'Mulai Chat',
+              target: '#mobis-floating-chat',
+            })
+            open('chat')
+          }}
           aria-label="Hubungi Kami"
         >
           Hubungi Kami
@@ -228,17 +247,7 @@ function Modal({
 ======================= */
 function RegisterForm() {
   return (
-    <form
-      onSubmit={() => {
-        void trackRegistrationCTAClick({
-          ctaText: 'Daftar Sekarang',
-          ctaLink: '#mobis-floating-register-submit',
-          section: 'Floating Widget',
-          placement: 'floating-register-submit',
-          targetType: 'submit',
-        })
-      }}
-    >
+    <form>
       <label className="form-label">Nama</label>
       <input className="form-control mb-3" placeholder="Masukkan nama Anda" required />
 
@@ -253,12 +262,21 @@ function RegisterForm() {
 }
 
 function StatusForm() {
+  const [nik, setNik] = useState('')
+  const isSubmitDisabled = !nik.trim()
+
   return (
     <form>
       <label className="form-label">NIK</label>
-      <input className="form-control mb-3" placeholder="Masukan NIK" required />
+      <input
+        className="form-control mb-3"
+        placeholder="Masukan NIK"
+        required
+        value={nik}
+        onChange={(e) => setNik(e.target.value)}
+      />
 
-      <button className="btn btn-success w-100 py-2" type="submit">
+      <button className="btn btn-success w-100 py-2" type="submit" disabled={isSubmitDisabled}>
         Check Status
       </button>
     </form>
