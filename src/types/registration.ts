@@ -19,5 +19,6 @@ export type RegistrationPayload = {
   driverExperience?: string
   handoverLocation?: string
   sourceInfo?: string
+  sourceDetail?: string
   promoCode?: string
 }

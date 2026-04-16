@@ -37,6 +37,7 @@ export function validateRegistrationPayload(body: any): RegistrationPayload {
     driverExperience: body.driverExperience ? String(body.driverExperience).trim() : undefined,
     handoverLocation: body.handoverLocation ? String(body.handoverLocation).trim() : undefined,
     sourceInfo: body.sourceInfo ? String(body.sourceInfo).trim() : undefined,
+    sourceDetail: body.sourceDetail ? String(body.sourceDetail).trim() : undefined,
     promoCode: body.promoCode ? String(body.promoCode).trim() : undefined,
   }
 

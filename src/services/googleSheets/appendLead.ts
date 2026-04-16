@@ -108,10 +108,37 @@ function isNoDriverAccount(driverApps?: string): boolean {
   return value === 'tidak ada akun'
 }
 
+function formatSourceInfoLabel(sourceInfo?: string): string {
+  if (!sourceInfo) return ''
+
+  return sourceInfo
+    .trim()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
 function buildSourceDetail(payload: RegistrationPayload): string {
-  const sourceDetail = (payload as any).sourceDetail ?? ''
+  const sourceDetail = payload.sourceDetail ?? ''
   const otherSourceInfo = (payload as any).otherSourceInfo ?? ''
   return [sourceDetail, otherSourceInfo].filter(Boolean).join(' | ')
+}
+
+function buildSheetSourceSummary(payload: RegistrationPayload): string {
+  const sourceKey = (payload.sourceInfo ?? '').trim().toLowerCase()
+  const sourceLabel = formatSourceInfoLabel(payload.sourceInfo)
+  const sourceDetail = (payload.sourceDetail ?? '').trim()
+  const promoCode = (payload.promoCode ?? '').trim()
+  const parts: string[] = []
+
+  if (sourceKey !== 'facebook' && sourceLabel && sourceDetail) {
+    parts.push(`${sourceLabel}: ${sourceDetail}`)
+  }
+
+  if (promoCode) {
+    parts.push(`Code Promo : ${promoCode}`)
+  }
+
+  return parts.join(' | ')
 }
 
 function buildRow(payload: RegistrationPayload): (string | null)[] {
@@ -152,8 +179,8 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
     noAccount ? '' : (payload.driverExperience ?? ''),
     payload.handoverLocation ?? '',
     payload.sourceInfo ?? '',
-    (payload as any).sourceDetail ?? '',
-    '',
+    payload.sourceInfo === 'facebook' ? (payload.sourceDetail ?? '') : '',
+    buildSheetSourceSummary(payload),
     'Website Mobis',
     '',
     '',
@@ -188,7 +215,7 @@ function buildExternalApiPayload(payload: RegistrationPayload) {
     pool_preference: payload.handoverLocation ?? '',
     information_source: payload.sourceInfo ?? '',
     detail_information_source: buildSourceDetail(payload),
-    promo_code: (payload as any).promoCode ?? '',
+    promo_code: payload.promoCode ?? '',
     registered_from: 'Website Mobis',
     emergency_phone_number: normalizePhone(payload.emergencyPhone),
     emergency_contact_name: payload.emergencyName ?? '',
