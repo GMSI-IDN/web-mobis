@@ -294,6 +294,10 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
   const birthDateRange = useMemo(() => getBirthDateRange(18, 62), [])
   const isNoDriverAccount = normalizeValue(values.driverApps) === 'tidak_ada_akun'
+  const ktpFieldError =
+    touched.ktpNumber && (errors.ktpNumber || serverFieldErrors.ktpNumber)
+      ? errors.ktpNumber || serverFieldErrors.ktpNumber
+      : ''
 
   const sourceDetailConfig = useMemo(() => {
     const key = normalizeValue(values.sourceInfo)
@@ -794,15 +798,15 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 <div className={fieldCol}>
                   <input
                     name="ktpNumber"
-                    className={`form-control form-control-sm ${touched.ktpNumber && errors.ktpNumber ? 'is-invalid' : ''}`}
+                    className={`form-control form-control-sm ${ktpFieldError ? 'is-invalid' : ''}`}
                     placeholder="Ketik nomor KTP"
                     inputMode="numeric"
                     maxLength={16}
                     value={values.ktpNumber}
                     onChange={(e) => setField('ktpNumber', e.target.value)}
                   />
-                  {touched.ktpNumber && errors.ktpNumber ? (
-                    <div className="invalid-feedback d-block">{errors.ktpNumber}</div>
+                  {ktpFieldError ? (
+                    <div className="invalid-feedback d-block">{ktpFieldError}</div>
                   ) : null}
                 </div>
               </div>

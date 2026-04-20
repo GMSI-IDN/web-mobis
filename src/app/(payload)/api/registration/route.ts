@@ -6,11 +6,77 @@ import { validateRegistrationPayload } from '@/lib/validation/registration'
 import { appendLeadToSheet } from '@/services/googleSheets/appendLead'
 import type { RegistrationPayload } from '@/types/registration'
 
+const KTP_REAPPLY_COOLDOWN_MONTHS = 3
+
 function normalizeCode(v: unknown) {
   return String(v ?? '')
     .trim()
     .toUpperCase()
     .replace(/\s+/g, '')
+}
+
+function addMonths(date: Date, months: number) {
+  const next = new Date(date)
+  next.setMonth(next.getMonth() + months)
+  return next
+}
+
+function formatDateID(date: Date) {
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+  }).format(date)
+}
+
+async function getKtpCooldownInfo(params: {
+  payload: any
+  ktpNumber: string
+}): Promise<{ blocked: false } | { blocked: true; nextEligibleAt: Date }> {
+  const { payload, ktpNumber } = params
+
+  const cooldownStart = addMonths(new Date(), -KTP_REAPPLY_COOLDOWN_MONTHS)
+
+  const existing = await payload.find({
+    collection: 'customers',
+    where: {
+      and: [
+        {
+          ktpNumber: {
+            equals: ktpNumber,
+          },
+        },
+        {
+          createdAt: {
+            greater_than_equal: cooldownStart.toISOString(),
+          },
+        },
+      ],
+    },
+    sort: '-createdAt',
+    limit: 1,
+    depth: 0,
+  })
+
+  const latestMatch = existing?.docs?.[0]
+
+  if (!latestMatch?.createdAt) return { blocked: false }
+
+  const registeredAt = new Date(latestMatch.createdAt)
+  if (Number.isNaN(registeredAt.getTime())) return { blocked: false }
+
+  const nextEligibleAt = addMonths(registeredAt, KTP_REAPPLY_COOLDOWN_MONTHS)
+  const now = Date.now()
+
+  if (now < nextEligibleAt.getTime()) {
+    return {
+      blocked: true,
+      nextEligibleAt,
+    }
+  }
+
+  return { blocked: false }
 }
 
 type PromoResult =
@@ -116,6 +182,27 @@ export async function POST(req: Request) {
     // console.log('[API /registration] payload validated:', reg)
 
     const payload = await getPayload({ config })
+    const ktpCooldown = await getKtpCooldownInfo({
+      payload,
+      ktpNumber: reg.ktpNumber,
+    })
+
+    if (ktpCooldown.blocked) {
+      const message = `Nomor KTP ini sudah pernah digunakan untuk pendaftaran. Silakan daftar kembali setelah ${formatDateID(ktpCooldown.nextEligibleAt)}.`
+
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'KTP_COOLDOWN_ACTIVE',
+          message,
+          errors: {
+            ktpNumber: message,
+          },
+          nextEligibleAt: ktpCooldown.nextEligibleAt.toISOString(),
+        },
+        { status: 400 },
+      )
+    }
 
     const promoCode = reg?.promoCode ? normalizeCode(reg.promoCode) : ''
 
@@ -227,6 +314,8 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: false,
+        code: err?.code,
+        errors: err?.errors,
         message: err?.message ?? 'Server error saat proses registration',
       },
       { status: err?.statusCode ?? 500 },
