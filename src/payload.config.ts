@@ -33,9 +33,14 @@ export default buildConfig({
   admin: {
     components: {
       beforeLogin: ['@/components/BeforeLogin'],
+      beforeNavLinks: ['@/components/AdminNav/ReportsNavLink'],
       views: {
         dashboard: {
           Component: '@/components/Dashboard',
+        },
+        reports: {
+          Component: '@/components/Reports',
+          path: '/reports',
         },
       },
     },

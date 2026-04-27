@@ -26,7 +26,9 @@ import { FolderTypeField as FolderTypeField_3817bf644402e67bfe6577f60ef982de } f
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
 import { RowLabel as RowLabel_1f6ff6ff633e3695d348f4f3c58f1466 } from '@/Footer/RowLabel'
 import { default as default_8a7ab0eb7ab5c511aba12e68480bfe5e } from '@/components/BeforeLogin'
+import { default as default_d15d37be6967052f000b03111249fe3a } from '@/components/AdminNav/ReportsNavLink'
 import { default as default_b39f2d96c5778d5698b3c9e7777aa63a } from '@/components/Dashboard'
+import { default as default_22b16e945b9c06d6cc94be32fb54fe3b } from '@/components/Reports'
 import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 
 export const importMap = {
@@ -58,6 +60,8 @@ export const importMap = {
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,
   "@/Footer/RowLabel#RowLabel": RowLabel_1f6ff6ff633e3695d348f4f3c58f1466,
   "@/components/BeforeLogin#default": default_8a7ab0eb7ab5c511aba12e68480bfe5e,
+  "@/components/AdminNav/ReportsNavLink#default": default_d15d37be6967052f000b03111249fe3a,
   "@/components/Dashboard#default": default_b39f2d96c5778d5698b3c9e7777aa63a,
+  "@/components/Reports#default": default_22b16e945b9c06d6cc94be32fb54fe3b,
   "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a
 }
