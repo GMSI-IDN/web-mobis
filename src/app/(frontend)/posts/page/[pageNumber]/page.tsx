@@ -10,6 +10,7 @@ import React from 'react'
 import PageClient from './page.client'
 
 export const revalidate = 600
+export const dynamic = 'force-dynamic'
 const POSTS_PER_PAGE = 12
 
 const parsePageNumber = (value: string): number | null => {
@@ -91,22 +92,4 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
       follow: true,
     },
   }
-}
-
-export async function generateStaticParams() {
-  const payload = await getPayload({ config: configPromise })
-  const { totalDocs } = await payload.count({
-    collection: 'posts',
-    overrideAccess: false,
-  })
-
-  const totalPages = Math.ceil(totalDocs / POSTS_PER_PAGE)
-
-  const pages: { pageNumber: string }[] = []
-
-  for (let i = 1; i <= totalPages; i++) {
-    pages.push({ pageNumber: String(i) })
-  }
-
-  return pages
 }
