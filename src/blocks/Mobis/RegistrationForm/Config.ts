@@ -67,7 +67,10 @@ export const RegistrationFormConfig: Block = {
         makeOptionArray('emRel', 'Emergency Relation Options'),
         makeOptionArray('drvExp', 'Driver Experience Options'),
         makeOptionArray('handover', 'Handover Location Options'),
-        makeOptionArray('onlineApp', 'Online App Options'),
+        // Temporary: disabled to keep staging admin working on DBs that do not have
+        // pages_blocks_registration_form_opts_online_app table yet.
+        // Re-enable after migration is applied on staging/prod.
+        // makeOptionArray('onlineApp', 'Online App Options'),
         makeOptionArray('source', 'Source Info Options'),
       ],
     },
