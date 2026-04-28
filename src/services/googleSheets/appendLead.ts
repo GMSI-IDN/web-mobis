@@ -269,7 +269,12 @@ async function sendLeadToExternalApi(payload: RegistrationPayload) {
 
 export async function appendLeadToSheet(payload: RegistrationPayload) {
   const spreadsheetId = resolveSpreadsheetId(payload.handoverLocation)
-  const sheetName = process.env.GOOGLE_SHEETS_SHEET_NAME || 'Leads'
+  // const sheetName = process.env.GOOGLE_SHEETS_SHEET_NAME || 'Leads'
+
+  let sheetName = 'Leads'
+  if (payload.handoverLocation?.toLowerCase().includes('mojokerto')) {
+    sheetName = 'LEADS MOJOKERTO'
+  }
 
   console.log(`Appending lead to sheet: ${spreadsheetId} (${sheetName})`)
 
