@@ -188,11 +188,11 @@ function normalizeRegionValue(value?: null | string) {
 }
 
 function resolveRegionLabel(doc: CustomerRangeDoc) {
-  const domicile = normalizeRegionValue(doc?.domicile)
-  if (domicile) return domicile
-
   const handover = normalizeRegionValue(doc?.handoverLocation)
   if (handover) return handover
+
+  const domicile = normalizeRegionValue(doc?.domicile)
+  if (domicile) return domicile
 
   return 'Wilayah tidak diisi'
 }
@@ -1626,7 +1626,7 @@ export default function ReportsTabsClient({
                             />
                             <span className="mobis-reports__region-label">{item.label}</span>
                             <strong>
-                              {formatCompactNumber(item.count)} • {item.percentage.toFixed(1)}%
+                              {formatCompactNumber(item.count)} | {item.percentage.toFixed(1)}%
                             </strong>
                           </div>
                         ))
@@ -1679,3 +1679,4 @@ export default function ReportsTabsClient({
     </>
   )
 }
+

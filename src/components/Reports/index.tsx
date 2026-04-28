@@ -78,11 +78,11 @@ function normalizeRegionValue(value?: null | string): string {
 }
 
 function resolveRegionLabel(doc: CustomerRegionDoc): string {
-  const domicile = normalizeRegionValue(doc.domicile)
-  if (domicile) return domicile
-
   const handover = normalizeRegionValue(doc.handoverLocation)
   if (handover) return handover
+
+  const domicile = normalizeRegionValue(doc.domicile)
+  if (domicile) return domicile
 
   return 'Wilayah tidak diisi'
 }
