@@ -1,6 +1,7 @@
 import config from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
+import { TEST_LEAD_NAME_EXCLUDE_VALUES } from '@/lib/customers/testLeadFilter'
 
 type TrendGranularity = 'day' | 'month' | 'week'
 
@@ -518,6 +519,11 @@ export async function GET(req: Request) {
         where: {
           and: [
             {
+              name: {
+                not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
+              },
+            },
+            {
               createdAt: {
                 greater_than_equal: startDate.toISOString(),
               },
@@ -555,6 +561,11 @@ export async function GET(req: Request) {
       collection: 'customers',
       where: {
         and: [
+          {
+            name: {
+              not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
+            },
+          },
           {
             createdAt: {
               greater_than_equal: prevStartDate.toISOString(),

@@ -144,23 +144,30 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
       {/* ✅ MODAL */}
       <div
         ref={modalElRef}
-        className="modal fade"
+        className="modal fade area-pools-modal"
         tabIndex={-1}
         aria-hidden="true"
         aria-labelledby="areaPoolsModalLabel"
       >
         <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content rounded-4 shadow">
-            <div className="modal-header border-0 pb-0">
-              <h5 id="areaPoolsModalLabel" className="modal-title w-100 text-center fw-bold">
+          <div className="modal-content rounded-4 shadow area-modal-content">
+            <div className="modal-header border-0 area-modal-header">
+              <h5 id="areaPoolsModalLabel" className="modal-title area-modal-title">
                 {activeArea?.label ? `${String(activeArea.label).toUpperCase()}` : 'POOL'}
               </h5>
-              {/* <button type="button" className="btn-close" onClick={closeModal} aria-label="Close" /> */}
+              <button
+                type="button"
+                className="area-modal-close-btn"
+                onClick={closeModal}
+                aria-label="Tutup modal area"
+              >
+                X
+              </button>
             </div>
 
-            <div className="modal-body pt-2">
+            <div className="modal-body area-modal-body">
               {activeArea?.pools?.length ? (
-                <div className="list-group list-group-flush">
+                <div className="list-group list-group-flush area-pools-list">
                   {activeArea.pools.map((p, idx) => {
                     const name = p?.name?.trim() || '-'
                     const mapUrl = p?.mapUrl?.trim() || '#'
@@ -182,17 +189,6 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
               ) : (
                 <div className="text-center text-muted py-3">Lokasi belum diisi.</div>
               )}
-            </div>
-
-            <div className="modal-footer border-0 pt-0">
-              <button
-                type="button"
-                className="btn area-modal-close-btn"
-                onClick={closeModal}
-                aria-label="Tutup modal area"
-              >
-                X
-              </button>
             </div>
           </div>
         </div>

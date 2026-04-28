@@ -1,5 +1,6 @@
 import type { AdminViewServerProps } from 'payload'
 import ReportsTabsClient from './ReportsTabsClient'
+import { TEST_LEAD_NAME_EXCLUDE_VALUES } from '@/lib/customers/testLeadFilter'
 
 import './index.scss'
 
@@ -217,6 +218,11 @@ async function hydrateCounts(
         where: {
           and: [
             {
+              name: {
+                not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
+              },
+            },
+            {
               createdAt: {
                 greater_than_equal: bucket.start.toISOString(),
               },
@@ -257,15 +263,29 @@ export default async function ReportsView({
       collection: 'customers',
       overrideAccess: false,
       req,
+      where: {
+        name: {
+          not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
+        },
+      },
     }),
     payload.count({
       collection: 'customers',
       overrideAccess: false,
       req,
       where: {
-        promoApplied: {
-          equals: true,
-        },
+        and: [
+          {
+            promoApplied: {
+              equals: true,
+            },
+          },
+          {
+            name: {
+              not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
+            },
+          },
+        ],
       },
     }),
     payload.find({
@@ -275,6 +295,11 @@ export default async function ReportsView({
       overrideAccess: false,
       req,
       sort: '-createdAt',
+      where: {
+        name: {
+          not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
+        },
+      },
       select: {
         createdAt: true,
         domicile: true,

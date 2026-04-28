@@ -1,4 +1,5 @@
 import type { BeforeListServerProps } from 'payload'
+import { TEST_LEAD_NAME_EXCLUDE_VALUES } from '@/lib/customers/testLeadFilter'
 
 import './index.scss'
 
@@ -12,14 +13,9 @@ export default async function CustomersBeforeList({ payload, user }: BeforeListS
       collection: 'customers',
       overrideAccess: false,
       user,
-    }),
-    payload.count({
-      collection: 'customers',
-      overrideAccess: false,
-      user,
       where: {
-        createdAt: {
-          greater_than_equal: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
+        name: {
+          not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
         },
       },
     }),
@@ -28,9 +24,37 @@ export default async function CustomersBeforeList({ payload, user }: BeforeListS
       overrideAccess: false,
       user,
       where: {
-        promoApplied: {
-          equals: true,
-        },
+        and: [
+          {
+            createdAt: {
+              greater_than_equal: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
+            },
+          },
+          {
+            name: {
+              not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
+            },
+          },
+        ],
+      },
+    }),
+    payload.count({
+      collection: 'customers',
+      overrideAccess: false,
+      user,
+      where: {
+        and: [
+          {
+            promoApplied: {
+              equals: true,
+            },
+          },
+          {
+            name: {
+              not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
+            },
+          },
+        ],
       },
     }),
   ])
