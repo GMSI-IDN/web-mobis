@@ -1,12 +1,13 @@
 import config from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
-import { TEST_LEAD_NAME_EXCLUDE_VALUES } from '@/lib/customers/testLeadFilter'
+import { isExcludedLeadName } from '@/lib/customers/testLeadFilter'
 
 type TrendGranularity = 'day' | 'month' | 'week'
 
 type CustomerRangeDoc = {
   createdAt?: null | string
+  name?: null | string
   promoApplied?: boolean | null
 }
 
@@ -377,6 +378,62 @@ function buildTopHours(docs: CustomerRangeDoc[], limit: number) {
     }))
 }
 
+async function fetchCustomerRangeDocs(params: {
+  endDate: Date
+  maxPages: number
+  payload: any
+  startDate: Date
+}) {
+  const { endDate, maxPages, payload, startDate } = params
+  const docs: CustomerRangeDoc[] = []
+  let page = 1
+  let totalPages = 1
+  let hasNextPage = true
+
+  while (hasNextPage && page <= maxPages) {
+    const batch = (await payload.find({
+      collection: 'customers',
+      depth: 0,
+      limit: DEFAULT_PAGE_SIZE,
+      page,
+      select: {
+        createdAt: true,
+        name: true,
+        promoApplied: true,
+      },
+      sort: '-createdAt',
+      where: {
+        and: [
+          {
+            createdAt: {
+              greater_than_equal: startDate.toISOString(),
+            },
+          },
+          {
+            createdAt: {
+              less_than_equal: endDate.toISOString(),
+            },
+          },
+        ],
+      },
+    })) as {
+      docs: CustomerRangeDoc[]
+      hasNextPage: boolean
+      totalPages: number
+    }
+
+    docs.push(...(batch.docs || []).filter((doc) => !isExcludedLeadName(doc?.name)))
+    hasNextPage = batch.hasNextPage
+    totalPages = batch.totalPages || totalPages
+    page += 1
+  }
+
+  return {
+    docs,
+    totalPages,
+  }
+}
+
 export const dynamic = 'force-dynamic'
 
 export async function OPTIONS(req: Request) {
@@ -500,52 +557,12 @@ export async function GET(req: Request) {
 
     const payload = await getPayload({ config })
 
-    const docs: CustomerRangeDoc[] = []
-    let page = 1
-    let totalPages = 1
-    let hasNextPage = true
-
-    while (hasNextPage && page <= maxPages) {
-      const batch = (await payload.find({
-        collection: 'customers',
-        depth: 0,
-        limit: DEFAULT_PAGE_SIZE,
-        page,
-        select: {
-          createdAt: true,
-          promoApplied: true,
-        },
-        sort: '-createdAt',
-        where: {
-          and: [
-            {
-              name: {
-                not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
-              },
-            },
-            {
-              createdAt: {
-                greater_than_equal: startDate.toISOString(),
-              },
-            },
-            {
-              createdAt: {
-                less_than_equal: endDate.toISOString(),
-              },
-            },
-          ],
-        },
-      })) as {
-        docs: CustomerRangeDoc[]
-        hasNextPage: boolean
-        totalPages: number
-      }
-
-      docs.push(...(batch.docs || []))
-      hasNextPage = batch.hasNextPage
-      totalPages = batch.totalPages || totalPages
-      page += 1
-    }
+    const { docs, totalPages } = await fetchCustomerRangeDocs({
+      endDate,
+      maxPages,
+      payload,
+      startDate,
+    })
 
     const msDiff = endDate.getTime() - startDate.getTime()
     const rangeDays = Math.max(1, Math.ceil(msDiff / DAY_MS))
@@ -557,31 +574,17 @@ export async function GET(req: Request) {
 
     const prevEndDate = new Date(startDate.getTime() - 1)
     const prevStartDate = new Date(prevEndDate.getTime() - msDiff)
-    const prevTotal = await payload.count({
-      collection: 'customers',
-      where: {
-        and: [
-          {
-            name: {
-              not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
-            },
-          },
-          {
-            createdAt: {
-              greater_than_equal: prevStartDate.toISOString(),
-            },
-          },
-          {
-            createdAt: {
-              less_than_equal: prevEndDate.toISOString(),
-            },
-          },
-        ],
-      },
+    const prevDocs = await fetchCustomerRangeDocs({
+      endDate: prevEndDate,
+      maxPages,
+      payload,
+      startDate: prevStartDate,
     })
 
     const growthVsPrevRangePct =
-      prevTotal.totalDocs > 0 ? ((totalDocs - prevTotal.totalDocs) / prevTotal.totalDocs) * 100 : 0
+      prevDocs.docs.length > 0
+        ? ((totalDocs - prevDocs.docs.length) / prevDocs.docs.length) * 100
+        : 0
 
     const trendBuckets = buildTrendBuckets(docs, startDate, endDate, trendGranularity)
     const topHours = buildTopHours(docs, topLimit)

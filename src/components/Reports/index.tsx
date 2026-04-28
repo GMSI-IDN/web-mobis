@@ -1,6 +1,6 @@
-import type { AdminViewServerProps } from 'payload'
+import type { AdminViewServerProps, Where } from 'payload'
 import ReportsTabsClient from './ReportsTabsClient'
-import { TEST_LEAD_NAME_EXCLUDE_VALUES } from '@/lib/customers/testLeadFilter'
+import { isExcludedLeadName } from '@/lib/customers/testLeadFilter'
 
 import './index.scss'
 
@@ -20,6 +20,10 @@ type CustomerHistoryItem = {
   phone?: null | string
   promoApplied?: boolean | null
   promoCode?: null | string
+}
+
+type CustomerCountDoc = {
+  name?: null | string
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -211,17 +215,11 @@ async function hydrateCounts(
 ) {
   const counts = await Promise.all(
     buckets.map(async (bucket) => {
-      const result = await payload.count({
-        collection: 'customers',
-        overrideAccess: false,
+      return countNonExcludedCustomers({
+        payload,
         req,
         where: {
           and: [
-            {
-              name: {
-                not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
-              },
-            },
             {
               createdAt: {
                 greater_than_equal: bucket.start.toISOString(),
@@ -235,8 +233,6 @@ async function hydrateCounts(
           ],
         },
       })
-
-      return result.totalDocs
     }),
   )
 
@@ -246,6 +242,46 @@ async function hydrateCounts(
   }))
 }
 
+async function countNonExcludedCustomers(params: {
+  payload: AdminViewServerProps['payload']
+  req: AdminViewServerProps['initPageResult']['req']
+  where?: Where
+}) {
+  const { payload, req, where } = params
+  const LIMIT = 200
+  const MAX_PAGES = 100
+  let page = 1
+  let hasNextPage = true
+  let total = 0
+
+  while (hasNextPage && page <= MAX_PAGES) {
+    const batch = (await payload.find({
+      collection: 'customers',
+      depth: 0,
+      limit: LIMIT,
+      overrideAccess: false,
+      page,
+      req,
+      where,
+      select: {
+        name: true,
+      },
+    })) as {
+      docs: CustomerCountDoc[]
+      hasNextPage: boolean
+    }
+
+    total += (batch.docs || []).reduce((sum, doc) => {
+      return sum + (isExcludedLeadName(doc?.name) ? 0 : 1)
+    }, 0)
+
+    hasNextPage = Boolean(batch.hasNextPage)
+    page += 1
+  }
+
+  return total
+}
+
 export default async function ReportsView({
   payload,
   initPageResult,
@@ -253,53 +289,32 @@ export default async function ReportsView({
   const req = initPageResult.req
   const now = new Date()
 
-  const [daily, weekly, monthly, yearly, hourly, total, promoApplied, recent] = await Promise.all([
+  const [daily, weekly, monthly, yearly, hourly, totalDocs, promoDocs, recent] = await Promise.all([
     hydrateCounts(buildDailyBuckets(now), payload, req),
     hydrateCounts(buildWeeklyBuckets(now), payload, req),
     hydrateCounts(buildMonthlyBuckets(now), payload, req),
     hydrateCounts(buildYearlyBuckets(now), payload, req),
     hydrateCounts(buildHourlyBucketsForToday(now), payload, req),
-    payload.count({
-      collection: 'customers',
-      overrideAccess: false,
+    countNonExcludedCustomers({
+      payload,
       req,
-      where: {
-        name: {
-          not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
-        },
-      },
     }),
-    payload.count({
-      collection: 'customers',
-      overrideAccess: false,
+    countNonExcludedCustomers({
+      payload,
       req,
       where: {
-        and: [
-          {
-            promoApplied: {
-              equals: true,
-            },
-          },
-          {
-            name: {
-              not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
-            },
-          },
-        ],
+        promoApplied: {
+          equals: true,
+        },
       },
     }),
     payload.find({
       collection: 'customers',
       depth: 0,
-      limit: 15,
+      limit: 120,
       overrideAccess: false,
       req,
       sort: '-createdAt',
-      where: {
-        name: {
-          not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
-        },
-      },
       select: {
         createdAt: true,
         domicile: true,
@@ -316,8 +331,9 @@ export default async function ReportsView({
   const weekCount = weekly[weekly.length - 1]?.count ?? 0
   const monthCount = monthly[monthly.length - 1]?.count ?? 0
   const yearCount = yearly[yearly.length - 1]?.count ?? 0
-  const totalDocs = total.totalDocs
-  const promoDocs = promoApplied.totalDocs
+  const recentDocs = (recent.docs as CustomerHistoryItem[])
+    .filter((item) => !isExcludedLeadName(item.name))
+    .slice(0, 15)
 
   return (
     <div className="mobis-reports">
@@ -373,7 +389,7 @@ export default async function ReportsView({
         hourly={hourly.map(({ count, label, shortLabel }) => ({ count, label, shortLabel }))}
         monthly={monthly.map(({ count, label, shortLabel }) => ({ count, label, shortLabel }))}
         promoDocs={promoDocs}
-        recentDocs={(recent.docs as CustomerHistoryItem[]).map((item) => ({
+        recentDocs={recentDocs.map((item) => ({
           createdAt: item.createdAt ?? null,
           domicile: item.domicile ?? null,
           id: item.id,
@@ -382,7 +398,7 @@ export default async function ReportsView({
           promoApplied: item.promoApplied ?? null,
           promoCode: item.promoCode ?? null,
         }))}
-        recentTotalDocs={recent.totalDocs}
+        recentTotalDocs={totalDocs}
         totalDocs={totalDocs}
         weekly={weekly.map(({ count, label, shortLabel }) => ({ count, label, shortLabel }))}
         yearly={yearly.map(({ count, label, shortLabel }) => ({ count, label, shortLabel }))}

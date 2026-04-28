@@ -6,9 +6,21 @@ import { getPublicURL } from '@/utilities/getURL'
 const siteURL = getPublicURL()
 const siteName = 'Rental MOBIS'
 const socialImagePath = 'https://rentalmobis.com/mobis/img/favicon.svg'
-const defaultTitle = 'Program Sewa & Kredit Mobil Taksi Online'
+const defaultTitle = 'Rental Mobil Untuk Driver Online'
 const defaultDescription =
-  'Solusi punya mobil untuk taksi online tanpa ribet. Gratis servis rutin, bayar mingguan, dan tersedia opsi jadi hak milik.'
+  'Rental mobil, rental mobil driver online, dan sewa kendaraan untuk supir online. Tersedia program mingguan dengan opsi rent to own untuk pengemudi taksi online.'
+const primaryKeywords = [
+  'rental mobil',
+  'rental mobil driver online',
+  'online driver',
+  'sewa kendaraan untuk online driver',
+  'sewa kendaraan supir online',
+  'rental mobil untuk driver online',
+  'sewa mobil driver online',
+  'rental mobil jakarta',
+  'rental mobil surabaya',
+  'rental mobil bali',
+]
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteURL),
@@ -20,16 +32,8 @@ export const metadata: Metadata = {
     template: `%s | ${siteName}`,
   },
   description: defaultDescription,
-  keywords: [
-    'rental mobil',
-    'sewa mobil',
-    'rental mobil driver online',
-    'sewa mobil driver online',
-    'mobis',
-    'rental mobil jakarta',
-    'rental mobil surabaya',
-    'rental mobil bali',
-  ],
+  keywords: primaryKeywords,
+  category: 'Automotive',
   alternates: {
     canonical: '/',
   },
@@ -82,7 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       url: siteURL,
       logo: `${siteURL}/favicon.png`,
       description:
-        'Solusi punya mobil untuk taksi online tanpa ribet. Gratis servis rutin, bayar mingguan, dan tersedia opsi jadi hak milik.',
+        'Layanan rental mobil untuk driver online dengan skema sewa mingguan dan opsi kepemilikan bertahap.',
     },
     {
       '@context': 'https://schema.org',
@@ -104,6 +108,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       description:
         'Program rental mobil dari PT Global Mobility Service (GMS) Indonesia khusus untuk pengemudi taksi online dengan opsi bayar mingguan dan Rent to Own.',
       areaServed: ['Jabodetabek', 'Surabaya', 'Sidoarjo', 'Gresik', 'Bali', 'Bandung'],
+      knowsAbout: primaryKeywords,
+      keywords: primaryKeywords.join(', '),
+      additionalType: 'https://schema.org/Service',
       aggregateRating: {
         '@type': 'AggregateRating',
         ratingValue: '5.0',
@@ -117,6 +124,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         availability: 'https://schema.org/InStock',
         name: 'Sewa Mobil Calya / Sigra per Hari',
       },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Service',
+      serviceType: 'Rental Mobil Driver Online',
+      name: 'Sewa Kendaraan Untuk Supir Online',
+      provider: {
+        '@type': 'Organization',
+        name: siteName,
+        url: siteURL,
+      },
+      areaServed: ['Jabodetabek', 'Surabaya', 'Sidoarjo', 'Gresik', 'Bali', 'Bandung', 'Malang'],
+      keywords: primaryKeywords.join(', '),
+      description:
+        'Layanan sewa kendaraan untuk online driver dengan unit siap jalan, perawatan berkala, dan skema pembayaran mingguan.',
+      url: siteURL,
     },
   ]
 

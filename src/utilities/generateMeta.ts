@@ -5,10 +5,17 @@ import type { Media, Page, Post, Config } from '../payload-types'
 import { mergeOpenGraph } from './mergeOpenGraph'
 import { getPublicURL } from './getURL'
 
-const HOMEPAGE_TITLE = 'Program Sewa & Kredit Mobil driver Online'
+const HOMEPAGE_TITLE = 'Rental Mobil Untuk Driver Online | Sewa Kendaraan Supir Online'
 const HOMEPAGE_DESCRIPTION =
-  'Solusi punya mobil untuk driver online tanpa ribet. Gratis servis rutin, bayar mingguan, dan tersedia opsi jadi hak milik.'
+  'Rental mobil dan sewa kendaraan untuk driver online dengan proses cepat. Cocok untuk pengemudi taksi online, ada opsi bayar mingguan serta program rent to own.'
 const DEFAULT_SOCIAL_IMAGE = 'https://rentalmobis.com/assets/img/Banner.webp'
+const HOMEPAGE_KEYWORDS = [
+  'rental mobil',
+  'rental mobil driver online',
+  'online driver',
+  'sewa kendaraan untuk online driver',
+  'sewa kendaraan supir online',
+]
 
 const getImageURL = (image?: Media | Config['db']['defaultIDType'] | null) => {
   const publicUrl = getPublicURL()
@@ -50,13 +57,14 @@ export const generateMeta = async (args: {
   const description = isHomepage
     ? HOMEPAGE_DESCRIPTION
     : rawDescription ||
-      'Mobis menyediakan program rental mobil untuk driver online dengan proses pendaftaran yang cepat dan informasi program yang jelas.'
+      'Mobis menyediakan layanan rental mobil untuk driver online dan sewa kendaraan supir online dengan proses pendaftaran cepat.'
 
   const ogImage = getImageURL(doc?.meta?.image)
 
   return {
     title,
     description,
+    keywords: isHomepage ? HOMEPAGE_KEYWORDS : undefined,
     alternates: {
       canonical: canonicalPath,
     },

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { isExcludedLeadName } from '@/lib/customers/testLeadFilter'
 
 type Bucket = {
   count: number
@@ -36,6 +37,7 @@ type Props = {
 
 type CustomerRangeDoc = {
   createdAt?: null | string
+  name?: null | string
   promoApplied?: boolean | null
 }
 
@@ -417,6 +419,7 @@ export default function ReportsTabsClient({
         baseParams.set('limit', '200')
         baseParams.set('page', '1')
         baseParams.set('select[createdAt]', 'true')
+        baseParams.set('select[name]', 'true')
         baseParams.set('select[promoApplied]', 'true')
         baseParams.set('sort', '-createdAt')
         baseParams.set('where[and][0][createdAt][greater_than_equal]', startISO)
@@ -424,7 +427,9 @@ export default function ReportsTabsClient({
 
         const firstPage = await api<CustomersListResponse>(`/api/customers?${baseParams.toString()}`)
 
-        const docs: CustomerRangeDoc[] = [...(firstPage.docs || [])]
+        const docs: CustomerRangeDoc[] = [
+          ...(firstPage.docs || []).filter((doc) => !isExcludedLeadName(doc?.name)),
+        ]
         let currentPage = firstPage.page ?? 1
         const totalPages = firstPage.totalPages ?? 1
         const maxPages = 30
@@ -434,7 +439,7 @@ export default function ReportsTabsClient({
           const pageParams = new URLSearchParams(baseParams)
           pageParams.set('page', String(currentPage))
           const pageRes = await api<CustomersListResponse>(`/api/customers?${pageParams.toString()}`)
-          docs.push(...(pageRes.docs || []))
+          docs.push(...(pageRes.docs || []).filter((doc) => !isExcludedLeadName(doc?.name)))
         }
 
         const msDiff = endDate.getTime() - startDate.getTime()
@@ -470,13 +475,28 @@ export default function ReportsTabsClient({
         const prevStartDate = new Date(prevEndDate.getTime() - msDiff)
         const prevParams = new URLSearchParams()
         prevParams.set('depth', '0')
-        prevParams.set('limit', '1')
+        prevParams.set('limit', '200')
         prevParams.set('page', '1')
+        prevParams.set('select[name]', 'true')
         prevParams.set('where[and][0][createdAt][greater_than_equal]', prevStartDate.toISOString())
         prevParams.set('where[and][1][createdAt][less_than_equal]', prevEndDate.toISOString())
 
-        const prevRes = await api<CustomersListResponse>(`/api/customers?${prevParams.toString()}`)
-        const prevTotal = prevRes.totalDocs ?? 0
+        const prevFirstPage = await api<CustomersListResponse>(`/api/customers?${prevParams.toString()}`)
+        let prevTotal = (prevFirstPage.docs || []).filter((doc) => !isExcludedLeadName(doc?.name))
+          .length
+        let prevPage = prevFirstPage.page ?? 1
+        const prevTotalPages = prevFirstPage.totalPages ?? 1
+
+        while (prevPage < prevTotalPages && prevPage < maxPages) {
+          prevPage += 1
+          const prevPageParams = new URLSearchParams(prevParams)
+          prevPageParams.set('page', String(prevPage))
+          const prevPageRes = await api<CustomersListResponse>(
+            `/api/customers?${prevPageParams.toString()}`,
+          )
+          prevTotal += (prevPageRes.docs || []).filter((doc) => !isExcludedLeadName(doc?.name)).length
+        }
+
         const growthVsPrevRangePct =
           prevTotal > 0 ? ((totalInRange - prevTotal) / prevTotal) * 100 : 0
 

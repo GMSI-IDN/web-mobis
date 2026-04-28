@@ -27,6 +27,7 @@ export default async function Page({ params: paramsPromise }: Args) {
   const { slug = 'home' } = await paramsPromise
   // Decode to support slugs with special characters
   const decodedSlug = decodeURIComponent(slug)
+  const isHomepage = decodedSlug === 'home'
   const url = '/' + decodedSlug
   let page: RequiredDataFromCollectionSlug<'pages'> | null
 
@@ -55,6 +56,31 @@ export default async function Page({ params: paramsPromise }: Args) {
 
       <RenderHero {...hero} />
       <RenderBlocks blocks={layout} />
+
+      {isHomepage ? (
+        <section className="container py-5" aria-labelledby="seo-driver-rental-title">
+          <div className="row justify-content-center">
+            <div className="col-12 col-lg-10">
+              <h2 id="seo-driver-rental-title" className="h4 fw-bold mb-3">
+                Rental Mobil Untuk Driver Online
+              </h2>
+              <p className="mb-3">
+                MOBIS menyediakan <strong>rental mobil</strong> dan <strong>sewa kendaraan untuk
+                online driver</strong> dengan proses pendaftaran cepat, pembayaran mingguan, dan
+                dukungan operasional untuk pengemudi taksi online.
+              </p>
+              <p className="mb-0">
+                Layanan ini juga sering dicari dengan kata kunci seperti
+                {' '}
+                <em>rental mobile driver online</em>, <em>online diver</em>, atau
+                {' '}
+                <em>sewa kemdaraam supir online</em>. Di halaman ini, Anda bisa langsung cek area,
+                program, dan alur pendaftaran sesuai kebutuhan.
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
     </article>
   )
 }

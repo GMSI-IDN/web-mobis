@@ -1,5 +1,5 @@
-import type { BeforeListServerProps } from 'payload'
-import { TEST_LEAD_NAME_EXCLUDE_VALUES } from '@/lib/customers/testLeadFilter'
+import type { BeforeListServerProps, Where } from 'payload'
+import { isExcludedLeadName } from '@/lib/customers/testLeadFilter'
 
 import './index.scss'
 
@@ -7,54 +7,68 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat('id-ID').format(value)
 }
 
+async function countNonExcludedCustomers(params: {
+  payload: BeforeListServerProps['payload']
+  user: BeforeListServerProps['user']
+  where?: Where
+}) {
+  const { payload, user, where } = params
+  const LIMIT = 200
+  const MAX_PAGES = 100
+  let page = 1
+  let hasNextPage = true
+  let total = 0
+
+  while (hasNextPage && page <= MAX_PAGES) {
+    const batch = (await payload.find({
+      collection: 'customers',
+      depth: 0,
+      limit: LIMIT,
+      overrideAccess: false,
+      page,
+      user,
+      where,
+      select: {
+        name: true,
+      },
+    })) as {
+      docs: Array<{ name?: null | string }>
+      hasNextPage: boolean
+    }
+
+    total += (batch.docs || []).reduce((sum, doc) => {
+      return sum + (isExcludedLeadName(doc?.name) ? 0 : 1)
+    }, 0)
+
+    hasNextPage = Boolean(batch.hasNextPage)
+    page += 1
+  }
+
+  return total
+}
+
 export default async function CustomersBeforeList({ payload, user }: BeforeListServerProps) {
   const [totalRegistrants, todayRegistrants, promoRegistrants] = await Promise.all([
-    payload.count({
-      collection: 'customers',
-      overrideAccess: false,
+    countNonExcludedCustomers({
+      payload,
+      user,
+    }),
+    countNonExcludedCustomers({
+      payload,
       user,
       where: {
-        name: {
-          not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
+        createdAt: {
+          greater_than_equal: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
         },
       },
     }),
-    payload.count({
-      collection: 'customers',
-      overrideAccess: false,
+    countNonExcludedCustomers({
+      payload,
       user,
       where: {
-        and: [
-          {
-            createdAt: {
-              greater_than_equal: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
-            },
-          },
-          {
-            name: {
-              not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
-            },
-          },
-        ],
-      },
-    }),
-    payload.count({
-      collection: 'customers',
-      overrideAccess: false,
-      user,
-      where: {
-        and: [
-          {
-            promoApplied: {
-              equals: true,
-            },
-          },
-          {
-            name: {
-              not_in: [...TEST_LEAD_NAME_EXCLUDE_VALUES],
-            },
-          },
-        ],
+        promoApplied: {
+          equals: true,
+        },
       },
     }),
   ])
@@ -80,15 +94,15 @@ export default async function CustomersBeforeList({ payload, user }: BeforeListS
       <div className="customers-list-summary__stats">
         <div className="customers-list-summary__stat">
           <span>Total Pendaftar</span>
-          <strong>{formatNumber(totalRegistrants.totalDocs)}</strong>
+          <strong>{formatNumber(totalRegistrants)}</strong>
         </div>
         <div className="customers-list-summary__stat">
           <span>Pendaftar Hari Ini</span>
-          <strong>{formatNumber(todayRegistrants.totalDocs)}</strong>
+          <strong>{formatNumber(todayRegistrants)}</strong>
         </div>
         <div className="customers-list-summary__stat">
           <span>Pakai Promo</span>
-          <strong>{formatNumber(promoRegistrants.totalDocs)}</strong>
+          <strong>{formatNumber(promoRegistrants)}</strong>
         </div>
       </div>
 
