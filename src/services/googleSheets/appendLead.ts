@@ -19,14 +19,19 @@ function resolveSpreadsheetId(handoverLocation?: string): string {
     'kota depok',
   ]
 
-  const validSurabaya = ['kota surabaya', 'kab, sidoarjo', 'kab. gresik']
+  const validSurabaya = ['kota surabaya', 'kab, sidoarjo', 'kab. gresik', 'mojokerto']
+  const validMalang = ['malang']
+
   const validBali = ['provinsi bali']
+
   const validBandung = ['bandung']
 
   if (validJabodetabek.includes(key)) {
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_JABODETABEK')
   } else if (validSurabaya.includes(key)) {
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_SURABAYA')
+  } else if (validMalang.includes(key)) {
+    return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_MALANG')
   } else if (validBali.includes(key)) {
     return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_BALI')
   } else if (validBandung.includes(key)) {
