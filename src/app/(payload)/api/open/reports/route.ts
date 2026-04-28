@@ -4,9 +4,12 @@ import { getPayload } from 'payload'
 import { isExcludedLeadName } from '@/lib/customers/testLeadFilter'
 
 type TrendGranularity = 'day' | 'month' | 'week'
+type RegionPeriod = 'day' | 'month' | 'week' | 'year'
 
 type CustomerRangeDoc = {
   createdAt?: null | string
+  domicile?: null | string
+  handoverLocation?: null | string
   name?: null | string
   promoApplied?: boolean | null
 }
@@ -24,6 +27,12 @@ type TrendSeedBucket = {
   end: Date
   label: string
   start: Date
+}
+
+type RegionStatBucket = {
+  count: number
+  label: string
+  percentage: number
 }
 
 type AccessWhitelistItem = {
@@ -212,6 +221,11 @@ function parseGranularity(value: string | null): TrendGranularity {
   return 'day'
 }
 
+function parseRegionPeriod(value: string | null): RegionPeriod {
+  if (value === 'day' || value === 'week' || value === 'month' || value === 'year') return value
+  return 'month'
+}
+
 function parseDateOrNull(value: string | null) {
   if (!value) return null
   const date = new Date(value)
@@ -266,6 +280,24 @@ function startOfJakartaMonth(date: Date) {
   return fromJakartaDate(
     new Date(Date.UTC(jakarta.getUTCFullYear(), jakarta.getUTCMonth(), 1, 0, 0, 0, 0)),
   )
+}
+
+function startOfJakartaYear(date: Date) {
+  const jakarta = toJakartaDate(date)
+  return fromJakartaDate(new Date(Date.UTC(jakarta.getUTCFullYear(), 0, 1, 0, 0, 0, 0)))
+}
+
+function getRegionPeriodStart(endDate: Date, period: RegionPeriod) {
+  if (period === 'day') return startOfJakartaDay(endDate)
+  if (period === 'week') return startOfJakartaWeek(endDate)
+  if (period === 'year') return startOfJakartaYear(endDate)
+  return startOfJakartaMonth(endDate)
+}
+
+function getRegionLineGranularity(period: RegionPeriod): TrendGranularity {
+  if (period === 'year') return 'month'
+  if (period === 'week') return 'day'
+  return 'day'
 }
 
 function getTrendPeriodStart(date: Date, granularity: TrendGranularity) {
@@ -378,6 +410,109 @@ function buildTopHours(docs: CustomerRangeDoc[], limit: number) {
     }))
 }
 
+function normalizeRegionValue(value?: null | string) {
+  return String(value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
+function resolveRegionLabel(doc: CustomerRangeDoc) {
+  const domicile = normalizeRegionValue(doc?.domicile)
+  if (domicile) return domicile
+
+  const handover = normalizeRegionValue(doc?.handoverLocation)
+  if (handover) return handover
+
+  return 'Wilayah tidak diisi'
+}
+
+function buildRegionStatsFromDocs(docs: CustomerRangeDoc[], topLimit: number): RegionStatBucket[] {
+  const map = new Map<string, number>()
+  let total = 0
+
+  for (const doc of docs) {
+    const label = resolveRegionLabel(doc)
+    map.set(label, (map.get(label) ?? 0) + 1)
+    total += 1
+  }
+
+  const sorted = Array.from(map.entries())
+    .map(([label, count]) => ({
+      count,
+      label,
+      percentage: total > 0 ? Number(((count / total) * 100).toFixed(1)) : 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+
+  const top = sorted.slice(0, topLimit)
+  const rest = sorted.slice(topLimit)
+  const restCount = rest.reduce((sum, item) => sum + item.count, 0)
+
+  if (restCount > 0) {
+    top.push({
+      count: restCount,
+      label: 'Lainnya',
+      percentage: total > 0 ? Number(((restCount / total) * 100).toFixed(1)) : 0,
+    })
+  }
+
+  return top
+}
+
+function buildRegionLineData(params: {
+  docs: CustomerRangeDoc[]
+  endDate: Date
+  period: RegionPeriod
+  regionLabels: string[]
+  startDate: Date
+}) {
+  const { docs, endDate, period, regionLabels, startDate } = params
+  const granularity = getRegionLineGranularity(period)
+
+  if (regionLabels.length === 0) {
+    return {
+      granularity,
+      labels: [] as string[],
+      maxCount: 0,
+      series: [] as Array<{ label: string; values: number[] }>,
+    }
+  }
+
+  const seeds = buildTrendSeed(startDate, endDate, granularity)
+  const indexByStart = new Map<number, number>(seeds.map((bucket, idx) => [bucket.start.getTime(), idx]))
+  const valuesByRegion = new Map<string, number[]>(
+    regionLabels.map((label) => [label, Array.from({ length: seeds.length }, () => 0)]),
+  )
+
+  for (const doc of docs) {
+    if (!doc.createdAt) continue
+    const createdAt = new Date(doc.createdAt)
+    if (Number.isNaN(createdAt.getTime())) continue
+
+    const regionLabel = resolveRegionLabel(doc)
+    const series = valuesByRegion.get(regionLabel)
+    if (!series) continue
+
+    const periodStart = getTrendPeriodStart(createdAt, granularity).getTime()
+    const idx = indexByStart.get(periodStart)
+    if (idx === undefined) continue
+
+    series[idx] += 1
+  }
+
+  const series = regionLabels.map((label) => ({
+    label,
+    values: valuesByRegion.get(label) ?? [],
+  }))
+
+  return {
+    granularity,
+    labels: seeds.map((item) => item.label),
+    maxCount: Math.max(0, ...series.flatMap((item) => item.values)),
+    series,
+  }
+}
+
 async function fetchCustomerRangeDocs(params: {
   endDate: Date
   maxPages: number
@@ -398,6 +533,8 @@ async function fetchCustomerRangeDocs(params: {
       page,
       select: {
         createdAt: true,
+        domicile: true,
+        handoverLocation: true,
         name: true,
         promoApplied: true,
       },
@@ -550,6 +687,7 @@ export async function GET(req: Request) {
 
     const topLimit = clampTopLimit(Number(url.searchParams.get('top') || DEFAULT_TOP_LIMIT))
     const trendGranularity = parseGranularity(url.searchParams.get('trend'))
+    const regionPeriod = parseRegionPeriod(url.searchParams.get('regionPeriod'))
     const maxPages = Math.max(
       1,
       Math.min(100, Number(url.searchParams.get('maxPages') || DEFAULT_MAX_PAGES)),
@@ -588,6 +726,25 @@ export async function GET(req: Request) {
 
     const trendBuckets = buildTrendBuckets(docs, startDate, endDate, trendGranularity)
     const topHours = buildTopHours(docs, topLimit)
+    const regionPeriodStart = getRegionPeriodStart(endDate, regionPeriod)
+    const regionEffectiveStart = regionPeriodStart.getTime() > startDate.getTime() ? regionPeriodStart : startDate
+    const regionDocs = docs.filter((doc) => {
+      if (!doc.createdAt) return false
+      const createdAt = new Date(doc.createdAt)
+      if (Number.isNaN(createdAt.getTime())) return false
+      const ms = createdAt.getTime()
+      return ms >= regionEffectiveStart.getTime() && ms <= endDate.getTime()
+    })
+    const regionStats = buildRegionStatsFromDocs(regionDocs, topLimit)
+    const regionLabels = regionStats.filter((item) => item.label !== 'Lainnya').map((item) => item.label)
+    const regionLine = buildRegionLineData({
+      docs: regionDocs,
+      endDate,
+      period: regionPeriod,
+      regionLabels,
+      startDate: regionEffectiveStart,
+    })
+    const regionDistinctCount = new Set(regionDocs.map((doc) => resolveRegionLabel(doc))).size
 
     return NextResponse.json(
       {
@@ -608,6 +765,7 @@ export async function GET(req: Request) {
         query: {
           endISO: endDate.toISOString(),
           rangeDays,
+          regionPeriod,
           startISO: startDate.toISOString(),
           top: topLimit,
           trend: trendGranularity,
@@ -626,6 +784,27 @@ export async function GET(req: Request) {
         trend: {
           buckets: trendBuckets,
           granularity: trendGranularity,
+        },
+        region: {
+          line: regionLine,
+          period: regionPeriod,
+          pie: {
+            buckets: regionStats,
+          },
+          rank: {
+            buckets: regionStats.map((item, idx) => ({
+              count: item.count,
+              label: item.label,
+              order: idx + 1,
+              percentage: item.percentage,
+            })),
+          },
+          summary: {
+            distinctRegions: regionDistinctCount,
+            periodEndISO: endDate.toISOString(),
+            periodStartISO: regionEffectiveStart.toISOString(),
+            totalDocs: regionDocs.length,
+          },
         },
       },
       {

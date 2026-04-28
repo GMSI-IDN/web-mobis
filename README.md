@@ -225,13 +225,14 @@ Query params:
 - `start`: ISO datetime (default 30 hari ke belakang)
 - `end`: ISO datetime (default sekarang)
 - `trend`: `day | week | month` (default `day`)
+- `regionPeriod`: `day | week | month | year` (default `month`)
 - `top`: `3..10` (default `3`)
 - `maxPages`: limit batch internal (default `30`)
 
 Contoh:
 
 ```bash
-curl --location 'https://your-domain.com/api/open/reports?trend=week&top=5' \
+curl --location 'https://your-domain.com/api/open/reports?trend=week&regionPeriod=month&top=5' \
   --header 'x-api-key: token-app-1' \
   --header 'x-client-domain: https://app-partner.example.com'
 ```
@@ -241,6 +242,10 @@ Response berisi:
 - `summary` (total, promo, growth, average/day)
 - `trend.buckets`
 - `topHours.buckets`
+- `region.summary` (total data periode wilayah, jumlah wilayah unik, start/end periode)
+- `region.pie.buckets` (label, jumlah, persentase)
+- `region.rank.buckets` (order, label, jumlah, persentase)
+- `region.line` (granularity, labels, series, maxCount) untuk komparasi diagram garis per wilayah
 
 ## Catatan Operasional
 
