@@ -26,6 +26,18 @@ type CustomerCountDoc = {
   name?: null | string
 }
 
+type CustomerRegionDoc = {
+  domicile?: null | string
+  handoverLocation?: null | string
+  name?: null | string
+}
+
+type RegionStat = {
+  count: number
+  label: string
+  percentage: number
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000
 const HOUR_MS = 60 * 60 * 1000
 const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000
@@ -55,6 +67,24 @@ const yearLabelFormatter = new Intl.DateTimeFormat('id-ID', {
 
 function pad2(value: number) {
   return String(value).padStart(2, '0')
+}
+
+function normalizeRegionValue(value?: null | string): string {
+  const clean = String(value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+
+  return clean || ''
+}
+
+function resolveRegionLabel(doc: CustomerRegionDoc): string {
+  const domicile = normalizeRegionValue(doc.domicile)
+  if (domicile) return domicile
+
+  const handover = normalizeRegionValue(doc.handoverLocation)
+  if (handover) return handover
+
+  return 'Wilayah tidak diisi'
 }
 
 function toJakartaDate(date: Date) {
@@ -282,6 +312,62 @@ async function countNonExcludedCustomers(params: {
   return total
 }
 
+async function buildRegionStats(params: {
+  payload: AdminViewServerProps['payload']
+  req: AdminViewServerProps['initPageResult']['req']
+  topLimit?: number
+  where?: Where
+}) {
+  const { payload, req, where } = params
+  const topLimit = params.topLimit ?? 10
+  const LIMIT = 200
+  const MAX_PAGES = 100
+  let page = 1
+  let hasNextPage = true
+  const map = new Map<string, number>()
+  let total = 0
+
+  while (hasNextPage && page <= MAX_PAGES) {
+    const batch = (await payload.find({
+      collection: 'customers',
+      depth: 0,
+      limit: LIMIT,
+      overrideAccess: false,
+      page,
+      req,
+      where,
+      select: {
+        domicile: true,
+        handoverLocation: true,
+        name: true,
+      },
+    })) as {
+      docs: CustomerRegionDoc[]
+      hasNextPage: boolean
+    }
+
+    for (const doc of batch.docs || []) {
+      if (isExcludedLeadName(doc?.name)) continue
+
+      const label = resolveRegionLabel(doc)
+      map.set(label, (map.get(label) ?? 0) + 1)
+      total += 1
+    }
+
+    hasNextPage = Boolean(batch.hasNextPage)
+    page += 1
+  }
+
+  return Array.from(map.entries())
+    .map(([label, count]) => ({
+      count,
+      label,
+      percentage: total > 0 ? Number(((count / total) * 100).toFixed(1)) : 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, topLimit) as RegionStat[]
+}
+
 export default async function ReportsView({
   payload,
   initPageResult,
@@ -289,43 +375,49 @@ export default async function ReportsView({
   const req = initPageResult.req
   const now = new Date()
 
-  const [daily, weekly, monthly, yearly, hourly, totalDocs, promoDocs, recent] = await Promise.all([
-    hydrateCounts(buildDailyBuckets(now), payload, req),
-    hydrateCounts(buildWeeklyBuckets(now), payload, req),
-    hydrateCounts(buildMonthlyBuckets(now), payload, req),
-    hydrateCounts(buildYearlyBuckets(now), payload, req),
-    hydrateCounts(buildHourlyBucketsForToday(now), payload, req),
-    countNonExcludedCustomers({
-      payload,
-      req,
-    }),
-    countNonExcludedCustomers({
-      payload,
-      req,
-      where: {
-        promoApplied: {
-          equals: true,
+  const [daily, weekly, monthly, yearly, hourly, totalDocs, promoDocs, recent, regionStats] =
+    await Promise.all([
+      hydrateCounts(buildDailyBuckets(now), payload, req),
+      hydrateCounts(buildWeeklyBuckets(now), payload, req),
+      hydrateCounts(buildMonthlyBuckets(now), payload, req),
+      hydrateCounts(buildYearlyBuckets(now), payload, req),
+      hydrateCounts(buildHourlyBucketsForToday(now), payload, req),
+      countNonExcludedCustomers({
+        payload,
+        req,
+      }),
+      countNonExcludedCustomers({
+        payload,
+        req,
+        where: {
+          promoApplied: {
+            equals: true,
+          },
         },
-      },
-    }),
-    payload.find({
-      collection: 'customers',
-      depth: 0,
-      limit: 120,
-      overrideAccess: false,
-      req,
-      sort: '-createdAt',
-      select: {
-        createdAt: true,
-        domicile: true,
-        id: true,
-        name: true,
-        phone: true,
-        promoApplied: true,
-        promoCode: true,
-      },
-    }),
-  ])
+      }),
+      payload.find({
+        collection: 'customers',
+        depth: 0,
+        limit: 120,
+        overrideAccess: false,
+        req,
+        sort: '-createdAt',
+        select: {
+          createdAt: true,
+          domicile: true,
+          id: true,
+          name: true,
+          phone: true,
+          promoApplied: true,
+          promoCode: true,
+        },
+      }),
+      buildRegionStats({
+        payload,
+        req,
+        topLimit: 10,
+      }),
+    ])
 
   const dayCount = daily[daily.length - 1]?.count ?? 0
   const weekCount = weekly[weekly.length - 1]?.count ?? 0
@@ -389,6 +481,7 @@ export default async function ReportsView({
         hourly={hourly.map(({ count, label, shortLabel }) => ({ count, label, shortLabel }))}
         monthly={monthly.map(({ count, label, shortLabel }) => ({ count, label, shortLabel }))}
         promoDocs={promoDocs}
+        regionStats={regionStats}
         recentDocs={recentDocs.map((item) => ({
           createdAt: item.createdAt ?? null,
           domicile: item.domicile ?? null,

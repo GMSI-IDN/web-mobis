@@ -126,7 +126,7 @@
 .mobis-reports__panel-tabs {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .mobis-reports__panel-tab {
@@ -427,6 +427,189 @@
   font-size: 0.8rem;
 }
 
+.mobis-reports__region-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.mobis-reports__period-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0.7rem 0 0.8rem;
+}
+
+.mobis-reports__period-tab {
+  min-height: 36px;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 999px;
+  background: var(--theme-elevation-0);
+  color: var(--theme-text);
+  font-size: 0.79rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.mobis-reports__period-tab.is-active {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+}
+
+.mobis-reports__region-chart-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  border: 1px solid var(--theme-elevation-120);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.08), transparent 52%),
+    linear-gradient(180deg, var(--theme-elevation-0), var(--theme-elevation-25));
+  padding: 0.72rem;
+}
+
+.mobis-reports__region-chart {
+  position: relative;
+  width: 248px;
+  height: 248px;
+  border-radius: 50%;
+  background-size: cover;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.mobis-reports__region-chart-center {
+  position: absolute;
+  inset: 50%;
+  width: 132px;
+  height: 132px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-150);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.mobis-reports__region-chart-center span {
+  display: block;
+  font-size: 0.76rem;
+  opacity: 0.72;
+}
+
+.mobis-reports__region-chart-center strong {
+  display: block;
+  font-size: 1.2rem;
+  line-height: 1.1;
+}
+
+.mobis-reports__region-legend {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  border: 1px solid var(--theme-elevation-120);
+  border-radius: 14px;
+  background: var(--theme-elevation-0);
+  padding: 0.8rem;
+}
+
+.mobis-reports__region-legend-head {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.2rem 0.2rem 0.55rem;
+  border-bottom: 1px solid var(--theme-elevation-100);
+  margin-bottom: 0.2rem;
+}
+
+.mobis-reports__region-legend-head strong {
+  font-size: 0.9rem;
+}
+
+.mobis-reports__region-legend-head small {
+  font-size: 0.75rem;
+  color: var(--theme-text);
+  opacity: 0.74;
+}
+
+.mobis-reports__region-legend-item {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.45rem 0.4rem;
+  border-bottom: 1px solid var(--theme-elevation-100);
+}
+
+.mobis-reports__region-legend-item:last-child {
+  border-bottom: 0;
+}
+
+.mobis-reports__region-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.mobis-reports__region-label {
+  font-size: 0.86rem;
+}
+
+.mobis-reports__region-lines {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0.8rem 0;
+}
+
+.mobis-reports__region-linechart-wrap {
+  width: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.65rem 0.25rem;
+}
+
+.mobis-reports__region-linechart {
+  width: 100%;
+  min-width: 680px;
+  height: auto;
+}
+
+.mobis-reports__region-mini-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.mobis-reports__region-mini-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.26rem 0.46rem;
+  border: 1px solid var(--theme-elevation-120);
+  border-radius: 999px;
+  background: var(--theme-elevation-0);
+}
+
+.mobis-reports__region-mini-legend-item span {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.mobis-reports__region-mini-legend-item small {
+  font-size: 0.76rem;
+  color: var(--theme-text);
+  opacity: 0.82;
+}
+
 .mobis-reports__accordion {
   display: grid;
   gap: 0.9rem;
@@ -436,6 +619,10 @@
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mobis-reports__accordion-tabs--triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .mobis-reports__accordion-tab {
@@ -640,12 +827,26 @@
     grid-template-columns: 1fr;
   }
 
+  .mobis-reports__region-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .mobis-reports__period-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .mobis-reports__custom-controls {
     grid-template-columns: 1fr;
   }
 
   .mobis-reports__accordion-tabs {
     grid-template-columns: 1fr;
+  }
+
+  .mobis-reports__accordion-tabs--triple {
+    grid-template-columns: repeat(3, minmax(210px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
   }
 
   .mobis-reports__action {
@@ -672,6 +873,20 @@
 
   .mobis-reports__trend-summary {
     grid-template-columns: 1fr;
+  }
+
+  .mobis-reports__region-chart {
+    width: 206px;
+    height: 206px;
+  }
+
+  .mobis-reports__region-chart-center {
+    width: 116px;
+    height: 116px;
+  }
+
+  .mobis-reports__region-linechart {
+    min-width: 520px;
   }
 
   .mobis-reports__trend-toolbar {

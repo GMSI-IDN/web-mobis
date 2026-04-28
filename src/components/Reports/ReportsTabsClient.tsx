@@ -19,8 +19,16 @@ type CustomerHistoryItem = {
   promoCode?: null | string
 }
 
-type Panel = 'custom' | 'hourly' | 'history' | 'trend'
+type RegionStat = {
+  count: number
+  label: string
+  percentage: number
+}
+
+type Panel = 'custom' | 'hourly' | 'history' | 'region' | 'trend'
 type CustomAccordionPanel = 'top-hours' | 'trend'
+type RegionDataPanel = 'line' | 'pie' | 'rank'
+type RegionStatPeriod = 'day' | 'month' | 'week' | 'year'
 type TrendGranularity = 'day' | 'month' | 'week'
 
 type Props = {
@@ -28,6 +36,7 @@ type Props = {
   hourly: Bucket[]
   monthly: Bucket[]
   promoDocs: number
+  regionStats: RegionStat[]
   recentDocs: CustomerHistoryItem[]
   recentTotalDocs: number
   totalDocs: number
@@ -37,6 +46,8 @@ type Props = {
 
 type CustomerRangeDoc = {
   createdAt?: null | string
+  domicile?: null | string
+  handoverLocation?: null | string
   name?: null | string
   promoApplied?: boolean | null
 }
@@ -63,6 +74,27 @@ type CustomSummaryState = {
   totalDocs: number
 }
 
+type RegionSummaryState = {
+  docs: CustomerRangeDoc[]
+  endISO: string
+  isTruncated: boolean
+  regions: RegionStat[]
+  startISO: string
+  totalDocs: number
+}
+
+type RegionLineSeries = {
+  color: string
+  label: string
+  values: number[]
+}
+
+type RegionLineChartData = {
+  labels: string[]
+  maxCount: number
+  series: RegionLineSeries[]
+}
+
 type TrendBucket = {
   count: number
   deltaFromPrev: number | null
@@ -80,8 +112,22 @@ type TrendSeedBucket = {
 
 const MIN_TOP_HOURS = 3
 const MAX_TOP_HOURS = 10
+const MIN_REGION_TOP = 3
+const MAX_REGION_TOP = 12
 const DAY_MS = 24 * 60 * 60 * 1000
 const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000
+const REGION_COLORS = [
+  '#ef4444',
+  '#f97316',
+  '#eab308',
+  '#22c55e',
+  '#06b6d4',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#14b8a6',
+  '#64748b',
+]
 
 const dateTimeFormatter = new Intl.DateTimeFormat('id-ID', {
   dateStyle: 'medium',
@@ -130,6 +176,76 @@ function clampTopLimit(value: number) {
   return Math.min(MAX_TOP_HOURS, Math.max(MIN_TOP_HOURS, value))
 }
 
+function clampRegionTop(value: number) {
+  if (Number.isNaN(value)) return 8
+  return Math.min(MAX_REGION_TOP, Math.max(MIN_REGION_TOP, value))
+}
+
+function normalizeRegionValue(value?: null | string) {
+  return String(value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
+function resolveRegionLabel(doc: CustomerRangeDoc) {
+  const domicile = normalizeRegionValue(doc?.domicile)
+  if (domicile) return domicile
+
+  const handover = normalizeRegionValue(doc?.handoverLocation)
+  if (handover) return handover
+
+  return 'Wilayah tidak diisi'
+}
+
+function buildRegionStatsFromDocs(docs: CustomerRangeDoc[], topLimit: number): RegionStat[] {
+  const map = new Map<string, number>()
+  let total = 0
+
+  for (const doc of docs) {
+    const label = resolveRegionLabel(doc)
+    map.set(label, (map.get(label) ?? 0) + 1)
+    total += 1
+  }
+
+  const sorted = Array.from(map.entries())
+    .map(([label, count]) => ({
+      count,
+      label,
+      percentage: total > 0 ? Number(((count / total) * 100).toFixed(1)) : 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+
+  const top = sorted.slice(0, topLimit)
+  const rest = sorted.slice(topLimit)
+  const restCount = rest.reduce((sum, item) => sum + item.count, 0)
+
+  if (restCount > 0) {
+    top.push({
+      count: restCount,
+      label: 'Lainnya',
+      percentage: total > 0 ? Number(((restCount / total) * 100).toFixed(1)) : 0,
+    })
+  }
+
+  return top
+}
+
+function buildRegionPieGradient(regions: RegionStat[]) {
+  if (regions.length === 0) return 'conic-gradient(#e2e8f0 0deg 360deg)'
+
+  let cursor = 0
+  const stops = regions.map((item, idx) => {
+    const start = cursor
+    const sliceDeg = (item.percentage / 100) * 360
+    const end = idx === regions.length - 1 ? 360 : Math.min(360, cursor + sliceDeg)
+    cursor = end
+    const color = REGION_COLORS[idx % REGION_COLORS.length]
+    return `${color} ${start}deg ${end}deg`
+  })
+
+  return `conic-gradient(${stops.join(', ')})`
+}
+
 function toJakartaDate(date: Date) {
   return new Date(date.getTime() + JAKARTA_OFFSET_MS)
 }
@@ -173,11 +289,35 @@ function startOfJakartaMonth(date: Date) {
   )
 }
 
+function startOfJakartaYear(date: Date) {
+  const jakarta = toJakartaDate(date)
+  return fromJakartaDate(new Date(Date.UTC(jakarta.getUTCFullYear(), 0, 1, 0, 0, 0, 0)))
+}
+
 function addJakartaMonths(date: Date, months: number) {
   const jakarta = toJakartaDate(date)
   return fromJakartaDate(
     new Date(Date.UTC(jakarta.getUTCFullYear(), jakarta.getUTCMonth() + months, 1, 0, 0, 0, 0)),
   )
+}
+
+function getRegionPeriodStart(endDate: Date, period: RegionStatPeriod) {
+  if (period === 'day') return startOfJakartaDay(endDate)
+  if (period === 'week') return startOfJakartaWeek(endDate)
+  if (period === 'year') return startOfJakartaYear(endDate)
+  return startOfJakartaMonth(endDate)
+}
+
+function getRegionPeriodLabel(period: RegionStatPeriod) {
+  if (period === 'day') return 'Harian'
+  if (period === 'week') return 'Mingguan'
+  if (period === 'year') return 'Tahunan'
+  return 'Bulanan'
+}
+
+function getRegionLineGranularity(period: RegionStatPeriod): TrendGranularity {
+  if (period === 'year') return 'month'
+  return 'day'
 }
 
 function getTrendPeriodStart(date: Date, granularity: TrendGranularity) {
@@ -328,11 +468,202 @@ function Bars({
   )
 }
 
+function buildRegionLineChartData(params: {
+  docs: CustomerRangeDoc[]
+  endISO: string
+  granularity: TrendGranularity
+  regionLabels: string[]
+  startISO: string
+}): RegionLineChartData {
+  const { docs, endISO, granularity, regionLabels, startISO } = params
+  const startDate = new Date(startISO)
+  const endDate = new Date(endISO)
+
+  if (
+    regionLabels.length === 0 ||
+    Number.isNaN(startDate.getTime()) ||
+    Number.isNaN(endDate.getTime()) ||
+    endDate < startDate
+  ) {
+    return { labels: [], maxCount: 0, series: [] }
+  }
+
+  const seeds = buildTrendSeed(startDate, endDate, granularity)
+  const indexByStart = new Map<number, number>(seeds.map((bucket, idx) => [bucket.start.getTime(), idx]))
+  const valuesByRegion = new Map<string, number[]>(
+    regionLabels.map((label) => [label, Array.from({ length: seeds.length }, () => 0)]),
+  )
+
+  for (const doc of docs) {
+    if (!doc.createdAt) continue
+    const createdAt = new Date(doc.createdAt)
+    if (Number.isNaN(createdAt.getTime())) continue
+
+    const regionLabel = resolveRegionLabel(doc)
+    const series = valuesByRegion.get(regionLabel)
+    if (!series) continue
+
+    const periodStart = getTrendPeriodStart(createdAt, granularity).getTime()
+    const idx = indexByStart.get(periodStart)
+    if (idx === undefined) continue
+
+    series[idx] += 1
+  }
+
+  const series = regionLabels.map((label, idx) => ({
+    color: REGION_COLORS[idx % REGION_COLORS.length],
+    label,
+    values: valuesByRegion.get(label) ?? [],
+  }))
+
+  const maxCount = Math.max(0, ...series.flatMap((item) => item.values))
+
+  return {
+    labels: seeds.map((item) => item.shortLabel),
+    maxCount,
+    series,
+  }
+}
+
+function RegionLineChart({
+  data,
+  title,
+}: {
+  data: RegionLineChartData
+  title: string
+}) {
+  const width = 760
+  const height = 220
+  const paddingTop = 16
+  const paddingRight = 14
+  const paddingBottom = 34
+  const paddingLeft = 28
+  const chartWidth = width - paddingLeft - paddingRight
+  const chartHeight = height - paddingTop - paddingBottom
+  const pointsCount = data.labels.length
+  const maxCount = Math.max(1, data.maxCount)
+
+  return (
+    <section className="mobis-reports__panel">
+      <div className="mobis-reports__panel-head">
+        <h5>{title}</h5>
+      </div>
+      <div className="mobis-reports__table-wrap">
+        {pointsCount === 0 || data.series.length === 0 ? (
+          <div className="mobis-reports__empty" style={{ padding: '1rem' }}>
+            Belum ada data komparasi.
+          </div>
+        ) : (
+          <div className="mobis-reports__region-linechart-wrap">
+            <svg
+              className="mobis-reports__region-linechart"
+              viewBox={`0 0 ${width} ${height}`}
+              role="img"
+              aria-label={`${title} berdasarkan waktu dan jumlah pendaftar`}
+            >
+              <line
+                x1={paddingLeft}
+                y1={height - paddingBottom}
+                x2={width - paddingRight}
+                y2={height - paddingBottom}
+                stroke="var(--theme-elevation-180)"
+                strokeWidth="1"
+              />
+              <line
+                x1={paddingLeft}
+                y1={paddingTop}
+                x2={paddingLeft}
+                y2={height - paddingBottom}
+                stroke="var(--theme-elevation-180)"
+                strokeWidth="1"
+              />
+
+              {[0.25, 0.5, 0.75].map((ratio) => {
+                const y = paddingTop + chartHeight * ratio
+                return (
+                  <line
+                    key={`grid-${ratio}`}
+                    x1={paddingLeft}
+                    y1={y}
+                    x2={width - paddingRight}
+                    y2={y}
+                    stroke="var(--theme-elevation-120)"
+                    strokeDasharray="3 3"
+                    strokeWidth="1"
+                  />
+                )
+              })}
+
+              {data.series.map((series) => {
+                const points = series.values
+                  .map((value, idx) => {
+                    const x =
+                      pointsCount === 1
+                        ? paddingLeft + chartWidth / 2
+                        : paddingLeft + (idx / (pointsCount - 1)) * chartWidth
+                    const y = paddingTop + chartHeight - (value / maxCount) * chartHeight
+                    return `${x},${y}`
+                  })
+                  .join(' ')
+
+                return (
+                  <polyline
+                    key={`line-${series.label}`}
+                    points={points}
+                    fill="none"
+                    stroke={series.color}
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )
+              })}
+
+              {data.labels.map((label, idx) => {
+                const x =
+                  pointsCount === 1
+                    ? paddingLeft + chartWidth / 2
+                    : paddingLeft + (idx / (pointsCount - 1)) * chartWidth
+                const y = height - paddingBottom + 16
+
+                return (
+                  <text
+                    key={`label-${label}-${idx}`}
+                    x={x}
+                    y={y}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="var(--theme-text)"
+                    opacity="0.72"
+                  >
+                    {label}
+                  </text>
+                )
+              })}
+            </svg>
+          </div>
+        )}
+      </div>
+      {data.series.length > 0 ? (
+        <div className="mobis-reports__region-mini-legend">
+          {data.series.map((series) => (
+            <div className="mobis-reports__region-mini-legend-item" key={`mini-legend-${series.label}`}>
+              <span style={{ backgroundColor: series.color }} aria-hidden="true" />
+              <small>{series.label}</small>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
 export default function ReportsTabsClient({
   daily,
   hourly,
   monthly,
   promoDocs,
+  regionStats,
   recentDocs,
   recentTotalDocs,
   totalDocs,
@@ -352,6 +683,18 @@ export default function ReportsTabsClient({
   const [customTopLimit, setCustomTopLimit] = useState(MIN_TOP_HOURS)
   const [customTrendGranularity, setCustomTrendGranularity] = useState<TrendGranularity>('day')
   const [customAccordionPanel, setCustomAccordionPanel] = useState<CustomAccordionPanel>('trend')
+  const [regionLoading, setRegionLoading] = useState(false)
+  const [regionError, setRegionError] = useState('')
+  const [regionTopLimit, setRegionTopLimit] = useState(8)
+  const [regionStart, setRegionStart] = useState(() => {
+    const end = new Date()
+    const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000)
+    return toInputDateTimeValue(start)
+  })
+  const [regionEnd, setRegionEnd] = useState(() => toInputDateTimeValue(new Date()))
+  const [regionSummaryState, setRegionSummaryState] = useState<RegionSummaryState | null>(null)
+  const [regionDataPanel, setRegionDataPanel] = useState<RegionDataPanel>('pie')
+  const [regionStatPeriod, setRegionStatPeriod] = useState<RegionStatPeriod>('month')
 
   const dayCount = daily[daily.length - 1]?.count ?? 0
   const weekCount = weekly[weekly.length - 1]?.count ?? 0
@@ -391,6 +734,20 @@ export default function ReportsTabsClient({
       totalDocs,
     } satisfies CustomSummaryState
   }, [daily, hourly, monthly, promoDocs, totalDocs, weekly])
+
+  const defaultRegionSummary = useMemo(() => {
+    const end = new Date()
+    const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+    return {
+      docs: [],
+      endISO: end.toISOString(),
+      isTruncated: false,
+      regions: regionStats,
+      startISO: start.toISOString(),
+      totalDocs,
+    } satisfies RegionSummaryState
+  }, [regionStats, totalDocs])
 
   const applyCustomRange = useCallback(
     async (startInput: string, endInput: string) => {
@@ -523,7 +880,154 @@ export default function ReportsTabsClient({
     [],
   )
 
+  const applyRegionRange = useCallback(
+    async (startInput: string, endInput: string, topLimitInput: number) => {
+      const startDate = new Date(startInput)
+      const endDate = new Date(endInput)
+      const topLimit = clampRegionTop(topLimitInput)
+
+      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        setRegionError('Rentang waktu wilayah tidak valid.')
+        return
+      }
+
+      if (endDate < startDate) {
+        setRegionError('Waktu akhir wilayah harus lebih besar dari waktu mulai.')
+        return
+      }
+
+      setRegionError('')
+      setRegionLoading(true)
+
+      const startISO = startDate.toISOString()
+      const endISO = endDate.toISOString()
+
+      try {
+        const baseParams = new URLSearchParams()
+        baseParams.set('depth', '0')
+        baseParams.set('limit', '200')
+        baseParams.set('page', '1')
+        baseParams.set('select[name]', 'true')
+        baseParams.set('select[domicile]', 'true')
+        baseParams.set('select[handoverLocation]', 'true')
+        baseParams.set('sort', '-createdAt')
+        baseParams.set('where[and][0][createdAt][greater_than_equal]', startISO)
+        baseParams.set('where[and][1][createdAt][less_than_equal]', endISO)
+
+        const firstPage = await api<CustomersListResponse>(`/api/customers?${baseParams.toString()}`)
+        const docs: CustomerRangeDoc[] = [
+          ...(firstPage.docs || []).filter((doc) => !isExcludedLeadName(doc?.name)),
+        ]
+
+        let currentPage = firstPage.page ?? 1
+        const totalPages = firstPage.totalPages ?? 1
+        const maxPages = 30
+
+        while (currentPage < totalPages && currentPage < maxPages) {
+          currentPage += 1
+          const pageParams = new URLSearchParams(baseParams)
+          pageParams.set('page', String(currentPage))
+          const pageRes = await api<CustomersListResponse>(`/api/customers?${pageParams.toString()}`)
+          docs.push(...(pageRes.docs || []).filter((doc) => !isExcludedLeadName(doc?.name)))
+        }
+
+        setRegionSummaryState({
+          docs,
+          endISO,
+          isTruncated: totalPages > maxPages,
+          regions: buildRegionStatsFromDocs(docs, topLimit),
+          startISO,
+          totalDocs: docs.length,
+        })
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Gagal memuat statistik wilayah.'
+        setRegionError(message)
+      } finally {
+        setRegionLoading(false)
+      }
+    },
+    [],
+  )
+
   const summaryToShow = customSummaryState ?? defaultCustomSummary
+  const regionSummaryToShow = regionSummaryState ?? defaultRegionSummary
+  const regionPeriodLabel = useMemo(() => getRegionPeriodLabel(regionStatPeriod), [regionStatPeriod])
+  const regionPeriodStartISO = useMemo(() => {
+    const endDate = new Date(regionSummaryToShow.endISO)
+    if (Number.isNaN(endDate.getTime())) return regionSummaryToShow.startISO
+    return getRegionPeriodStart(endDate, regionStatPeriod).toISOString()
+  }, [regionStatPeriod, regionSummaryToShow.endISO, regionSummaryToShow.startISO])
+  const regionPeriodDocs = useMemo(() => {
+    const docs = regionSummaryToShow.docs || []
+    if (docs.length === 0) return [] as CustomerRangeDoc[]
+
+    const endDate = new Date(regionSummaryToShow.endISO)
+    if (Number.isNaN(endDate.getTime())) return docs
+
+    const periodStart = new Date(regionPeriodStartISO).getTime()
+    const periodEnd = endDate.getTime()
+
+    return docs.filter((doc) => {
+      if (!doc.createdAt) return false
+      const createdAt = new Date(doc.createdAt)
+      if (Number.isNaN(createdAt.getTime())) return false
+      const at = createdAt.getTime()
+      return at >= periodStart && at <= periodEnd
+    })
+  }, [regionPeriodStartISO, regionSummaryToShow.docs, regionSummaryToShow.endISO])
+  const regionPeriodStats = useMemo(
+    () => buildRegionStatsFromDocs(regionPeriodDocs, regionTopLimit),
+    [regionPeriodDocs, regionTopLimit],
+  )
+  const regionPieGradient = useMemo(
+    () => buildRegionPieGradient(regionPeriodStats),
+    [regionPeriodStats],
+  )
+  const regionLegend = useMemo(
+    () =>
+      regionPeriodStats.map((item, idx) => ({
+        ...item,
+        color: REGION_COLORS[idx % REGION_COLORS.length],
+      })),
+    [regionPeriodStats],
+  )
+  const regionOptions = useMemo(() => {
+    const map = new Map<string, number>()
+
+    for (const doc of regionPeriodDocs) {
+      const label = resolveRegionLabel(doc)
+      map.set(label, (map.get(label) ?? 0) + 1)
+    }
+
+    return Array.from(map.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [regionPeriodDocs])
+  const regionComparisonLabels = useMemo(
+    () => regionOptions.slice(0, regionTopLimit).map((item) => item.label),
+    [regionOptions, regionTopLimit],
+  )
+  const regionLineData = useMemo(
+    () =>
+      buildRegionLineChartData({
+        docs: regionPeriodDocs,
+        endISO: regionSummaryToShow.endISO,
+        granularity: getRegionLineGranularity(regionStatPeriod),
+        regionLabels: regionComparisonLabels,
+        startISO: regionPeriodStartISO,
+      }),
+    [
+      regionPeriodDocs,
+      regionPeriodStartISO,
+      regionStatPeriod,
+      regionComparisonLabels,
+      regionSummaryToShow.endISO,
+    ],
+  )
+  const regionChartTitle = useMemo(
+    () => `Komparasi Wilayah ${regionPeriodLabel}`,
+    [regionPeriodLabel],
+  )
   const displayedTopHours = useMemo(
     () => summaryToShow.topHours.slice(0, customTopLimit),
     [summaryToShow.topHours, customTopLimit],
@@ -541,6 +1045,7 @@ export default function ReportsTabsClient({
 
   useEffect(() => {
     void applyCustomRange(customStart, customEnd)
+    void applyRegionRange(regionStart, regionEnd, regionTopLimit)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -578,6 +1083,14 @@ export default function ReportsTabsClient({
         >
           <span>Panel Riwayat</span>
           <small>Data pendaftar terbaru</small>
+        </button>
+        <button
+          className={`mobis-reports__panel-tab ${activePanel === 'region' ? 'is-active' : ''}`}
+          onClick={() => setActivePanel('region')}
+          type="button"
+        >
+          <span>Panel Wilayah</span>
+          <small>Distribusi pendaftar per wilayah</small>
         </button>
       </section>
 
@@ -929,6 +1442,236 @@ export default function ReportsTabsClient({
                   )}
                 </tbody>
               </table>
+            </div>
+          </section>
+        ) : null}
+
+        {activePanel === 'region' ? (
+          <section className="mobis-reports__panel">
+            <div className="mobis-reports__panel-head">
+              <h5>Statistik Pendaftar Berdasarkan Wilayah</h5>
+              <p>
+                {regionLegend.length > 0
+                  ? `${regionPeriodLabel}: ${regionLegend.length} wilayah ditampilkan`
+                  : 'Belum ada data'}
+              </p>
+            </div>
+
+            <div className="mobis-reports__custom-controls">
+              <label className="mobis-reports__custom-control">
+                <span>Dari</span>
+                <input
+                  className="mobis-reports__custom-input"
+                  onChange={(e) => setRegionStart(e.target.value)}
+                  type="datetime-local"
+                  value={regionStart}
+                />
+              </label>
+              <label className="mobis-reports__custom-control">
+                <span>Sampai</span>
+                <input
+                  className="mobis-reports__custom-input"
+                  onChange={(e) => setRegionEnd(e.target.value)}
+                  type="datetime-local"
+                  value={regionEnd}
+                />
+              </label>
+              <label className="mobis-reports__custom-control">
+                <span>Jumlah Wilayah</span>
+                <select
+                  className="mobis-reports__custom-input"
+                  onChange={(e) => setRegionTopLimit(clampRegionTop(Number(e.target.value)))}
+                  value={regionTopLimit}
+                >
+                  {Array.from(
+                    { length: MAX_REGION_TOP - MIN_REGION_TOP + 1 },
+                    (_, idx) => MIN_REGION_TOP + idx,
+                  ).map((value) => (
+                    <option key={`region-top-${value}`} value={value}>
+                      {value} wilayah
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="mobis-reports__custom-actions">
+                <button
+                  className="mobis-reports__custom-btn"
+                  onClick={() => void applyRegionRange(regionStart, regionEnd, regionTopLimit)}
+                  type="button"
+                >
+                  {regionLoading ? 'Memuat...' : 'Terapkan'}
+                </button>
+              </div>
+            </div>
+
+            {regionError ? <div className="mobis-reports__custom-error">{regionError}</div> : null}
+
+            <div className="mobis-reports__custom-grid">
+              <article className="mobis-reports__custom-card">
+                <span>Rentang Terpilih</span>
+                <strong>
+                  {formatDateTime(regionSummaryToShow.startISO)} -{' '}
+                  {formatDateTime(regionSummaryToShow.endISO)}
+                </strong>
+              </article>
+              <article className="mobis-reports__custom-card">
+                <span>Wilayah Pertama di Daftar</span>
+                <strong>{regionLegend[0]?.label ?? '-'}</strong>
+              </article>
+              <article className="mobis-reports__custom-card">
+                <span>Total {regionPeriodLabel}</span>
+                <strong>{formatCompactNumber(regionPeriodDocs.length)} pendaftar</strong>
+              </article>
+            </div>
+
+            <div className="mobis-reports__period-tabs" aria-label="Periode pie chart dan rank wilayah">
+              <button
+                className={`mobis-reports__period-tab ${regionStatPeriod === 'day' ? 'is-active' : ''}`}
+                onClick={() => setRegionStatPeriod('day')}
+                type="button"
+              >
+                Harian
+              </button>
+              <button
+                className={`mobis-reports__period-tab ${regionStatPeriod === 'week' ? 'is-active' : ''}`}
+                onClick={() => setRegionStatPeriod('week')}
+                type="button"
+              >
+                Mingguan
+              </button>
+              <button
+                className={`mobis-reports__period-tab ${regionStatPeriod === 'month' ? 'is-active' : ''}`}
+                onClick={() => setRegionStatPeriod('month')}
+                type="button"
+              >
+                Bulanan
+              </button>
+              <button
+                className={`mobis-reports__period-tab ${regionStatPeriod === 'year' ? 'is-active' : ''}`}
+                onClick={() => setRegionStatPeriod('year')}
+                type="button"
+              >
+                Tahunan
+              </button>
+            </div>
+
+            {regionSummaryToShow.isTruncated ? (
+              <div className="mobis-reports__custom-note">
+                Data range sangat besar, statistik wilayah dihitung dari batch terbatas.
+              </div>
+            ) : null}
+
+            <div className="mobis-reports__accordion mobis-reports__region-lines">
+              <div className="mobis-reports__accordion-tabs mobis-reports__accordion-tabs--triple">
+                <button
+                  aria-expanded={regionDataPanel === 'pie'}
+                  className={`mobis-reports__accordion-tab ${regionDataPanel === 'pie' ? 'is-active' : ''}`}
+                  onClick={() => setRegionDataPanel('pie')}
+                  type="button"
+                >
+                  <span>Diagram Pie</span>
+                  <small>Distribusi wilayah {regionPeriodLabel.toLowerCase()}</small>
+                </button>
+                <button
+                  aria-expanded={regionDataPanel === 'line'}
+                  className={`mobis-reports__accordion-tab ${regionDataPanel === 'line' ? 'is-active' : ''}`}
+                  onClick={() => setRegionDataPanel('line')}
+                  type="button"
+                >
+                  <span>Diagram Garis</span>
+                  <small>Komparasi tren wilayah</small>
+                </button>
+                <button
+                  aria-expanded={regionDataPanel === 'rank'}
+                  className={`mobis-reports__accordion-tab ${regionDataPanel === 'rank' ? 'is-active' : ''}`}
+                  onClick={() => setRegionDataPanel('rank')}
+                  type="button"
+                >
+                  <span>Ranking</span>
+                  <small>Urutan wilayah berdasarkan jumlah</small>
+                </button>
+              </div>
+
+              <div className="mobis-reports__accordion-panel">
+                {regionDataPanel === 'pie' ? (
+                  <div className="mobis-reports__region-layout">
+                    <div className="mobis-reports__region-chart-wrap">
+                      <div
+                        className="mobis-reports__region-chart"
+                        style={{ backgroundImage: regionPieGradient }}
+                        role="img"
+                        aria-label={`Diagram lingkaran distribusi pendaftar wilayah ${regionPeriodLabel.toLowerCase()}`}
+                      >
+                        <div className="mobis-reports__region-chart-center">
+                          <span>Total {regionPeriodLabel}</span>
+                          <strong>{formatCompactNumber(regionPeriodDocs.length)}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mobis-reports__region-legend">
+                      <div className="mobis-reports__region-legend-head">
+                        <strong>Keterangan Wilayah</strong>
+                        <small>Jumlah dan kontribusi per wilayah</small>
+                      </div>
+                      {regionLegend.length === 0 ? (
+                        <div className="mobis-reports__empty">Belum ada data wilayah.</div>
+                      ) : (
+                        regionLegend.map((item, idx) => (
+                          <div className="mobis-reports__region-legend-item" key={`legend-${item.label}-${idx}`}>
+                            <span
+                              className="mobis-reports__region-color"
+                              style={{ backgroundColor: item.color }}
+                              aria-hidden="true"
+                            />
+                            <span className="mobis-reports__region-label">{item.label}</span>
+                            <strong>
+                              {formatCompactNumber(item.count)} • {item.percentage.toFixed(1)}%
+                            </strong>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
+                {regionDataPanel === 'line' ? (
+                  <RegionLineChart data={regionLineData} title={regionChartTitle} />
+                ) : null}
+
+                {regionDataPanel === 'rank' ? (
+                  <div className="mobis-reports__table-wrap">
+                    <table className="mobis-reports__table">
+                      <thead>
+                        <tr>
+                          <th>Urutan</th>
+                          <th>Wilayah</th>
+                          <th className="text-end">Jumlah</th>
+                          <th className="text-end">Kontribusi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {regionLegend.length === 0 ? (
+                          <tr>
+                            <td className="mobis-reports__empty" colSpan={4}>
+                              Belum ada data wilayah.
+                            </td>
+                          </tr>
+                        ) : (
+                          regionLegend.map((item, idx) => (
+                            <tr key={`region-${item.label}-${idx}`}>
+                              <td>#{idx + 1}</td>
+                              <td>{displayText(item.label)}</td>
+                              <td className="text-end">{formatCompactNumber(item.count)}</td>
+                              <td className="text-end">{item.percentage.toFixed(1)}%</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </section>
         ) : null}
