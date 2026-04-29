@@ -31,7 +31,7 @@ body {
 }
 
 .bg-gradient-form {
-  background: linear-gradient(180deg,#FFF 10%, #daedcc 50% , #45c62b 100%);
+  background: linear-gradient(180deg, #ffffff 8%, #daedcc 50%, #45c62b 100%);
 }
 
 .btn-register {
@@ -177,7 +177,7 @@ body {
 .footer-mobis {
   padding: 1rem 2rem;
   color: #fff;
-  background: linear-gradient(180deg,#45c62b 0%, #09af04 80%);
+  background: linear-gradient(180deg, #2fa90d 0%, #289b0a 52%, #228a08 100%);
   width: 100%;
 }
 
@@ -580,6 +580,113 @@ body {
   z-index: 5;
 }
 
+/* ===== FAQ Section ===== */
+.faq-mobis-section {
+  background: linear-gradient(180deg, #45c62b 0%, #39b619 55%, #2fa90d 100%);
+}
+
+.faq-mobis-title {
+  margin: 0 0 1rem;
+  text-align: center;
+  color: #f4ffe9;
+  font-size: clamp(1.1rem, 0.95rem + 0.65vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(22, 101, 22, 0.28);
+}
+
+.faq-mobis-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.faq-mobis-item {
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(13, 86, 10, 0.18);
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.faq-mobis-item.is-open {
+  box-shadow: 0 12px 24px rgba(13, 86, 10, 0.2);
+  transform: translateY(-1px);
+}
+
+.faq-mobis-trigger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0.95rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  text-align: left;
+}
+
+.faq-mobis-question {
+  color: #2f8e17;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.faq-mobis-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 999px;
+  background: #35af20;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.faq-mobis-icon span {
+  display: inline-block;
+  transform: translateY(-1px) scale(1);
+  transition: transform 0.22s ease;
+}
+
+.faq-mobis-answer-wrap {
+  border-top: 1px solid rgba(47, 142, 23, 0);
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0 1rem;
+  background: #ffffff;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.25s ease,
+    padding 0.25s ease,
+    border-color 0.2s ease;
+}
+
+.faq-mobis-item.is-open .faq-mobis-answer-wrap {
+  border-top-color: rgba(47, 142, 23, 0.14);
+  max-height: 280px;
+  opacity: 1;
+  padding: 0.75rem 1rem 1rem;
+}
+
+.faq-mobis-item.is-open .faq-mobis-icon span {
+  transform: translateY(-1px) scale(1.08);
+}
+
+.faq-mobis-answer {
+  margin: 0;
+  color: #1f2937;
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
 
 .btn-banner-cta-fullbleed {
   color: #3BAC1F;
@@ -804,4 +911,3 @@ body {
     }
 
 }
-

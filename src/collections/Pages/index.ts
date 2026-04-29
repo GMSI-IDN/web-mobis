@@ -24,6 +24,7 @@ import { TestimonialsConfig } from '@/blocks/Mobis/Testimonials'
 import { RegistrationFormConfig } from '@/blocks/Mobis/RegistrationForm'
 import { FooterSimpleConfig } from '@/blocks/Mobis/FooterSimple'
 import { ProgramDualConfig } from '@/blocks/Mobis/ProgramDual'
+import { FaqAccordionConfig } from '@/blocks/Mobis/FaqAccordion'
 
 import {
   MetaDescriptionField,
@@ -101,6 +102,7 @@ export const Pages: CollectionConfig<'pages'> = {
                 RegistrationFormConfig,
                 FooterSimpleConfig,
                 ProgramDualConfig,
+                FaqAccordionConfig,
               ],
               required: true,
               admin: {

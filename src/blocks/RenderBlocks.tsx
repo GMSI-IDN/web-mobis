@@ -20,6 +20,7 @@ import { Testimonials } from '@/blocks/Mobis/Testimonials'
 import { RegistrationForm } from '@/blocks/Mobis/RegistrationForm'
 import { FooterSimple } from '@/blocks/Mobis/FooterSimple'
 import { ProgramDual } from '@/blocks/Mobis/ProgramDual'
+import { FaqAccordion } from '@/blocks/Mobis/FaqAccordion'
 
 const blockComponents = {
   archive: ArchiveBlock,
@@ -40,6 +41,7 @@ const blockComponents = {
   registrationForm: RegistrationForm,
   footerSimple: FooterSimple,
   programDual: ProgramDual,
+  faqAccordion: FaqAccordion,
 } as const
 
 type BlockTypeKey = keyof typeof blockComponents
@@ -86,6 +88,8 @@ export const RenderBlocks: React.FC<{
                                 ? 'my-0'
                                 : blockType === 'programDual'
                                   ? 'my-0'
+                                  : blockType === 'faqAccordion'
+                                    ? 'my-0'
                                   : 'my-4 my-md-5'
 
           return (

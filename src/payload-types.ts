@@ -260,6 +260,7 @@ export interface Page {
     | RegistrationFormBlock
     | FooterSimpleBlock
     | ProgramDualBlock
+    | FaqAccordionBlock
   )[];
   meta?: {
     title?: string | null;
@@ -1084,6 +1085,21 @@ export interface ProgramDualBlock {
   blockType: 'programDual';
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqAccordionBlock".
+ */
+export interface FaqAccordionBlock {
+  title: string;
+  items: {
+    question: string;
+    answer: string;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faqAccordion';
+}
+/**
  * Data user yang sudah mendaftar melalui form pendaftaran Mobis.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1568,6 +1584,7 @@ export interface PagesSelect<T extends boolean = true> {
         registrationForm?: T | RegistrationFormBlockSelect<T>;
         footerSimple?: T | FooterSimpleBlockSelect<T>;
         programDual?: T | ProgramDualBlockSelect<T>;
+        faqAccordion?: T | FaqAccordionBlockSelect<T>;
       };
   meta?:
     | T
@@ -1900,6 +1917,22 @@ export interface ProgramDualBlockSelect<T extends boolean = true> {
         centerCards?: T;
         headerTop?: T;
         bodyTopPadding?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqAccordionBlock_select".
+ */
+export interface FaqAccordionBlockSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
       };
   id?: T;
   blockName?: T;
