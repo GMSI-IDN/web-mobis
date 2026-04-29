@@ -5,10 +5,11 @@ import type { Media, Page, Post, Config } from '../payload-types'
 import { mergeOpenGraph } from './mergeOpenGraph'
 import { getPublicURL } from './getURL'
 
-const HOMEPAGE_TITLE = 'Rental Mobil Untuk Driver Online | Sewa Kendaraan Supir Online'
+const HOMEPAGE_TITLE = 'Sewa Mobil & Rental Driver Online'
 const HOMEPAGE_DESCRIPTION =
-  'Rental mobil dan sewa kendaraan untuk driver online dengan proses cepat. Cocok untuk pengemudi taksi online, ada opsi bayar mingguan serta program rent to own.'
-const DEFAULT_SOCIAL_IMAGE = 'https://rentalmobis.com/assets/img/Banner.webp'
+  'Cari rental driver online terpercaya? MOBIS sedia sewa mobil dan kendaraan untuk taksi online dengan proses cepat, bayar mingguan, & program rent to own.'
+const DEFAULT_SOCIAL_IMAGE =
+  'https://admin.rentalmobis.com/api/media/file/banner-bebas_pilih_aplikasi-1-1200x630.webp'
 const HOMEPAGE_KEYWORDS = [
   'rental mobil',
   'rental mobil driver online',

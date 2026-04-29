@@ -7,7 +7,7 @@ export const ProgramDualConfig: Block = {
     {
       name: 'title',
       type: 'text',
-      defaultValue: 'Program Rental',
+      defaultValue: 'Pilihan Program Rental Driver Online',
       admin: { description: 'Judul umum (opsional).' },
     },
 

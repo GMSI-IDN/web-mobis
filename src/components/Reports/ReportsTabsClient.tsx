@@ -28,6 +28,7 @@ type RegionStat = {
 type Panel = 'custom' | 'hourly' | 'history' | 'region' | 'trend'
 type CustomAccordionPanel = 'top-hours' | 'trend'
 type RegionDataPanel = 'line' | 'pie' | 'rank'
+type RegionSource = 'domicile' | 'handover'
 type RegionStatPeriod = 'day' | 'month' | 'week' | 'year'
 type TrendGranularity = 'day' | 'month' | 'week'
 
@@ -187,22 +188,30 @@ function normalizeRegionValue(value?: null | string) {
     .replace(/\s+/g, ' ')
 }
 
-function resolveRegionLabel(doc: CustomerRangeDoc) {
-  const handover = normalizeRegionValue(doc?.handoverLocation)
-  if (handover) return handover
+function getRegionSourceLabel(source: RegionSource) {
+  return source === 'handover' ? 'Handover Location' : 'Domisili'
+}
 
-  const domicile = normalizeRegionValue(doc?.domicile)
-  if (domicile) return domicile
+function resolveRegionLabel(doc: CustomerRangeDoc, source: RegionSource) {
+  const value =
+    source === 'handover'
+      ? normalizeRegionValue(doc?.handoverLocation)
+      : normalizeRegionValue(doc?.domicile)
+  if (value) return value
 
   return 'Wilayah tidak diisi'
 }
 
-function buildRegionStatsFromDocs(docs: CustomerRangeDoc[], topLimit: number): RegionStat[] {
+function buildRegionStatsFromDocs(
+  docs: CustomerRangeDoc[],
+  topLimit: number,
+  source: RegionSource,
+): RegionStat[] {
   const map = new Map<string, number>()
   let total = 0
 
   for (const doc of docs) {
-    const label = resolveRegionLabel(doc)
+    const label = resolveRegionLabel(doc, source)
     map.set(label, (map.get(label) ?? 0) + 1)
     total += 1
   }
@@ -473,9 +482,10 @@ function buildRegionLineChartData(params: {
   endISO: string
   granularity: TrendGranularity
   regionLabels: string[]
+  source: RegionSource
   startISO: string
 }): RegionLineChartData {
-  const { docs, endISO, granularity, regionLabels, startISO } = params
+  const { docs, endISO, granularity, regionLabels, source, startISO } = params
   const startDate = new Date(startISO)
   const endDate = new Date(endISO)
 
@@ -499,7 +509,7 @@ function buildRegionLineChartData(params: {
     const createdAt = new Date(doc.createdAt)
     if (Number.isNaN(createdAt.getTime())) continue
 
-    const regionLabel = resolveRegionLabel(doc)
+    const regionLabel = resolveRegionLabel(doc, source)
     const series = valuesByRegion.get(regionLabel)
     if (!series) continue
 
@@ -694,6 +704,7 @@ export default function ReportsTabsClient({
   const [regionEnd, setRegionEnd] = useState(() => toInputDateTimeValue(new Date()))
   const [regionSummaryState, setRegionSummaryState] = useState<RegionSummaryState | null>(null)
   const [regionDataPanel, setRegionDataPanel] = useState<RegionDataPanel>('pie')
+  const [regionSource, setRegionSource] = useState<RegionSource>('handover')
   const [regionStatPeriod, setRegionStatPeriod] = useState<RegionStatPeriod>('month')
 
   const dayCount = daily[daily.length - 1]?.count ?? 0
@@ -935,7 +946,7 @@ export default function ReportsTabsClient({
           docs,
           endISO,
           isTruncated: totalPages > maxPages,
-          regions: buildRegionStatsFromDocs(docs, topLimit),
+          regions: buildRegionStatsFromDocs(docs, topLimit, 'handover'),
           startISO,
           totalDocs: docs.length,
         })
@@ -952,6 +963,7 @@ export default function ReportsTabsClient({
   const summaryToShow = customSummaryState ?? defaultCustomSummary
   const regionSummaryToShow = regionSummaryState ?? defaultRegionSummary
   const regionPeriodLabel = useMemo(() => getRegionPeriodLabel(regionStatPeriod), [regionStatPeriod])
+  const regionSourceLabel = useMemo(() => getRegionSourceLabel(regionSource), [regionSource])
   const regionRangeDocs = regionSummaryToShow.docs || []
   const regionPeriodStartISO = useMemo(() => {
     const endDate = new Date(regionSummaryToShow.endISO)
@@ -984,8 +996,8 @@ export default function ReportsTabsClient({
     [regionPeriodFilteredDocs, regionRangeDocs, regionUsesRangeFallback],
   )
   const regionPeriodStats = useMemo(
-    () => buildRegionStatsFromDocs(regionPeriodDocs, regionTopLimit),
-    [regionPeriodDocs, regionTopLimit],
+    () => buildRegionStatsFromDocs(regionPeriodDocs, regionTopLimit, regionSource),
+    [regionPeriodDocs, regionTopLimit, regionSource],
   )
   const regionPieGradient = useMemo(
     () => buildRegionPieGradient(regionPeriodStats),
@@ -1003,14 +1015,14 @@ export default function ReportsTabsClient({
     const map = new Map<string, number>()
 
     for (const doc of regionPeriodDocs) {
-      const label = resolveRegionLabel(doc)
+      const label = resolveRegionLabel(doc, regionSource)
       map.set(label, (map.get(label) ?? 0) + 1)
     }
 
     return Array.from(map.entries())
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
-  }, [regionPeriodDocs])
+  }, [regionPeriodDocs, regionSource])
   const regionComparisonLabels = useMemo(
     () => regionOptions.slice(0, regionTopLimit).map((item) => item.label),
     [regionOptions, regionTopLimit],
@@ -1022,19 +1034,21 @@ export default function ReportsTabsClient({
         endISO: regionSummaryToShow.endISO,
         granularity: getRegionLineGranularity(regionStatPeriod),
         regionLabels: regionComparisonLabels,
+        source: regionSource,
         startISO: regionPeriodStartISO,
       }),
     [
       regionPeriodDocs,
       regionPeriodStartISO,
       regionStatPeriod,
+      regionSource,
       regionComparisonLabels,
       regionSummaryToShow.endISO,
     ],
   )
   const regionChartTitle = useMemo(
-    () => `Komparasi Wilayah ${regionPeriodLabel}`,
-    [regionPeriodLabel],
+    () => `Komparasi ${regionSourceLabel} ${regionPeriodLabel}`,
+    [regionPeriodLabel, regionSourceLabel],
   )
   const displayedTopHours = useMemo(
     () => summaryToShow.topHours.slice(0, customTopLimit),
@@ -1460,7 +1474,7 @@ export default function ReportsTabsClient({
               <h5>Statistik Pendaftar Berdasarkan Wilayah</h5>
               <p>
                 {regionLegend.length > 0
-                  ? `${regionPeriodLabel}: ${regionLegend.length} wilayah ditampilkan`
+                  ? `${regionPeriodLabel} (${regionSourceLabel}): ${regionLegend.length} wilayah ditampilkan`
                   : 'Belum ada data'}
               </p>
             </div>
@@ -1483,6 +1497,17 @@ export default function ReportsTabsClient({
                   type="datetime-local"
                   value={regionEnd}
                 />
+              </label>
+              <label className="mobis-reports__custom-control">
+                <span>Sumber Wilayah</span>
+                <select
+                  className="mobis-reports__custom-input"
+                  onChange={(e) => setRegionSource(e.target.value as RegionSource)}
+                  value={regionSource}
+                >
+                  <option value="handover">Handover Location</option>
+                  <option value="domicile">Domisili</option>
+                </select>
               </label>
               <label className="mobis-reports__custom-control">
                 <span>Jumlah Wilayah</span>
@@ -1527,7 +1552,7 @@ export default function ReportsTabsClient({
                 <strong>{regionLegend[0]?.label ?? '-'}</strong>
               </article>
               <article className="mobis-reports__custom-card">
-                <span>Total {regionPeriodLabel}</span>
+                <span>Total {regionPeriodLabel} ({regionSourceLabel})</span>
                 <strong>{formatCompactNumber(regionPeriodDocs.length)} pendaftar</strong>
               </article>
             </div>
@@ -1585,7 +1610,9 @@ export default function ReportsTabsClient({
                   type="button"
                 >
                   <span>Diagram Pie</span>
-                  <small>Distribusi wilayah {regionPeriodLabel.toLowerCase()}</small>
+                  <small>
+                    Distribusi {regionSourceLabel.toLowerCase()} {regionPeriodLabel.toLowerCase()}
+                  </small>
                 </button>
                 <button
                   aria-expanded={regionDataPanel === 'line'}
@@ -1594,7 +1621,7 @@ export default function ReportsTabsClient({
                   type="button"
                 >
                   <span>Diagram Garis</span>
-                  <small>Komparasi tren wilayah</small>
+                  <small>Komparasi tren {regionSourceLabel.toLowerCase()}</small>
                 </button>
                 <button
                   aria-expanded={regionDataPanel === 'rank'}
@@ -1603,7 +1630,7 @@ export default function ReportsTabsClient({
                   type="button"
                 >
                   <span>Ranking</span>
-                  <small>Urutan wilayah berdasarkan jumlah</small>
+                  <small>Urutan {regionSourceLabel.toLowerCase()} berdasarkan jumlah</small>
                 </button>
               </div>
 
@@ -1615,7 +1642,7 @@ export default function ReportsTabsClient({
                         className="mobis-reports__region-chart"
                         style={{ backgroundImage: regionPieGradient }}
                         role="img"
-                        aria-label={`Diagram lingkaran distribusi pendaftar wilayah ${regionPeriodLabel.toLowerCase()}`}
+                        aria-label={`Diagram lingkaran distribusi ${regionSourceLabel.toLowerCase()} ${regionPeriodLabel.toLowerCase()}`}
                       >
                         <div className="mobis-reports__region-chart-center">
                           <span>Total {regionPeriodLabel}</span>
@@ -1626,8 +1653,8 @@ export default function ReportsTabsClient({
 
                     <div className="mobis-reports__region-legend">
                       <div className="mobis-reports__region-legend-head">
-                        <strong>Keterangan Wilayah</strong>
-                        <small>Jumlah dan kontribusi per wilayah</small>
+                        <strong>Keterangan {regionSourceLabel}</strong>
+                        <small>Jumlah dan kontribusi per {regionSourceLabel.toLowerCase()}</small>
                       </div>
                       {regionLegend.length === 0 ? (
                         <div className="mobis-reports__empty">Belum ada data wilayah.</div>

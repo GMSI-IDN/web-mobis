@@ -5,10 +5,11 @@ import { getPublicURL } from '@/utilities/getURL'
 
 const siteURL = getPublicURL()
 const siteName = 'Rental MOBIS'
-const socialImagePath = 'https://rentalmobis.com/mobis/img/favicon.svg'
-const defaultTitle = 'Rental Mobil Untuk Driver Online'
+const socialImagePath =
+  'https://admin.rentalmobis.com/api/media/file/banner-bebas_pilih_aplikasi-1-1200x630.webp'
+const defaultTitle = 'Sewa Mobil & Rental Driver Online'
 const defaultDescription =
-  'Rental mobil, rental mobil driver online, dan sewa kendaraan untuk supir online. Tersedia program mingguan dengan opsi rent to own untuk pengemudi taksi online.'
+  'Cari rental driver online terpercaya? MOBIS sedia sewa mobil dan kendaraan untuk taksi online dengan proses cepat, bayar mingguan, & program rent to own.'
 const primaryKeywords = [
   'rental mobil',
   'rental mobil driver online',
@@ -129,7 +130,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       '@context': 'https://schema.org',
       '@type': 'Service',
       serviceType: 'Rental Mobil Driver Online',
-      name: 'Sewa Kendaraan Untuk Supir Online',
+      name: 'Sewa Mobil & Rental Driver Online',
       provider: {
         '@type': 'Organization',
         name: siteName,
@@ -138,7 +139,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       areaServed: ['Jabodetabek', 'Surabaya', 'Sidoarjo', 'Gresik', 'Bali', 'Bandung', 'Malang'],
       keywords: primaryKeywords.join(', '),
       description:
-        'Layanan sewa kendaraan untuk online driver dengan unit siap jalan, perawatan berkala, dan skema pembayaran mingguan.',
+        'Layanan sewa kendaraan dan rental driver online dengan unit siap jalan, perawatan berkala, dan skema pembayaran mingguan.',
       url: siteURL,
     },
   ]
