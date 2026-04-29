@@ -243,6 +243,7 @@ Response berisi:
 - `trend.buckets`
 - `topHours.buckets`
 - `region.summary` (total data periode wilayah, jumlah wilayah unik, start/end periode)
+  - `usesRangeFallback=true` artinya periode aktif kosong, sehingga API otomatis pakai data seluruh rentang `start..end`
 - `region.pie.buckets` (label, jumlah, persentase)
 - `region.rank.buckets` (order, label, jumlah, persentase)
 - `region.line` (granularity, labels, series, maxCount) untuk komparasi diagram garis per wilayah

@@ -952,29 +952,37 @@ export default function ReportsTabsClient({
   const summaryToShow = customSummaryState ?? defaultCustomSummary
   const regionSummaryToShow = regionSummaryState ?? defaultRegionSummary
   const regionPeriodLabel = useMemo(() => getRegionPeriodLabel(regionStatPeriod), [regionStatPeriod])
+  const regionRangeDocs = regionSummaryToShow.docs || []
   const regionPeriodStartISO = useMemo(() => {
     const endDate = new Date(regionSummaryToShow.endISO)
     if (Number.isNaN(endDate.getTime())) return regionSummaryToShow.startISO
     return getRegionPeriodStart(endDate, regionStatPeriod).toISOString()
   }, [regionStatPeriod, regionSummaryToShow.endISO, regionSummaryToShow.startISO])
-  const regionPeriodDocs = useMemo(() => {
-    const docs = regionSummaryToShow.docs || []
-    if (docs.length === 0) return [] as CustomerRangeDoc[]
+  const regionPeriodFilteredDocs = useMemo(() => {
+    if (regionRangeDocs.length === 0) return [] as CustomerRangeDoc[]
 
     const endDate = new Date(regionSummaryToShow.endISO)
-    if (Number.isNaN(endDate.getTime())) return docs
+    if (Number.isNaN(endDate.getTime())) return regionRangeDocs
 
     const periodStart = new Date(regionPeriodStartISO).getTime()
     const periodEnd = endDate.getTime()
 
-    return docs.filter((doc) => {
+    return regionRangeDocs.filter((doc) => {
       if (!doc.createdAt) return false
       const createdAt = new Date(doc.createdAt)
       if (Number.isNaN(createdAt.getTime())) return false
       const at = createdAt.getTime()
       return at >= periodStart && at <= periodEnd
     })
-  }, [regionPeriodStartISO, regionSummaryToShow.docs, regionSummaryToShow.endISO])
+  }, [regionPeriodStartISO, regionRangeDocs, regionSummaryToShow.endISO])
+  const regionUsesRangeFallback = useMemo(
+    () => regionRangeDocs.length > 0 && regionPeriodFilteredDocs.length === 0,
+    [regionPeriodFilteredDocs.length, regionRangeDocs.length],
+  )
+  const regionPeriodDocs = useMemo(
+    () => (regionUsesRangeFallback ? regionRangeDocs : regionPeriodFilteredDocs),
+    [regionPeriodFilteredDocs, regionRangeDocs, regionUsesRangeFallback],
+  )
   const regionPeriodStats = useMemo(
     () => buildRegionStatsFromDocs(regionPeriodDocs, regionTopLimit),
     [regionPeriodDocs, regionTopLimit],
@@ -1558,6 +1566,13 @@ export default function ReportsTabsClient({
             {regionSummaryToShow.isTruncated ? (
               <div className="mobis-reports__custom-note">
                 Data range sangat besar, statistik wilayah dihitung dari batch terbatas.
+              </div>
+            ) : null}
+
+            {regionUsesRangeFallback ? (
+              <div className="mobis-reports__custom-note">
+                Data {regionPeriodLabel.toLowerCase()} kosong pada rentang ini, menampilkan data
+                dari seluruh rentang terpilih.
               </div>
             ) : null}
 

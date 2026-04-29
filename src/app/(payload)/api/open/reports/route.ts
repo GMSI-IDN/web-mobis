@@ -728,13 +728,16 @@ export async function GET(req: Request) {
     const topHours = buildTopHours(docs, topLimit)
     const regionPeriodStart = getRegionPeriodStart(endDate, regionPeriod)
     const regionEffectiveStart = regionPeriodStart.getTime() > startDate.getTime() ? regionPeriodStart : startDate
-    const regionDocs = docs.filter((doc) => {
+    const regionPeriodDocs = docs.filter((doc) => {
       if (!doc.createdAt) return false
       const createdAt = new Date(doc.createdAt)
       if (Number.isNaN(createdAt.getTime())) return false
       const ms = createdAt.getTime()
       return ms >= regionEffectiveStart.getTime() && ms <= endDate.getTime()
     })
+    const regionUsesRangeFallback = regionPeriodDocs.length === 0 && docs.length > 0
+    const regionDocs = regionUsesRangeFallback ? docs : regionPeriodDocs
+    const regionSummaryStart = regionUsesRangeFallback ? startDate : regionEffectiveStart
     const regionStats = buildRegionStatsFromDocs(regionDocs, topLimit)
     const regionLabels = regionStats.filter((item) => item.label !== 'Lainnya').map((item) => item.label)
     const regionLine = buildRegionLineData({
@@ -742,7 +745,7 @@ export async function GET(req: Request) {
       endDate,
       period: regionPeriod,
       regionLabels,
-      startDate: regionEffectiveStart,
+      startDate: regionSummaryStart,
     })
     const regionDistinctCount = new Set(regionDocs.map((doc) => resolveRegionLabel(doc))).size
 
@@ -802,7 +805,8 @@ export async function GET(req: Request) {
           summary: {
             distinctRegions: regionDistinctCount,
             periodEndISO: endDate.toISOString(),
-            periodStartISO: regionEffectiveStart.toISOString(),
+            periodStartISO: regionSummaryStart.toISOString(),
+            usesRangeFallback: regionUsesRangeFallback,
             totalDocs: regionDocs.length,
           },
         },
