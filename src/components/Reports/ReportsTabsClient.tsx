@@ -542,16 +542,39 @@ function RegionLineChart({
   data: RegionLineChartData
   title: string
 }) {
+  const [hiddenSeriesLabels, setHiddenSeriesLabels] = useState<string[]>([])
+  const pointsCount = data.labels.length
+  const rotateAxisLabels = pointsCount > 18
   const width = 760
-  const height = 220
+  const height = rotateAxisLabels ? 242 : 220
   const paddingTop = 16
   const paddingRight = 14
-  const paddingBottom = 34
+  const paddingBottom = rotateAxisLabels ? 56 : 34
   const paddingLeft = 28
   const chartWidth = width - paddingLeft - paddingRight
   const chartHeight = height - paddingTop - paddingBottom
-  const pointsCount = data.labels.length
-  const maxCount = Math.max(1, data.maxCount)
+  const visibleSeries = useMemo(
+    () => data.series.filter((series) => !hiddenSeriesLabels.includes(series.label)),
+    [data.series, hiddenSeriesLabels],
+  )
+  const maxCount = Math.max(1, ...visibleSeries.flatMap((series) => series.values))
+  const hasVisibleSeries = visibleSeries.length > 0
+  const maxTicks = Math.max(4, Math.floor(chartWidth / 56))
+  const labelStep = pointsCount <= maxTicks ? 1 : Math.ceil(pointsCount / maxTicks)
+  const axisFontSize = pointsCount > 24 ? 8 : pointsCount > 16 ? 9 : 10
+
+  useEffect(() => {
+    setHiddenSeriesLabels((prev) =>
+      prev.filter((label) => data.series.some((series) => series.label === label)),
+    )
+  }, [data.series])
+
+  const toggleSeriesVisibility = useCallback((label: string) => {
+    setHiddenSeriesLabels((prev) => {
+      if (prev.includes(label)) return prev.filter((item) => item !== label)
+      return [...prev, label]
+    })
+  }, [])
 
   return (
     <section className="mobis-reports__panel">
@@ -562,6 +585,10 @@ function RegionLineChart({
         {pointsCount === 0 || data.series.length === 0 ? (
           <div className="mobis-reports__empty" style={{ padding: '1rem' }}>
             Belum ada data komparasi.
+          </div>
+        ) : !hasVisibleSeries ? (
+          <div className="mobis-reports__empty" style={{ padding: '1rem' }}>
+            Semua kota disembunyikan. Aktifkan minimal 1 kota di legend.
           </div>
         ) : (
           <div className="mobis-reports__region-linechart-wrap">
@@ -604,7 +631,7 @@ function RegionLineChart({
                 )
               })}
 
-              {data.series.map((series) => {
+              {visibleSeries.map((series) => {
                 const points = series.values
                   .map((value, idx) => {
                     const x =
@@ -630,19 +657,24 @@ function RegionLineChart({
               })}
 
               {data.labels.map((label, idx) => {
+                const shouldRender =
+                  idx === 0 || idx === pointsCount - 1 || idx % labelStep === 0
+                if (!shouldRender) return null
+
                 const x =
                   pointsCount === 1
                     ? paddingLeft + chartWidth / 2
                     : paddingLeft + (idx / (pointsCount - 1)) * chartWidth
-                const y = height - paddingBottom + 16
+                const y = height - paddingBottom + (rotateAxisLabels ? 20 : 16)
 
                 return (
                   <text
                     key={`label-${label}-${idx}`}
                     x={x}
                     y={y}
-                    textAnchor="middle"
-                    fontSize="10"
+                    textAnchor={rotateAxisLabels ? 'end' : 'middle'}
+                    transform={rotateAxisLabels ? `rotate(-28 ${x} ${y})` : undefined}
+                    fontSize={axisFontSize}
                     fill="var(--theme-text)"
                     opacity="0.72"
                   >
@@ -657,10 +689,15 @@ function RegionLineChart({
       {data.series.length > 0 ? (
         <div className="mobis-reports__region-mini-legend">
           {data.series.map((series) => (
-            <div className="mobis-reports__region-mini-legend-item" key={`mini-legend-${series.label}`}>
+            <button
+              className={`mobis-reports__region-mini-legend-item ${hiddenSeriesLabels.includes(series.label) ? 'is-off' : ''}`}
+              key={`mini-legend-${series.label}`}
+              onClick={() => toggleSeriesVisibility(series.label)}
+              type="button"
+            >
               <span style={{ backgroundColor: series.color }} aria-hidden="true" />
               <small>{series.label}</small>
-            </div>
+            </button>
           ))}
         </div>
       ) : null}

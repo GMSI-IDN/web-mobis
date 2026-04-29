@@ -596,6 +596,10 @@
   border: 1px solid var(--theme-elevation-120);
   border-radius: 999px;
   background: var(--theme-elevation-0);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: left;
 }
 
 .mobis-reports__region-mini-legend-item span {
@@ -608,6 +612,14 @@
   font-size: 0.76rem;
   color: var(--theme-text);
   opacity: 0.82;
+}
+
+.mobis-reports__region-mini-legend-item.is-off {
+  opacity: 0.45;
+}
+
+.mobis-reports__region-mini-legend-item.is-off small {
+  text-decoration: line-through;
 }
 
 .mobis-reports__accordion {
