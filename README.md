@@ -50,11 +50,30 @@ pnpm build
 pnpm start
 ```
 
+### Build Production (Disarankan untuk Staging/Server)
+
+Urutan ini penting agar perubahan schema Payload (blok baru, field baru, tabel/kolom baru) tidak membuat halaman admin seperti `Pages` menjadi blank:
+
+```bash
+pnpm migrate:status
+pnpm migrate
+pnpm generate:importmap
+pnpm build
+pnpm start
+```
+
+Catatan:
+
+- Jangan membuat tabel/kolom Payload manual di DB. Gunakan migration Payload agar tabel `live` dan `versions` (`_pages_v_*`) ikut sinkron.
+- Jika muncul gejala blank setelah update schema, cek dulu migration status dan jalankan `pnpm migrate` sebelum build.
+- Hindari memakai DB yang sama untuk local dan staging. Jika terpaksa, pastikan `PAYLOAD_DB_PUSH=false` supaya local tidak mengubah schema staging otomatis.
+
 ## Environment Variables Penting
 
 ### Core
 
 - `DATABASE_URL`
+- `PAYLOAD_DB_PUSH` (default `false`, aktifkan `true` hanya jika memang ingin auto push schema)
 - `PAYLOAD_SECRET`
 - `CRON_SECRET`
 

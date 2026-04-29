@@ -21,6 +21,7 @@ import { MobisWidgetsGlobal } from './components/MobisWidget/payload/MobisWidget
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+const dbPushEnabled = process.env.PAYLOAD_DB_PUSH === 'true'
 
 export default buildConfig({
   serverURL: getServerSideURL(),
@@ -75,6 +76,7 @@ export default buildConfig({
   editor: defaultLexical,
 
   db: postgresAdapter({
+    push: dbPushEnabled,
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
