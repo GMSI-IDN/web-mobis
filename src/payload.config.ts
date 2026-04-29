@@ -22,6 +22,7 @@ import { MobisWidgetsGlobal } from './components/MobisWidget/payload/MobisWidget
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 const dbPushEnabled = process.env.PAYLOAD_DB_PUSH === 'true'
+const enableCustomAdmin = process.env.PAYLOAD_ENABLE_CUSTOM_ADMIN !== 'false'
 
 export default buildConfig({
   serverURL: getServerSideURL(),
@@ -32,19 +33,21 @@ export default buildConfig({
   },
 
   admin: {
-    components: {
-      beforeLogin: ['@/components/BeforeLogin'],
-      beforeNavLinks: ['@/components/AdminNav/ReportsNavLink'],
-      views: {
-        dashboard: {
-          Component: '@/components/Dashboard',
-        },
-        reports: {
-          Component: '@/components/Reports',
-          path: '/reports',
-        },
-      },
-    },
+    components: enableCustomAdmin
+      ? {
+          beforeLogin: ['@/components/BeforeLogin'],
+          beforeNavLinks: ['@/components/AdminNav/ReportsNavLink'],
+          views: {
+            dashboard: {
+              Component: '@/components/Dashboard',
+            },
+            reports: {
+              Component: '@/components/Reports',
+              path: '/reports',
+            },
+          },
+        }
+      : {},
     importMap: {
       baseDir: path.resolve(dirname),
     },

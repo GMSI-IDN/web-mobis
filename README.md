@@ -74,6 +74,7 @@ Catatan:
 
 - `DATABASE_URL`
 - `PAYLOAD_DB_PUSH` (default `false`, aktifkan `true` hanya jika memang ingin auto push schema)
+- `PAYLOAD_ENABLE_CUSTOM_ADMIN` (default `true`, set `false` untuk pakai admin default saat troubleshooting panel blank)
 - `PAYLOAD_SECRET`
 - `CRON_SECRET`
 

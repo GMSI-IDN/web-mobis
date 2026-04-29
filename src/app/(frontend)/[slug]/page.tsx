@@ -34,8 +34,8 @@ export default async function Page({ params: paramsPromise }: Args) {
     slug: decodedSlug,
   })
 
-  // Remove this code once your website is seeded
-  if (!page && slug === 'home') {
+  // Dev-only fallback to avoid empty home during local bootstrap
+  if (!page && slug === 'home' && process.env.NODE_ENV !== 'production') {
     page = homeStatic
   }
 
@@ -93,7 +93,7 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
 
     return result.docs?.[0] || null
   } catch (error) {
-    if (isKnownOptionalRelationError(error)) {
+    if (isKnownOptionalRelationError(error) && process.env.NODE_ENV !== 'production') {
       return null
     }
 

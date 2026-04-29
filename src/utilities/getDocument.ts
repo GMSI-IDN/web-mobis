@@ -23,7 +23,7 @@ async function getDocument(collection: Collection, slug: string, depth = 0) {
 
     return page.docs[0]
   } catch (error) {
-    if (isKnownOptionalRelationError(error)) {
+    if (isKnownOptionalRelationError(error) && process.env.NODE_ENV !== 'production') {
       return null
     }
 
