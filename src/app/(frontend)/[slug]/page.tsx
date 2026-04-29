@@ -10,7 +10,7 @@ import { homeStatic } from '@/endpoints/seed/home-static'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { RenderHero } from '@/heros/RenderHero'
 import { generateMeta } from '@/utilities/generateMeta'
-import { isMissingRelationError } from '@/utilities/isMissingRelationError'
+import { isKnownOptionalRelationError } from '@/utilities/isMissingRelationError'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 
@@ -93,7 +93,7 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
 
     return result.docs?.[0] || null
   } catch (error) {
-    if (isMissingRelationError(error, 'pages_blocks_registration_form_opts_online_app')) {
+    if (isKnownOptionalRelationError(error)) {
       return null
     }
 

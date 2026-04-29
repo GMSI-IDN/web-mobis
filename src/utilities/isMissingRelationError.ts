@@ -15,3 +15,13 @@ export const isMissingRelationError = (error: unknown, relationName: string): bo
 
   return code === '42P01' && message.includes(`relation "${relationName}" does not exist`)
 }
+
+const OPTIONAL_RELATIONS = [
+  'pages_blocks_registration_form_opts_online_app',
+  'pages_blocks_faq_accordion',
+  'pages_blocks_faq_accordion_items',
+] as const
+
+export const isKnownOptionalRelationError = (error: unknown): boolean => {
+  return OPTIONAL_RELATIONS.some((relationName) => isMissingRelationError(error, relationName))
+}
