@@ -1,4 +1,4 @@
-type Cat = { id: string; name: string; createdAt?: string }
+type Cat = { id: number; name: string; createdAt?: string }
 
 function fmtDate(d?: string) {
   if (!d) return '-'

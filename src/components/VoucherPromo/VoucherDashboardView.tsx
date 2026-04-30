@@ -6,14 +6,14 @@ import VoucherFormPanel from './parts/VoucherFormPanel'
 import VoucherTablePanel from './parts/VoucherTablePanel'
 import './index.scss'
 
-type Cat = { id: string; name: string; createdAt?: string }
+type Cat = { id: number; name: string; createdAt?: string }
 type Voucher = {
-  id: string
+  id: number
   code: string
   quota: number
   used?: number
   enabled?: boolean
-  category?: string | { id: string; name?: string }
+  category?: number | { id: number; name?: string }
 }
 
 type ListRes<T> = { docs: T[] }
@@ -44,6 +44,7 @@ export default function VoucherDashboardView() {
   const [vouchers, setVouchers] = useState<Voucher[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [voucherModalOpen, setVoucherModalOpen] = useState(false)
@@ -77,6 +78,7 @@ export default function VoucherDashboardView() {
       setVouchers(vouRes.docs || [])
     } catch (e: any) {
       setError(e?.message ?? 'Gagal load data')
+      setSuccess('')
     } finally {
       setLoading(false)
     }
@@ -129,6 +131,9 @@ export default function VoucherDashboardView() {
       {error ? (
         <div className="voucher-dashboard__alert voucher-dashboard__alert--danger">{error}</div>
       ) : null}
+      {success ? (
+        <div className="voucher-dashboard__alert voucher-dashboard__alert--success">{success}</div>
+      ) : null}
 
       <div className="voucher-dashboard__stats">
         <div className="voucher-dashboard__stat-card">
@@ -178,9 +183,13 @@ export default function VoucherDashboardView() {
           loadingGlobal={loading}
           mode="modal"
           onClose={() => setVoucherModalOpen(false)}
-          onSuccess={async () => {
+          onSuccess={async (createdCode) => {
             await loadData()
             setVoucherModalOpen(false)
+            if (createdCode) {
+              setSuccess(`Voucher ${createdCode} berhasil dibuat.`)
+              setError('')
+            }
           }}
         />
       ) : null}

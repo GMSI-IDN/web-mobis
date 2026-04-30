@@ -2,14 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 
-type Cat = { id: string; name: string }
+type Cat = { id: number; name: string }
 type Voucher = {
-  id: string
+  id: number
   code: string
   quota: number
   used?: number
   enabled?: boolean
-  category?: string | { id: string; name?: string }
+  category?: number | { id: number; name?: string }
 }
 
 async function api(url: string, init?: RequestInit) {
@@ -72,7 +72,7 @@ export default function VoucherTablePanel({
   onSearchChange?: (value: string) => void
   search: string
 }) {
-  const [busyId, setBusyId] = useState<string>('')
+  const [busyId, setBusyId] = useState<number | null>(null)
   const [pageSize, setPageSize] = useState<number>(10)
   const [page, setPage] = useState<number>(1)
   const disabled = Boolean(loadingGlobal) || Boolean(busyId)
@@ -105,7 +105,7 @@ export default function VoucherTablePanel({
       })
       onChanged?.()
     } finally {
-      setBusyId('')
+      setBusyId(null)
     }
   }
 
@@ -119,7 +119,7 @@ export default function VoucherTablePanel({
       })
       onChanged?.()
     } finally {
-      setBusyId('')
+      setBusyId(null)
     }
   }
 
@@ -132,7 +132,7 @@ export default function VoucherTablePanel({
       await api(`/api/vouchers/${v.id}`, { method: 'DELETE' })
       onChanged?.()
     } finally {
-      setBusyId('')
+      setBusyId(null)
     }
   }
 
@@ -210,7 +210,7 @@ export default function VoucherTablePanel({
             >
               <option value="">Semua kategori</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={String(c.id)}>
                   {c.name}
                 </option>
               ))}

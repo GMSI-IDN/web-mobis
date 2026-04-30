@@ -6,14 +6,14 @@ import CategoryForm from './parts/CategoryForm'
 import VoucherTable from './parts/VoucherTable'
 import CategoryTable from './parts/CategoryTable'
 
-type Cat = { id: string; name: string; createdAt?: string }
+type Cat = { id: number; name: string; createdAt?: string }
 type Voucher = {
-  id: string
+  id: number
   code: string
   quota: number
   used?: number
   enabled?: boolean
-  category?: string | { id: string; name?: string }
+  category?: number | { id: number; name?: string }
   createdAt?: string
 }
 
@@ -160,7 +160,7 @@ export default function VoucherDashboard() {
           >
             <option value="">All Category</option>
             {cats.map((c) => (
-              <option key={c.id} value={c.id}>
+              <option key={c.id} value={String(c.id)}>
                 {c.name}
               </option>
             ))}

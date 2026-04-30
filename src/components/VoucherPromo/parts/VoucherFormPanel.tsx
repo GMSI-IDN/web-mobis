@@ -2,7 +2,19 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 
-type Cat = { id: string; name: string; createdAt?: string }
+type Cat = { id: number; name: string; createdAt?: string }
+
+function extractErrorMessage(data: any, status: number) {
+  if (typeof data?.message === 'string' && data.message.trim()) return data.message
+
+  const nestedFieldMessage = data?.errors?.[0]?.data?.errors?.[0]?.message
+  if (typeof nestedFieldMessage === 'string' && nestedFieldMessage.trim()) return nestedFieldMessage
+
+  const directFieldMessage = data?.errors?.[0]?.message
+  if (typeof directFieldMessage === 'string' && directFieldMessage.trim()) return directFieldMessage
+
+  return `Request failed: ${status}`
+}
 
 async function api<T = unknown>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -14,7 +26,7 @@ async function api<T = unknown>(url: string, init?: RequestInit): Promise<T> {
     },
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data?.message || `Request failed: ${res.status}`)
+  if (!res.ok) throw new Error(extractErrorMessage(data, res.status))
   return data as T
 }
 
@@ -29,6 +41,11 @@ function normalizeUpper(v: string) {
   return String(v || '')
     .trim()
     .toUpperCase()
+}
+
+function toNumberId(v: string): number | null {
+  const n = Number(String(v || '').trim())
+  return Number.isFinite(n) ? n : null
 }
 
 function fmtDate(d?: string) {
@@ -61,7 +78,7 @@ export default function VoucherFormPanel({
   categories: Cat[]
   mode?: 'modal' | 'panel'
   onClose?: () => void
-  onSuccess?: () => void | Promise<void>
+  onSuccess?: (createdCode?: string) => void | Promise<void>
   loadingGlobal?: boolean
 }) {
   const [categoryId, setCategoryId] = useState('')
@@ -81,7 +98,7 @@ export default function VoucherFormPanel({
   const [categoryPage, setCategoryPage] = useState<number>(1)
 
   useEffect(() => {
-    if (!categoryId && categories?.[0]?.id) setCategoryId(categories[0].id)
+    if (!categoryId && categories?.[0]?.id) setCategoryId(String(categories[0].id))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories?.length])
 
@@ -101,13 +118,15 @@ export default function VoucherFormPanel({
         return setErr('Start Date harus lebih kecil dari Exp Date.')
       }
     }
+    const categoryIdNum = toNumberId(categoryId)
+    if (categoryIdNum === null) return setErr('Kategori tidak valid.')
 
     setLoading(true)
     try {
       await api('/api/vouchers', {
         method: 'POST',
         body: JSON.stringify({
-          category: categoryId,
+          category: categoryIdNum,
           code: c,
           quota: Number(quota),
           enabled: Boolean(enabled),
@@ -123,7 +142,7 @@ export default function VoucherFormPanel({
       setStartAt('')
       setEndAt('')
       setDescription('')
-      await onSuccess?.()
+      await onSuccess?.(c)
     } catch (e: any) {
       setErr(e?.message ?? 'Gagal membuat voucher.')
     } finally {
@@ -146,7 +165,7 @@ export default function VoucherFormPanel({
       })
 
       setCategoryName('')
-      if (created?.id) setCategoryId(created.id)
+      if (created?.id) setCategoryId(String(created.id))
       await onSuccess?.()
       setCategoryModalOpen(false)
     } catch (e: any) {
@@ -194,7 +213,7 @@ export default function VoucherFormPanel({
             >
               <option value="">-- pilih --</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={String(c.id)}>
                   {c.name}
                 </option>
               ))}

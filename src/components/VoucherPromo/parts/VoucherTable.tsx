@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 
 type Voucher = {
-  id: string
+  id: number
   code: string
   quota: number
   used?: number
@@ -38,7 +38,7 @@ export default function VoucherTable({
   data: Voucher[]
   onChanged?: () => void
 }) {
-  const [busyId, setBusyId] = useState<string>('')
+  const [busyId, setBusyId] = useState<number | null>(null)
 
   async function toggleActive(v: Voucher) {
     setBusyId(v.id)
@@ -49,7 +49,7 @@ export default function VoucherTable({
       })
       onChanged?.()
     } finally {
-      setBusyId('')
+      setBusyId(null)
     }
   }
 
@@ -63,7 +63,7 @@ export default function VoucherTable({
       })
       onChanged?.()
     } finally {
-      setBusyId('')
+      setBusyId(null)
     }
   }
 
@@ -76,7 +76,7 @@ export default function VoucherTable({
       await api(`/api/vouchers/${v.id}`, { method: 'DELETE' })
       onChanged?.()
     } finally {
-      setBusyId('')
+      setBusyId(null)
     }
   }
 

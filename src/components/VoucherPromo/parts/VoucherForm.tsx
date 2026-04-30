@@ -1,7 +1,19 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 
-type Cat = { id: string; name: string }
+type Cat = { id: number; name: string }
+
+function extractErrorMessage(data: any, status: number) {
+  if (typeof data?.message === 'string' && data.message.trim()) return data.message
+
+  const nestedFieldMessage = data?.errors?.[0]?.data?.errors?.[0]?.message
+  if (typeof nestedFieldMessage === 'string' && nestedFieldMessage.trim()) return nestedFieldMessage
+
+  const directFieldMessage = data?.errors?.[0]?.message
+  if (typeof directFieldMessage === 'string' && directFieldMessage.trim()) return directFieldMessage
+
+  return `Request failed: ${status}`
+}
 
 async function api(url: string, init?: RequestInit) {
   const res = await fetch(url, {
@@ -13,7 +25,7 @@ async function api(url: string, init?: RequestInit) {
     },
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data?.message || `Request failed: ${res.status}`)
+  if (!res.ok) throw new Error(extractErrorMessage(data, res.status))
   return data
 }
 
@@ -22,6 +34,11 @@ function normalizeCode(v: string) {
     .trim()
     .toUpperCase()
     .replace(/\s+/g, '')
+}
+
+function toNumberId(v: string): number | null {
+  const n = Number(String(v || '').trim())
+  return Number.isFinite(n) ? n : null
 }
 
 export default function VoucherForm({
@@ -45,7 +62,7 @@ export default function VoucherForm({
   const [err, setErr] = useState('')
 
   useEffect(() => {
-    if (!categoryId && categories?.[0]?.id) setCategoryId(categories[0].id)
+    if (!categoryId && categories?.[0]?.id) setCategoryId(String(categories[0].id))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories?.length])
 
@@ -57,6 +74,8 @@ export default function VoucherForm({
     if (!categoryId) return setErr('Kategori wajib dipilih.')
     if (!c) return setErr('Kode wajib diisi.')
     if (!Number.isFinite(quota) || quota < 0) return setErr('Quota tidak valid.')
+    const categoryIdNum = toNumberId(categoryId)
+    if (categoryIdNum === null) return setErr('Kategori tidak valid.')
 
     // validasi tanggal (optional)
     if (startAt && endAt) {
@@ -71,7 +90,7 @@ export default function VoucherForm({
       await api('/api/vouchers', {
         method: 'POST',
         body: JSON.stringify({
-          category: categoryId,
+          category: categoryIdNum,
           code: c,
           quota: Number(quota),
           enabled: Boolean(enabled),
@@ -115,7 +134,7 @@ export default function VoucherForm({
             >
               <option value="">-- pilih --</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={String(c.id)}>
                   {c.name}
                 </option>
               ))}

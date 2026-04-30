@@ -646,6 +646,12 @@
   color: #b91c1c;
 }
 
+.voucher-dashboard__alert--success {
+  border-color: rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.1);
+  color: #166534;
+}
+
 .voucher-dashboard__empty {
   padding: 1.3rem 1rem;
   color: var(--theme-text);
