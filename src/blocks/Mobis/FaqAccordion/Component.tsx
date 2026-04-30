@@ -42,15 +42,14 @@ export const FaqAccordion: React.FC<Props> = ({ title, items }) => {
                     >
                       <span className="faq-mobis-question">{question}</span>
                       <span className="faq-mobis-icon" aria-hidden="true">
-                        <span>{isOpen ? '-' : '+'}</span>
+                        <span className="faq-mobis-symbol" />
                       </span>
                     </button>
 
-                    <div
-                      className="faq-mobis-answer-wrap"
-                      id={`faq-answer-${idx}`}
-                    >
-                      <p className="faq-mobis-answer">{answer}</p>
+                    <div className="faq-mobis-answer-wrap" id={`faq-answer-${idx}`}>
+                      <div className="faq-mobis-answer-inner">
+                        <p className="faq-mobis-answer">{answer}</p>
+                      </div>
                     </div>
                   </article>
                 )

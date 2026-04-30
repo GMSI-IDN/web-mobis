@@ -649,35 +649,71 @@ body {
   font-weight: 700;
 }
 
-.faq-mobis-icon span {
+.faq-mobis-symbol {
+  position: relative;
   display: inline-block;
+  width: 18px;
+  height: 18px;
   transform: translateY(-1px) scale(1);
-  transition: transform 0.22s ease;
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-mobis-symbol::before,
+.faq-mobis-symbol::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: #ffffff;
+  transform-origin: center;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-mobis-symbol::before {
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+.faq-mobis-symbol::after {
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .faq-mobis-answer-wrap {
-  border-top: 1px solid rgba(47, 142, 23, 0);
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0;
-  overflow: hidden;
-  padding: 0 1rem;
   background: #ffffff;
-  transition:
-    max-height 0.3s ease,
-    opacity 0.25s ease,
-    padding 0.25s ease,
-    border-color 0.2s ease;
+  transition: grid-template-rows 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
 }
 
 .faq-mobis-item.is-open .faq-mobis-answer-wrap {
-  border-top-color: rgba(47, 142, 23, 0.14);
-  max-height: 280px;
+  grid-template-rows: 1fr;
   opacity: 1;
+}
+
+.faq-mobis-answer-inner {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 1rem;
+  transition: padding 0.28s ease;
+}
+
+.faq-mobis-item.is-open .faq-mobis-answer-inner {
   padding: 0.75rem 1rem 1rem;
 }
 
-.faq-mobis-item.is-open .faq-mobis-icon span {
+.faq-mobis-item.is-open .faq-mobis-symbol {
   transform: translateY(-1px) scale(1.08);
+}
+
+.faq-mobis-item.is-open .faq-mobis-symbol::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.faq-mobis-item.is-open .faq-mobis-symbol::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .faq-mobis-answer {
@@ -685,6 +721,17 @@ body {
   color: #1f2937;
   line-height: 1.55;
   font-size: 0.92rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-mobis-answer-wrap,
+  .faq-mobis-answer-inner,
+  .faq-mobis-symbol,
+  .faq-mobis-symbol::before,
+  .faq-mobis-symbol::after,
+  .faq-mobis-item {
+    transition: none !important;
+  }
 }
 
 
