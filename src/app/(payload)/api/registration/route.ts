@@ -179,14 +179,21 @@ async function validatePromoCode(params: {
 }
 
 export async function POST(req: Request) {
+  let step = 'init'
   try {
+    step = 'parse-body'
     const body = await req.json()
+    const { id: _ignoredClientId, ...bodyWithoutId } =
+      body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
     // console.log('[API /registration] payload received:', body)
 
-    const reg: RegistrationPayload = validateRegistrationPayload(body)
+    step = 'validate-payload'
+    const reg: RegistrationPayload = validateRegistrationPayload(bodyWithoutId)
     // console.log('[API /registration] payload validated:', reg)
 
+    step = 'init-payload'
     const payload = await getPayload({ config })
+    step = 'check-ktp-cooldown'
     const ktpCooldown = await getKtpCooldownInfo({
       payload,
       ktpNumber: reg.ktpNumber,
@@ -218,6 +225,7 @@ export async function POST(req: Request) {
       promoResult = { provided: false }
     } else {
       try {
+        step = 'validate-promo'
         promoResult = await validatePromoCode({
           payload,
           promoCode,
@@ -247,6 +255,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Kirim ke Google Sheets
+    step = 'append-google-sheet'
     const sheetMeta = await appendLeadToSheet({
       ...reg,
       promoCode,
@@ -254,6 +263,7 @@ export async function POST(req: Request) {
     // console.log('[API /registration] appended to Google Sheets', sheetMeta)
 
     // 4. Simpan customer
+    step = 'create-customer'
     const customer = await payload.create({
       collection: 'customers',
       data: {
@@ -290,15 +300,20 @@ export async function POST(req: Request) {
         voucher: promoResult.provided && promoResult.valid ? promoResult.voucherId : undefined,
         promoError: undefined,
 
-        rawPayload: body,
+        rawPayload: bodyWithoutId,
         sheetMeta,
       },
     })
 
     if (promoResult.provided && promoResult.valid) {
+      step = 'increment-voucher-used'
       await payload.update({
         collection: 'vouchers',
-        id: promoResult.voucherId,
+        where: {
+          code: {
+            equals: promoResult.code,
+          },
+        },
         data: {
           used: promoResult.used + 1,
         },
@@ -313,13 +328,22 @@ export async function POST(req: Request) {
       promo: promoResult,
     })
   } catch (err: any) {
-    console.error('[API /registration] ERROR:', err)
+    console.error('[API /registration] ERROR:', {
+      step,
+      message: err?.message,
+      code: err?.code,
+      data: err?.data,
+      errors: err?.errors,
+      stack: err?.stack,
+    })
 
     return NextResponse.json(
       {
         ok: false,
+        step,
         code: err?.code,
         errors: err?.errors,
+        data: err?.data,
         message: err?.message ?? 'Server error saat proses registration',
       },
       { status: err?.statusCode ?? 500 },
