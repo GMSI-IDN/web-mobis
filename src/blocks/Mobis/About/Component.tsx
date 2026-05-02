@@ -13,9 +13,7 @@ type Props = {
 export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
   const imageUrl = image?.url
   const normalizedTitle =
-    title?.trim() === 'Tentang Rental MOBIS'
-      ? 'Tentang Layanan Rental Driver Online MOBIS'
-      : title
+    title?.trim() === 'Tentang Rental MOBIS' ? 'Tentang Layanan Rental Driver Online MOBIS' : title
 
   return (
     <section className="background-light about-section py-5">
@@ -23,7 +21,7 @@ export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
         <div className="row align-items-center g-3">
           <div className="col-6 ">
             <div className="text-about">
-              <h2 className="fw-bold primary-color text-center title-about">{normalizedTitle}</h2>
+              <h1 className="fw-bold primary-color text-center title-about">{normalizedTitle}</h1>
 
               {/* ✅ RichText output (bold/italic/underline) */}
               <div className="mb-0 primary-color text-justify">
