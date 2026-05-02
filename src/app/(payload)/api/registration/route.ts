@@ -85,7 +85,7 @@ type PromoResult =
       provided: true
       valid: true
       code: string
-      voucherId: string
+      voucherId: number
       quota: number
       used: number
       remaining: number
@@ -130,6 +130,11 @@ async function validatePromoCode(params: {
     throw new Error('Voucher tidak ditemukan')
   }
 
+  const voucherId = Number(voucher.id)
+  if (!Number.isFinite(voucherId)) {
+    throw new Error('ID voucher tidak valid')
+  }
+
   if ('enabled' in voucher && !voucher.enabled) {
     throw new Error('Voucher tidak aktif')
   }
@@ -166,7 +171,7 @@ async function validatePromoCode(params: {
     provided: true,
     valid: true,
     code: promoCode,
-    voucherId: String(voucher.id),
+    voucherId,
     quota,
     used,
     remaining,
@@ -282,8 +287,7 @@ export async function POST(req: Request) {
         promoApplied: promoResult.provided ? promoResult.valid : false,
         promoAppliedAt:
           promoResult.provided && promoResult.valid ? new Date().toISOString() : undefined,
-        voucher:
-          promoResult.provided && promoResult.valid ? Number(promoResult.voucherId) : undefined,
+        voucher: promoResult.provided && promoResult.valid ? promoResult.voucherId : undefined,
         promoError: undefined,
 
         rawPayload: body,
