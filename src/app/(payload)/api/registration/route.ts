@@ -178,6 +178,30 @@ async function validatePromoCode(params: {
   }
 }
 
+function isIdUniqueValidationError(err: unknown) {
+  const error = err as any
+  const details = [
+    ...(Array.isArray(error?.data?.errors) ? error.data.errors : []),
+    ...(Array.isArray(error?.errors) ? error.errors : []),
+  ]
+
+  return details.some((item: any) => {
+    const path = String(item?.path ?? '')
+    const message = String(item?.message ?? '')
+    return path === 'id' && /unique/i.test(message)
+  })
+}
+
+async function resyncCustomersIdSequence(payload: any) {
+  await payload.db.drizzle.execute(
+    `SELECT setval(
+      pg_get_serial_sequence('customers', 'id'),
+      COALESCE((SELECT MAX(id) FROM customers), 0) + 1,
+      false
+    );`,
+  )
+}
+
 export async function POST(req: Request) {
   let step = 'init'
   try {
@@ -264,46 +288,62 @@ export async function POST(req: Request) {
 
     // 4. Simpan customer
     step = 'create-customer'
-    const customer = await payload.create({
-      collection: 'customers',
-      data: {
-        name: reg.name ?? '',
-        birthPlace: reg.birthPlace ?? '',
-        birthDate: reg.birthDate ?? '',
+    const customerData = {
+      name: reg.name ?? '',
+      birthPlace: reg.birthPlace ?? '',
+      birthDate: reg.birthDate ?? '',
 
-        phone: reg.phone ?? '',
-        ktpNumber: reg.ktpNumber ?? '',
+      phone: reg.phone ?? '',
+      ktpNumber: reg.ktpNumber ?? '',
 
-        simNumber: reg.simNumber ?? '',
-        simType: reg.simType ?? '',
-        domicile: reg.domicile ?? '',
-        simValidUntil: reg.simValidUntil ?? '',
+      simNumber: reg.simNumber ?? '',
+      simType: reg.simType ?? '',
+      domicile: reg.domicile ?? '',
+      simValidUntil: reg.simValidUntil ?? '',
 
-        currentAddress: reg.currentAddress ?? '',
-        houseOwnership: reg.houseOwnership ?? '',
+      currentAddress: reg.currentAddress ?? '',
+      houseOwnership: reg.houseOwnership ?? '',
 
-        emergencyName: reg.emergencyName ?? '',
-        emergencyPhone: reg.emergencyPhone ?? '',
-        emergencyRelation: reg.emergencyRelation ?? '',
+      emergencyName: reg.emergencyName ?? '',
+      emergencyPhone: reg.emergencyPhone ?? '',
+      emergencyRelation: reg.emergencyRelation ?? '',
 
-        driverApps: reg.driverApps ?? '',
-        activeAccountSelf: reg.activeAccountSelf ?? '',
-        driverExperience: reg.driverExperience ?? '',
+      driverApps: reg.driverApps ?? '',
+      activeAccountSelf: reg.activeAccountSelf ?? '',
+      driverExperience: reg.driverExperience ?? '',
 
-        handoverLocation: reg.handoverLocation ?? '',
-        sourceInfo: reg.sourceInfo ?? '',
+      handoverLocation: reg.handoverLocation ?? '',
+      sourceInfo: reg.sourceInfo ?? '',
 
-        promoCode: promoCode || undefined,
-        promoApplied: promoResult.provided ? promoResult.valid : false,
-        promoAppliedAt:
-          promoResult.provided && promoResult.valid ? new Date().toISOString() : undefined,
-        voucher: promoResult.provided && promoResult.valid ? promoResult.voucherId : undefined,
-        promoError: undefined,
+      promoCode: promoCode || undefined,
+      promoApplied: promoResult.provided ? promoResult.valid : false,
+      promoAppliedAt:
+        promoResult.provided && promoResult.valid ? new Date().toISOString() : undefined,
+      voucher: promoResult.provided && promoResult.valid ? promoResult.voucherId : undefined,
+      promoError: undefined,
 
-        rawPayload: bodyWithoutId,
-        sheetMeta,
-      },
-    })
+      rawPayload: bodyWithoutId,
+      sheetMeta,
+    }
+
+    let customer: any
+    try {
+      customer = await payload.create({
+        collection: 'customers',
+        data: customerData,
+      })
+    } catch (err) {
+      if (!isIdUniqueValidationError(err)) throw err
+
+      step = 'resync-customers-id-sequence'
+      await resyncCustomersIdSequence(payload)
+
+      step = 'create-customer-retry'
+      customer = await payload.create({
+        collection: 'customers',
+        data: customerData,
+      })
+    }
 
     if (promoResult.provided && promoResult.valid) {
       step = 'increment-voucher-used'
