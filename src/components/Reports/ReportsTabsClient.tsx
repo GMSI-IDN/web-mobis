@@ -955,6 +955,7 @@ export default function ReportsTabsClient({
         baseParams.set('depth', '0')
         baseParams.set('limit', '200')
         baseParams.set('page', '1')
+        baseParams.set('select[createdAt]', 'true')
         baseParams.set('select[name]', 'true')
         baseParams.set('select[domicile]', 'true')
         baseParams.set('select[handoverLocation]', 'true')
