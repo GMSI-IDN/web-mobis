@@ -499,7 +499,6 @@ function buildRegionLineChartData(params: {
   }
 
   const seeds = buildTrendSeed(startDate, endDate, granularity)
-  const indexByStart = new Map<number, number>(seeds.map((bucket, idx) => [bucket.start.getTime(), idx]))
   const valuesByRegion = new Map<string, number[]>(
     regionLabels.map((label) => [label, Array.from({ length: seeds.length }, () => 0)]),
   )
@@ -515,9 +514,13 @@ function buildRegionLineChartData(params: {
     const series = valuesByRegion.get(regionLabel)
     if (!series) continue
 
-    const periodStart = getTrendPeriodStart(createdAt, granularity).getTime()
-    const idx = indexByStart.get(periodStart)
-    if (idx === undefined) continue
+    const at = createdAt.getTime()
+    const idx = seeds.findIndex((bucket) => {
+      const startMs = bucket.start.getTime()
+      const endMs = bucket.end.getTime()
+      return at >= startMs && at < endMs
+    })
+    if (idx < 0) continue
 
     series[idx] += 1
   }

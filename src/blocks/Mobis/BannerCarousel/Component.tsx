@@ -15,6 +15,19 @@ type Slide = {
   backgroundImageMobile?: Media
 }
 
+function isSafeCtaLink(value: string) {
+  if (!value) return false
+  if (value.startsWith('#')) return true
+  if (value.startsWith('/')) return true
+
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 export default function BannerCarouselBlockComponent({ slides }: { slides?: Slide[] }) {
   const id = useId().replace(/:/g, '')
   const carouselId = `carousel-${id}`
@@ -94,7 +107,8 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
               const isFirstSlide = i === 0
 
               const ctaText = s?.ctaText ?? 'Daftar Sekarang'
-              const ctaLink = s?.ctaLink?.trim() || '#registration'
+              const rawCtaLink = s?.ctaLink?.trim() || '#registration'
+              const ctaLink = isSafeCtaLink(rawCtaLink) ? rawCtaLink : '#registration'
               const isSectionLink = ctaLink.startsWith('#')
 
               return (
