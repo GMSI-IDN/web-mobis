@@ -45,6 +45,7 @@ export default async function Page({ params: paramsPromise }: Args) {
     overrideAccess: false,
   })
 
+  if (posts.totalDocs === 0) notFound()
   if (posts.totalPages > 0 && sanitizedPageNumber > posts.totalPages) notFound()
 
   return (

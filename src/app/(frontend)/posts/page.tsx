@@ -5,6 +5,7 @@ import { PageRange } from '@/components/PageRange'
 import { Pagination } from '@/components/Pagination'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
+import { notFound } from 'next/navigation'
 import React from 'react'
 import PageClient from './page.client'
 
@@ -25,6 +26,8 @@ export default async function Page() {
       meta: true,
     },
   })
+
+  if (posts.totalDocs === 0) notFound()
 
   return (
     <div className="pt-24 pb-24">
