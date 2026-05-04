@@ -162,6 +162,7 @@ export const Pages: CollectionConfig<'pages'> = {
       },
       schedulePublish: true,
     },
-    maxPerDoc: 50,
+    // Keep above current row count to avoid hitting version-cap edge cases during saves.
+    maxPerDoc: 200,
   },
 }
