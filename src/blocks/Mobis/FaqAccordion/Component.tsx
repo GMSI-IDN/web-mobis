@@ -32,7 +32,10 @@ export const FaqAccordion: React.FC<Props> = ({ title, items }) => {
                 const answer = item?.answer?.trim() || 'Jawaban akan segera diperbarui.'
 
                 return (
-                  <article className={`faq-mobis-item ${isOpen ? 'is-open' : ''}`} key={`faq-${idx}`}>
+                  <article
+                    className={`faq-mobis-item ${isOpen ? 'is-open' : ''}`}
+                    key={`faq-${idx}`}
+                  >
                     <button
                       aria-controls={`faq-answer-${idx}`}
                       aria-expanded={isOpen}
@@ -40,7 +43,7 @@ export const FaqAccordion: React.FC<Props> = ({ title, items }) => {
                       onClick={() => setOpenIndex((prev) => (prev === idx ? null : idx))}
                       type="button"
                     >
-                      <span className="faq-mobis-question">{question}</span>
+                      <h2 className="faq-mobis-question">{question}</h2>
                       <span className="faq-mobis-icon" aria-hidden="true">
                         <span className="faq-mobis-symbol" />
                       </span>
@@ -61,5 +64,3 @@ export const FaqAccordion: React.FC<Props> = ({ title, items }) => {
     </section>
   )
 }
-
-
