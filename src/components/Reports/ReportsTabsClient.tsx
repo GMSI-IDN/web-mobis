@@ -499,6 +499,9 @@ function buildRegionLineChartData(params: {
   }
 
   const seeds = buildTrendSeed(startDate, endDate, granularity)
+  const indexByStart = new Map<number, number>(
+    seeds.map((bucket, idx) => [bucket.start.getTime(), idx] as const),
+  )
   const valuesByRegion = new Map<string, number[]>(
     regionLabels.map((label) => [label, Array.from({ length: seeds.length }, () => 0)]),
   )
@@ -514,13 +517,8 @@ function buildRegionLineChartData(params: {
     const series = valuesByRegion.get(regionLabel)
     if (!series) continue
 
-    const at = createdAt.getTime()
-    const idx = seeds.findIndex((bucket) => {
-      const startMs = bucket.start.getTime()
-      const endMs = bucket.end.getTime()
-      return at >= startMs && at < endMs
-    })
-    if (idx < 0) continue
+    const idx = indexByStart.get(getTrendPeriodStart(createdAt, granularity).getTime())
+    if (idx === undefined) continue
 
     series[idx] += 1
   }
@@ -984,6 +982,10 @@ export default function ReportsTabsClient({
         baseParams.set('limit', '200')
         baseParams.set('page', '1')
         baseParams.set('sort', '-createdAt')
+        baseParams.set('select[createdAt]', 'true')
+        baseParams.set('select[domicile]', 'true')
+        baseParams.set('select[handoverLocation]', 'true')
+        baseParams.set('select[name]', 'true')
         baseParams.set('where[and][0][createdAt][greater_than_equal]', startISO)
         baseParams.set('where[and][1][createdAt][less_than_equal]', endISO)
 
@@ -992,16 +994,25 @@ export default function ReportsTabsClient({
           ...(firstPage.docs || []).filter((doc) => !isExcludedLeadName(doc?.name)),
         ]
 
-        let currentPage = firstPage.page ?? 1
         const totalPages = firstPage.totalPages ?? 1
         const maxPages = 30
+        const lastPage = Math.min(totalPages, maxPages)
+        const remainingPages = Array.from({ length: Math.max(0, lastPage - 1) }, (_, idx) => idx + 2)
+        const pageBatchSize = 4
 
-        while (currentPage < totalPages && currentPage < maxPages) {
-          currentPage += 1
-          const pageParams = new URLSearchParams(baseParams)
-          pageParams.set('page', String(currentPage))
-          const pageRes = await api<CustomersListResponse>(`/api/customers?${pageParams.toString()}`)
-          docs.push(...(pageRes.docs || []).filter((doc) => !isExcludedLeadName(doc?.name)))
+        for (let index = 0; index < remainingPages.length; index += pageBatchSize) {
+          const batchPages = remainingPages.slice(index, index + pageBatchSize)
+          const batchResults = await Promise.all(
+            batchPages.map(async (pageNumber) => {
+              const pageParams = new URLSearchParams(baseParams)
+              pageParams.set('page', String(pageNumber))
+              return api<CustomersListResponse>(`/api/customers?${pageParams.toString()}`)
+            }),
+          )
+
+          for (const pageRes of batchResults) {
+            docs.push(...(pageRes.docs || []).filter((doc) => !isExcludedLeadName(doc?.name)))
+          }
         }
 
         setRegionSummaryState({

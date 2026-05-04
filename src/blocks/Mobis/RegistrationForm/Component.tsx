@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
+import { trackFacebookCustomEvent, trackFacebookEvent } from '@/utilities/pixelFacebook'
 
 type Option = { label: string; value: string }
 
@@ -101,13 +101,18 @@ const trackRegistrationSubmitClick = ({ buttonText }: { buttonText: string }) =>
 }
 
 const trackRegistrationSuccess = ({ buttonText }: { buttonText: string }) => {
-  trackFacebookCustomEvent('RegistrationSuccess', {
+  const basePayload = {
     button_text: buttonText + '-success',
     section: 'Registration Form',
     target: '/api/registration',
     target_type: 'submit',
     page_path: window.location.pathname,
-  })
+    value: 120000, // contoh nilai konversi, bisa disesuaikan dengan kebutuhan
+    currency: 'IDR',
+  }
+
+  trackFacebookCustomEvent('RegistrationSuccess', basePayload)
+  trackFacebookEvent('CompleteRegistration', basePayload)
 }
 
 function SelectField({

@@ -193,10 +193,14 @@ function isIdUniqueValidationError(err: unknown) {
 }
 
 async function resyncCustomersIdSequence(payload: any) {
+  await resyncCollectionIdSequence(payload, 'customers')
+}
+
+async function resyncCollectionIdSequence(payload: any, tableName: string) {
   await payload.db.drizzle.execute(
     `SELECT setval(
-      pg_get_serial_sequence('customers', 'id'),
-      COALESCE((SELECT MAX(id) FROM customers), 0) + 1,
+      pg_get_serial_sequence('${tableName}', 'id'),
+      COALESCE((SELECT MAX(id) FROM ${tableName}), 0) + 1,
       false
     );`,
   )
@@ -347,17 +351,37 @@ export async function POST(req: Request) {
 
     if (promoResult.provided && promoResult.valid) {
       step = 'increment-voucher-used'
-      await payload.update({
-        collection: 'vouchers',
-        where: {
-          code: {
-            equals: promoResult.code,
+
+      const updateVoucherUsage = async () => {
+        const latestVoucher = await payload.findByID({
+          collection: 'vouchers',
+          id: promoResult.voucherId,
+          depth: 0,
+        })
+
+        const latestUsed = Number(latestVoucher?.used ?? promoResult.used)
+        const nextUsed = Number.isFinite(latestUsed) ? latestUsed + 1 : promoResult.used + 1
+
+        await payload.update({
+          collection: 'vouchers',
+          id: promoResult.voucherId,
+          data: {
+            used: nextUsed,
           },
-        },
-        data: {
-          used: promoResult.used + 1,
-        },
-      })
+        })
+      }
+
+      try {
+        await updateVoucherUsage()
+      } catch (err) {
+        if (!isIdUniqueValidationError(err)) throw err
+
+        step = 'resync-vouchers-id-sequence'
+        await resyncCollectionIdSequence(payload, 'vouchers')
+
+        step = 'increment-voucher-used-retry'
+        await updateVoucherUsage()
+      }
     }
 
     return NextResponse.json({

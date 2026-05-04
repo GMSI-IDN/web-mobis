@@ -85,6 +85,17 @@ function mapSimTypeForApi(simType?: string): string {
   return mapSimTypeForSheet(simType)
 }
 
+function toExternalInteger(value?: string): number | null {
+  const raw = String(value ?? '').trim()
+  if (!raw) return null
+
+  const digitsOnly = raw.replace(/\D/g, '')
+  if (!digitsOnly) return null
+
+  const parsed = Number(digitsOnly)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 function normalizePhone(phone?: string): string {
   if (!phone) return ''
 
@@ -213,7 +224,9 @@ function buildExternalApiPayload(payload: RegistrationPayload) {
     phone_number: normalizePhone(payload.phone),
     age,
     identity_number: payload.ktpNumber ?? '',
-    domicile: payload.domicile ?? '',
+    // External API expects an integer foreign-key value for domicile.
+    // Send null when FE still provides a human-readable label.
+    domicile: toExternalInteger(payload.domicile),
     address: payload.currentAddress ?? '',
     home_ownership_status: payload.houseOwnership ?? '',
     online_driver_app: payload.driverApps ?? '',
