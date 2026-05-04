@@ -311,10 +311,10 @@ function addJakartaMonths(date: Date, months: number) {
 }
 
 function getRegionPeriodStart(endDate: Date, period: RegionStatPeriod) {
-  if (period === 'day') return startOfJakartaDay(endDate)
-  if (period === 'week') return startOfJakartaWeek(endDate)
-  if (period === 'year') return startOfJakartaYear(endDate)
-  return startOfJakartaMonth(endDate)
+  if (period === 'day') return addJakartaDays(endDate, -1)
+  if (period === 'week') return addJakartaDays(endDate, -7)
+  if (period === 'year') return addJakartaMonths(endDate, -12)
+  return addJakartaMonths(endDate, -1)
 }
 
 function getRegionPeriodLabel(period: RegionStatPeriod) {
@@ -503,11 +503,13 @@ function buildRegionLineChartData(params: {
   const valuesByRegion = new Map<string, number[]>(
     regionLabels.map((label) => [label, Array.from({ length: seeds.length }, () => 0)]),
   )
+  let validDateDocs = 0
 
   for (const doc of docs) {
     if (!doc.createdAt) continue
     const createdAt = new Date(doc.createdAt)
     if (Number.isNaN(createdAt.getTime())) continue
+    validDateDocs += 1
 
     const regionLabel = resolveRegionLabel(doc, source)
     const series = valuesByRegion.get(regionLabel)
@@ -525,6 +527,29 @@ function buildRegionLineChartData(params: {
     label,
     values: valuesByRegion.get(label) ?? [],
   }))
+
+  // Fallback: jika ada data wilayah tapi timestamp tidak valid/terbaca, tampilkan 1 titik agregat
+  // agar chart tidak terlihat kosong total.
+  if (validDateDocs === 0 && docs.length > 0) {
+    const aggregateMap = new Map<string, number>()
+    for (const doc of docs) {
+      const label = resolveRegionLabel(doc, source)
+      if (!valuesByRegion.has(label)) continue
+      aggregateMap.set(label, (aggregateMap.get(label) ?? 0) + 1)
+    }
+
+    const aggregateSeries = regionLabels.map((label, idx) => ({
+      color: REGION_COLORS[idx % REGION_COLORS.length],
+      label,
+      values: [aggregateMap.get(label) ?? 0],
+    }))
+
+    return {
+      labels: ['Agregat'],
+      maxCount: Math.max(0, ...aggregateSeries.flatMap((item) => item.values)),
+      series: aggregateSeries,
+    }
+  }
 
   const maxCount = Math.max(0, ...series.flatMap((item) => item.values))
 
@@ -955,10 +980,6 @@ export default function ReportsTabsClient({
         baseParams.set('depth', '0')
         baseParams.set('limit', '200')
         baseParams.set('page', '1')
-        baseParams.set('select[createdAt]', 'true')
-        baseParams.set('select[name]', 'true')
-        baseParams.set('select[domicile]', 'true')
-        baseParams.set('select[handoverLocation]', 'true')
         baseParams.set('sort', '-createdAt')
         baseParams.set('where[and][0][createdAt][greater_than_equal]', startISO)
         baseParams.set('where[and][1][createdAt][less_than_equal]', endISO)
@@ -1025,14 +1046,7 @@ export default function ReportsTabsClient({
       return at >= periodStart && at <= periodEnd
     })
   }, [regionPeriodStartISO, regionRangeDocs, regionSummaryToShow.endISO])
-  const regionUsesRangeFallback = useMemo(
-    () => regionRangeDocs.length > 0 && regionPeriodFilteredDocs.length === 0,
-    [regionPeriodFilteredDocs.length, regionRangeDocs.length],
-  )
-  const regionPeriodDocs = useMemo(
-    () => (regionUsesRangeFallback ? regionRangeDocs : regionPeriodFilteredDocs),
-    [regionPeriodFilteredDocs, regionRangeDocs, regionUsesRangeFallback],
-  )
+  const regionPeriodDocs = regionPeriodFilteredDocs
   const regionPeriodStats = useMemo(
     () => buildRegionStatsFromDocs(regionPeriodDocs, regionTopLimit, regionSource),
     [regionPeriodDocs, regionTopLimit, regionSource],
@@ -1629,13 +1643,6 @@ export default function ReportsTabsClient({
             {regionSummaryToShow.isTruncated ? (
               <div className="mobis-reports__custom-note">
                 Data range sangat besar, statistik wilayah dihitung dari batch terbatas.
-              </div>
-            ) : null}
-
-            {regionUsesRangeFallback ? (
-              <div className="mobis-reports__custom-note">
-                Data {regionPeriodLabel.toLowerCase()} kosong pada rentang ini, menampilkan data
-                dari seluruh rentang terpilih.
               </div>
             ) : null}
 
