@@ -9,6 +9,10 @@ import type { RegistrationPayload } from '@/types/registration'
 
 const KTP_REAPPLY_COOLDOWN_MONTHS = 3
 
+function isTruthyEnv(value: string | undefined) {
+  return ['1', 'true', 'yes', 'on'].includes(String(value ?? '').trim().toLowerCase())
+}
+
 function normalizeCode(v: unknown) {
   return String(v ?? '')
     .trim()
@@ -283,6 +287,9 @@ async function resyncCollectionIdSequence(payload: any, tableName: string) {
 export async function POST(req: Request) {
   let step = 'init'
   try {
+    const bypassGoogleSheets = isTruthyEnv(process.env.REGISTRATION_BYPASS_GOOGLE_SHEETS)
+    const metaDebug = isTruthyEnv(process.env.REGISTRATION_META_DEBUG)
+
     step = 'parse-body'
     const body = await req.json()
     const {
@@ -363,12 +370,21 @@ export async function POST(req: Request) {
       )
     }
 
-    // 3. Kirim ke Google Sheets
-    step = 'append-google-sheet'
-    const sheetMeta = await appendLeadToSheet({
-      ...reg,
-      promoCode,
-    })
+    // 3. Kirim ke Google Sheets (opsional bypass via env)
+    let sheetMeta: Record<string, unknown>
+    if (bypassGoogleSheets) {
+      step = 'skip-google-sheet'
+      sheetMeta = {
+        bypassed: true,
+        bypassReason: 'REGISTRATION_BYPASS_GOOGLE_SHEETS enabled',
+      }
+    } else {
+      step = 'append-google-sheet'
+      sheetMeta = await appendLeadToSheet({
+        ...reg,
+        promoCode,
+      })
+    }
     // console.log('[API /registration] appended to Google Sheets', sheetMeta)
 
     // 4. Simpan customer
@@ -465,6 +481,7 @@ export async function POST(req: Request) {
       }
     }
 
+    let capiResult: Awaited<ReturnType<typeof sendMetaConversionsApiEvent>> | null = null
     try {
       step = 'send-meta-conversion'
       const { firstName, lastName } = splitName(reg.name)
@@ -473,7 +490,7 @@ export async function POST(req: Request) {
       const fbc = getCookieValue(cookieHeader, '_fbc')
       const fbp = getCookieValue(cookieHeader, '_fbp')
 
-      const capiResult = await sendMetaConversionsApiEvent({
+      capiResult = await sendMetaConversionsApiEvent({
         eventName: 'CompleteRegistration',
         eventId: metaEventId,
         eventSourceUrl,
@@ -504,14 +521,33 @@ export async function POST(req: Request) {
           response: capiResult.response,
         })
       }
+
+      if (metaDebug) {
+        console.info('[API /registration] Meta CAPI debug:', {
+          sent: capiResult.sent,
+          status: capiResult.status,
+          reason: capiResult.sent ? undefined : capiResult.reason,
+          eventId: metaEventId,
+          response: capiResult.response,
+        })
+      }
     } catch (metaErr: unknown) {
       console.warn('[API /registration] Meta CAPI exception:', metaErr)
     }
 
     return NextResponse.json({
       ok: true,
-      message: 'Terkirim ke Google Sheets + tersimpan ke database.',
+      message: bypassGoogleSheets
+        ? 'Google Sheets dibypass. Data tersimpan ke database.'
+        : 'Terkirim ke Google Sheets + tersimpan ke database.',
       customerId: customer.id,
+      googleSheetsBypassed: bypassGoogleSheets,
+      metaCapi: metaDebug
+        ? {
+            enabled: true,
+            result: capiResult,
+          }
+        : undefined,
       // sheet: sheetMeta,
       promo: promoResult,
     })
