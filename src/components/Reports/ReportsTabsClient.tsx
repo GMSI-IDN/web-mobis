@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { isExcludedLeadName } from '@/lib/customers/testLeadFilter'
 
 type Bucket = {
@@ -31,6 +31,7 @@ type RegionDataPanel = 'line' | 'pie' | 'rank'
 type RegionSource = 'domicile' | 'handover'
 type RegionStatPeriod = 'day' | 'month' | 'week' | 'year'
 type TrendGranularity = 'day' | 'month' | 'week'
+type TimeBucketGranularity = 'hour' | TrendGranularity
 
 type Props = {
   daily: Bucket[]
@@ -116,6 +117,7 @@ const MAX_TOP_HOURS = 10
 const MIN_REGION_TOP = 3
 const MAX_REGION_TOP = 12
 const DAY_MS = 24 * 60 * 60 * 1000
+const HOUR_MS = 60 * 60 * 1000
 const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000
 const REGION_COLORS = [
   '#ef4444',
@@ -267,6 +269,27 @@ function addJakartaDays(date: Date, days: number) {
   return new Date(date.getTime() + days * DAY_MS)
 }
 
+function addJakartaHours(date: Date, hours: number) {
+  return new Date(date.getTime() + hours * HOUR_MS)
+}
+
+function startOfJakartaHour(date: Date) {
+  const jakarta = toJakartaDate(date)
+  return fromJakartaDate(
+    new Date(
+      Date.UTC(
+        jakarta.getUTCFullYear(),
+        jakarta.getUTCMonth(),
+        jakarta.getUTCDate(),
+        jakarta.getUTCHours(),
+        0,
+        0,
+        0,
+      ),
+    ),
+  )
+}
+
 function startOfJakartaDay(date: Date) {
   const jakarta = toJakartaDate(date)
   return fromJakartaDate(
@@ -324,24 +347,37 @@ function getRegionPeriodLabel(period: RegionStatPeriod) {
   return 'Bulanan'
 }
 
-function getRegionLineGranularity(period: RegionStatPeriod): TrendGranularity {
-  if (period === 'year') return 'month'
-  return 'day'
+function getRegionLineGranularity(_period: RegionStatPeriod): TimeBucketGranularity {
+  return 'hour'
 }
 
-function getTrendPeriodStart(date: Date, granularity: TrendGranularity) {
+function getTrendPeriodStart(date: Date, granularity: TimeBucketGranularity) {
+  if (granularity === 'hour') return startOfJakartaHour(date)
   if (granularity === 'day') return startOfJakartaDay(date)
   if (granularity === 'week') return startOfJakartaWeek(date)
   return startOfJakartaMonth(date)
 }
 
-function getTrendPeriodEnd(periodStart: Date, granularity: TrendGranularity) {
+function getTrendPeriodEnd(periodStart: Date, granularity: TimeBucketGranularity) {
+  if (granularity === 'hour') return addJakartaHours(periodStart, 1)
   if (granularity === 'day') return addJakartaDays(periodStart, 1)
   if (granularity === 'week') return addJakartaDays(periodStart, 7)
   return addJakartaMonths(periodStart, 1)
 }
 
-function getTrendLabel(periodStart: Date, periodEnd: Date, granularity: TrendGranularity, index: number) {
+function getTrendLabel(
+  periodStart: Date,
+  periodEnd: Date,
+  granularity: TimeBucketGranularity,
+  index: number,
+) {
+  if (granularity === 'hour') {
+    const dayLabel = dayLabelFormatter.format(periodStart)
+    const hour = String(toJakartaDate(periodStart).getUTCHours()).padStart(2, '0')
+    const label = `${dayLabel} ${hour}:00`
+    return { label, shortLabel: label }
+  }
+
   if (granularity === 'day') {
     const label = dayLabelFormatter.format(periodStart)
     return { label, shortLabel: label }
@@ -366,7 +402,11 @@ function toTrendBuckets(buckets: Pick<Bucket, 'count' | 'label' | 'shortLabel'>[
   }))
 }
 
-function buildTrendSeed(startDate: Date, endDate: Date, granularity: TrendGranularity): TrendSeedBucket[] {
+function buildTrendSeed(
+  startDate: Date,
+  endDate: Date,
+  granularity: TimeBucketGranularity,
+): TrendSeedBucket[] {
   const safeStart = new Date(Math.min(startDate.getTime(), endDate.getTime()))
   const safeEnd = new Date(Math.max(startDate.getTime(), endDate.getTime()))
   const initialStart = getTrendPeriodStart(safeStart, granularity)
@@ -480,7 +520,7 @@ function Bars({
 function buildRegionLineChartData(params: {
   docs: CustomerRangeDoc[]
   endISO: string
-  granularity: TrendGranularity
+  granularity: TimeBucketGranularity
   regionLabels: string[]
   source: RegionSource
   startISO: string
@@ -588,6 +628,7 @@ function RegionLineChart({
   const maxTicks = Math.max(4, Math.floor(chartWidth / 56))
   const labelStep = pointsCount <= maxTicks ? 1 : Math.ceil(pointsCount / maxTicks)
   const axisFontSize = pointsCount > 24 ? 8 : pointsCount > 16 ? 9 : 10
+  const pointValueStep = Math.max(1, labelStep * 2)
 
   useEffect(() => {
     setHiddenSeriesLabels((prev) =>
@@ -658,27 +699,64 @@ function RegionLineChart({
               })}
 
               {visibleSeries.map((series) => {
-                const points = series.values
-                  .map((value, idx) => {
-                    const x =
-                      pointsCount === 1
-                        ? paddingLeft + chartWidth / 2
-                        : paddingLeft + (idx / (pointsCount - 1)) * chartWidth
-                    const y = paddingTop + chartHeight - (value / maxCount) * chartHeight
-                    return `${x},${y}`
-                  })
-                  .join(' ')
+                const pointsGeometry = series.values.map((value, idx) => {
+                  const x =
+                    pointsCount === 1
+                      ? paddingLeft + chartWidth / 2
+                      : paddingLeft + (idx / (pointsCount - 1)) * chartWidth
+                  const y = paddingTop + chartHeight - (value / maxCount) * chartHeight
+                  return { idx, value, x, y }
+                })
+                const points = pointsGeometry.map((point) => `${point.x},${point.y}`).join(' ')
 
                 return (
-                  <polyline
-                    key={`line-${series.label}`}
-                    points={points}
-                    fill="none"
-                    stroke={series.color}
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <g key={`line-${series.label}`}>
+                    <polyline
+                      points={points}
+                      fill="none"
+                      stroke={series.color}
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+
+                    {pointsGeometry.map((point) => {
+                      const isBoundary =
+                        point.idx === 0 || point.idx === pointsGeometry.length - 1
+                      const showValue =
+                        point.value > 0 &&
+                        (pointsCount <= 24 || isBoundary || point.idx % pointValueStep === 0)
+                      const valueY =
+                        point.y - 8 < paddingTop + 4 ? point.y + 12 : point.y - 8
+
+                      return (
+                        <g key={`point-${series.label}-${point.idx}`}>
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r="3.2"
+                            fill="var(--theme-bg)"
+                            stroke={series.color}
+                            strokeWidth="1.8"
+                          >
+                            <title>{`${series.label} (${data.labels[point.idx]}): ${formatCompactNumber(point.value)}`}</title>
+                          </circle>
+                          {showValue ? (
+                            <text
+                              x={point.x}
+                              y={valueY}
+                              textAnchor="middle"
+                              fontSize="8"
+                              fill={series.color}
+                              opacity="0.92"
+                            >
+                              {formatCompactNumber(point.value)}
+                            </text>
+                          ) : null}
+                        </g>
+                      )
+                    })}
+                  </g>
                 )
               })}
 
@@ -744,6 +822,8 @@ export default function ReportsTabsClient({
   yearly,
 }: Props) {
   const [activePanel, setActivePanel] = useState<Panel>('trend')
+  const customRequestRef = useRef(0)
+  const regionRequestRef = useRef(0)
   const [customLoading, setCustomLoading] = useState(false)
   const [customError, setCustomError] = useState('')
   const [customStart, setCustomStart] = useState(() => {
@@ -839,6 +919,8 @@ export default function ReportsTabsClient({
       }
 
       setCustomError('')
+      const requestId = customRequestRef.current + 1
+      customRequestRef.current = requestId
       setCustomLoading(true)
 
       const startISO = startDate.toISOString()
@@ -931,6 +1013,8 @@ export default function ReportsTabsClient({
         const growthVsPrevRangePct =
           prevTotal > 0 ? ((totalInRange - prevTotal) / prevTotal) * 100 : 0
 
+        if (requestId !== customRequestRef.current) return
+
         setCustomSummaryState({
           averagePerDay,
           customTrends,
@@ -945,9 +1029,12 @@ export default function ReportsTabsClient({
           totalDocs: totalInRange,
         })
       } catch (error: unknown) {
+        if (requestId !== customRequestRef.current) return
+
         const message = error instanceof Error ? error.message : 'Gagal memuat custom summary.'
         setCustomError(message)
       } finally {
+        if (requestId !== customRequestRef.current) return
         setCustomLoading(false)
       }
     },
@@ -971,6 +1058,8 @@ export default function ReportsTabsClient({
       }
 
       setRegionError('')
+      const requestId = regionRequestRef.current + 1
+      regionRequestRef.current = requestId
       setRegionLoading(true)
 
       const startISO = startDate.toISOString()
@@ -1015,6 +1104,8 @@ export default function ReportsTabsClient({
           }
         }
 
+        if (requestId !== regionRequestRef.current) return
+
         setRegionSummaryState({
           docs,
           endISO,
@@ -1024,9 +1115,12 @@ export default function ReportsTabsClient({
           totalDocs: docs.length,
         })
       } catch (error: unknown) {
+        if (requestId !== regionRequestRef.current) return
+
         const message = error instanceof Error ? error.message : 'Gagal memuat statistik wilayah.'
         setRegionError(message)
       } finally {
+        if (requestId !== regionRequestRef.current) return
         setRegionLoading(false)
       }
     },
@@ -1113,7 +1207,7 @@ export default function ReportsTabsClient({
     ],
   )
   const regionChartTitle = useMemo(
-    () => `Komparasi ${regionSourceLabel} ${regionPeriodLabel}`,
+    () => `Komparasi ${regionSourceLabel} ${regionPeriodLabel} (Per Jam)`,
     [regionPeriodLabel, regionSourceLabel],
   )
   const displayedTopHours = useMemo(
@@ -1292,6 +1386,7 @@ export default function ReportsTabsClient({
                 <button
                   className="mobis-reports__custom-btn"
                   onClick={() => void applyCustomRange(customStart, customEnd)}
+                  disabled={customLoading}
                   type="button"
                 >
                   {customLoading ? 'Memuat...' : 'Terapkan'}
@@ -1596,6 +1691,7 @@ export default function ReportsTabsClient({
                 <button
                   className="mobis-reports__custom-btn"
                   onClick={() => void applyRegionRange(regionStart, regionEnd, regionTopLimit)}
+                  disabled={regionLoading}
                   type="button"
                 >
                   {regionLoading ? 'Memuat...' : 'Terapkan'}

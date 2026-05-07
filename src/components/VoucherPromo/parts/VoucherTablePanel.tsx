@@ -34,6 +34,17 @@ function pct(used: number, quota: number) {
   return v
 }
 
+function parseNonNegativeInteger(raw: string): number | null {
+  const trimmed = String(raw ?? '').trim()
+  if (!trimmed) return null
+  if (!/^\d+$/.test(trimmed)) return null
+
+  const parsed = Number(trimmed)
+  if (!Number.isFinite(parsed) || parsed < 0) return null
+
+  return parsed
+}
+
 function getVisiblePages(page: number, totalPages: number) {
   if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1)
 
@@ -111,6 +122,8 @@ export default function VoucherTablePanel({
 
   async function updateQuota(v: Voucher, value: number) {
     if (!Number.isFinite(value) || value < 0) return
+    if (value === Number(v.quota ?? 0)) return
+
     setBusyId(v.id)
     try {
       await api(`/api/vouchers/${v.id}`, {
@@ -322,7 +335,20 @@ export default function VoucherTablePanel({
                       min={0}
                       step={1}
                       disabled={busyId === v.id}
-                      onBlur={(e) => updateQuota(v, Number(e.target.value))}
+                      onBlur={(e) => {
+                        const nextQuota = parseNonNegativeInteger(e.target.value)
+                        if (nextQuota === null) {
+                          e.currentTarget.value = String(quota)
+                          return
+                        }
+
+                        if (nextQuota === quota) {
+                          e.currentTarget.value = String(quota)
+                          return
+                        }
+
+                        void updateQuota(v, nextQuota)
+                      }}
                     />
                   </td>
 

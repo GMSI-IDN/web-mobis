@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 
 import { validateRegistrationPayload } from '@/lib/validation/registration'
 import { appendLeadToSheet } from '@/services/googleSheets/appendLead'
+import { sendMetaConversionsApiEvent } from '@/services/meta/sendConversionsApiEvent'
 import type { RegistrationPayload } from '@/types/registration'
 
 const KTP_REAPPLY_COOLDOWN_MONTHS = 3
@@ -13,6 +14,79 @@ function normalizeCode(v: unknown) {
     .trim()
     .toUpperCase()
     .replace(/\s+/g, '')
+}
+
+function normalizeText(value: unknown) {
+  return String(value ?? '').trim()
+}
+
+function sanitizeMetaEventId(value: unknown): string | undefined {
+  const next = normalizeText(value)
+  if (!next) return undefined
+  if (next.length < 8 || next.length > 100) return undefined
+  if (!/^[A-Za-z0-9._:-]+$/.test(next)) return undefined
+  return next
+}
+
+function sanitizeSourcePath(value: unknown): string | undefined {
+  const next = normalizeText(value)
+  if (!next) return undefined
+  if (next.length > 512) return undefined
+  if (!next.startsWith('/')) return undefined
+  return next
+}
+
+function getCookieValue(cookieHeader: string | null, name: string): string | undefined {
+  if (!cookieHeader) return undefined
+
+  const parts = cookieHeader.split(';')
+  for (const part of parts) {
+    const [rawKey, ...rest] = part.trim().split('=')
+    if (!rawKey) continue
+    if (rawKey !== name) continue
+    const rawValue = rest.join('=').trim()
+    if (!rawValue) return undefined
+    return decodeURIComponent(rawValue)
+  }
+
+  return undefined
+}
+
+function getClientIp(req: Request): string | undefined {
+  const forwardedFor = normalizeText(req.headers.get('x-forwarded-for'))
+  if (forwardedFor) {
+    const first = forwardedFor.split(',')[0]?.trim()
+    if (first) return first
+  }
+
+  const realIp = normalizeText(req.headers.get('x-real-ip'))
+  return realIp || undefined
+}
+
+function splitName(name: string): { firstName?: string; lastName?: string } {
+  const normalized = normalizeText(name)
+  if (!normalized) return {}
+
+  const parts = normalized.split(/\s+/).filter(Boolean)
+  if (!parts.length) return {}
+
+  const firstName = parts[0]
+  const lastName = parts.length > 1 ? parts.slice(1).join(' ') : undefined
+  return { firstName, lastName }
+}
+
+function getEventSourceUrl(req: Request, sourcePath?: string): string | undefined {
+  const referer = normalizeText(req.headers.get('referer'))
+  if (referer.startsWith('http://') || referer.startsWith('https://')) return referer
+
+  if (!sourcePath) return undefined
+
+  const configuredBase = normalizeText(process.env.NEXT_PUBLIC_SERVER_URL)
+  if (configuredBase.startsWith('http://') || configuredBase.startsWith('https://')) {
+    return `${configuredBase.replace(/\/+$/, '')}${sourcePath}`
+  }
+
+  return undefined
 }
 
 function addMonths(date: Date, months: number) {
@@ -211,8 +285,15 @@ export async function POST(req: Request) {
   try {
     step = 'parse-body'
     const body = await req.json()
-    const { id: _ignoredClientId, ...bodyWithoutId } =
+    const {
+      id: _ignoredClientId,
+      metaEventId: rawMetaEventId,
+      metaSourcePath: rawMetaSourcePath,
+      ...bodyWithoutId
+    } =
       body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
+    const metaEventId = sanitizeMetaEventId(rawMetaEventId)
+    const metaSourcePath = sanitizeSourcePath(rawMetaSourcePath)
     // console.log('[API /registration] payload received:', body)
 
     step = 'validate-payload'
@@ -382,6 +463,49 @@ export async function POST(req: Request) {
         step = 'increment-voucher-used-retry'
         await updateVoucherUsage()
       }
+    }
+
+    try {
+      step = 'send-meta-conversion'
+      const { firstName, lastName } = splitName(reg.name)
+      const eventSourceUrl = getEventSourceUrl(req, metaSourcePath)
+      const cookieHeader = req.headers.get('cookie')
+      const fbc = getCookieValue(cookieHeader, '_fbc')
+      const fbp = getCookieValue(cookieHeader, '_fbp')
+
+      const capiResult = await sendMetaConversionsApiEvent({
+        eventName: 'CompleteRegistration',
+        eventId: metaEventId,
+        eventSourceUrl,
+        userData: {
+          phone: reg.phone,
+          firstName,
+          lastName,
+          externalId: String(customer.id),
+          clientIpAddress: getClientIp(req),
+          clientUserAgent: req.headers.get('user-agent') ?? undefined,
+          fbc,
+          fbp,
+        },
+        customData: {
+          value: 120000,
+          currency: 'IDR',
+          content_name: 'Registration Form',
+          content_category: 'Lead',
+          source_info: reg.sourceInfo || undefined,
+          source_detail: reg.sourceDetail || undefined,
+        },
+      })
+
+      if (!capiResult.sent) {
+        console.warn('[API /registration] Meta CAPI skipped/failed:', {
+          reason: capiResult.reason,
+          status: capiResult.status,
+          response: capiResult.response,
+        })
+      }
+    } catch (metaErr: unknown) {
+      console.warn('[API /registration] Meta CAPI exception:', metaErr)
     }
 
     return NextResponse.json({

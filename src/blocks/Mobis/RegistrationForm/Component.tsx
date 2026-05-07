@@ -1,7 +1,10 @@
 'use client'
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { trackFacebookCustomEvent, trackFacebookEvent } from '@/utilities/pixelFacebook'
+import {
+  trackFacebookCustomEvent,
+  trackFacebookEventWithDedup,
+} from '@/utilities/pixelFacebook'
 
 type Option = { label: string; value: string }
 
@@ -100,7 +103,13 @@ const trackRegistrationSubmitClick = ({ buttonText }: { buttonText: string }) =>
   })
 }
 
-const trackRegistrationSuccess = ({ buttonText }: { buttonText: string }) => {
+const trackRegistrationSuccess = ({
+  buttonText,
+  eventId,
+}: {
+  buttonText: string
+  eventId?: string
+}) => {
   const basePayload = {
     button_text: buttonText + '-success',
     section: 'Registration Form',
@@ -112,7 +121,13 @@ const trackRegistrationSuccess = ({ buttonText }: { buttonText: string }) => {
   }
 
   trackFacebookCustomEvent('RegistrationSuccess', basePayload)
-  trackFacebookEvent('CompleteRegistration', basePayload)
+  trackFacebookEventWithDedup('CompleteRegistration', basePayload, { eventID: eventId })
+}
+
+function createMetaEventId() {
+  if (typeof window === 'undefined') return ''
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID()
+  return `evt_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
 }
 
 function SelectField({
@@ -609,12 +624,15 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     setServerFieldErrors({})
 
     try {
+      const metaEventId = createMetaEventId()
       const payload = {
         ...values,
         phone: onlyDigits(values.phone),
         ktpNumber: onlyDigits(values.ktpNumber),
         emergencyPhone: onlyDigits(values.emergencyPhone),
         agree: values.agree ? '1' : '0',
+        metaEventId,
+        metaSourcePath: window.location.pathname,
       }
 
       const res = await fetch('/api/registration', {
@@ -700,6 +718,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
       trackRegistrationSuccess({
         buttonText: submitLabel ?? 'Kirim',
+        eventId: metaEventId || undefined,
       })
     } catch (error) {
       const message =

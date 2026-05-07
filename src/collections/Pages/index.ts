@@ -11,6 +11,10 @@ import { hero } from '@/heros/config'
 import { slugField } from 'payload'
 import { populatePublishedAt } from '../../hooks/populatePublishedAt'
 import { generatePreviewPath } from '../../utilities/generatePreviewPath'
+import {
+  ensurePageVersionIntegrity,
+  stripReservedPageFields,
+} from './hooks/ensurePageVersionIntegrity'
 import { revalidateDelete, revalidatePage } from './hooks/revalidatePage'
 
 import { BannerCarouselBlock } from '@/blocks/Mobis/BannerCarousel'
@@ -151,6 +155,8 @@ export const Pages: CollectionConfig<'pages'> = {
     slugField(),
   ],
   hooks: {
+    beforeOperation: [ensurePageVersionIntegrity],
+    beforeValidate: [stripReservedPageFields],
     afterChange: [revalidatePage],
     beforeChange: [populatePublishedAt],
     afterDelete: [revalidateDelete],

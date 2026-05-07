@@ -18,6 +18,7 @@ import { getServerSideURL, getAllowedOrigins } from './utilities/getURL'
 import { CustomerCollections } from './collections/Customers'
 import { VoucherPromoCollections } from './collections/VoucherPromo'
 import { MobisWidgetsGlobal } from './components/MobisWidget/payload/MobisWidgets.global'
+import { resyncPostgresSequencesOnInit } from './lib/db/resyncPostgresSequences'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -122,5 +123,9 @@ export default buildConfig({
       },
     },
     tasks: [],
+  },
+
+  onInit: async (payload) => {
+    await resyncPostgresSequencesOnInit(payload)
   },
 })

@@ -85,6 +85,40 @@ function mapSimTypeForApi(simType?: string): string {
   return mapSimTypeForSheet(simType)
 }
 
+function normalizeKeyword(value?: string): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '')
+}
+
+function mapHomeOwnershipForApi(value?: string): number | null {
+  const numericValue = toExternalInteger(value)
+  if (numericValue !== null) return numericValue
+
+  const keyword = normalizeKeyword(value)
+  if (!keyword) return null
+
+  // External service expects integer FK.
+  // Support current FE option values + common human-readable labels.
+  const mapping: Record<string, number> = {
+    miliksendiri: 1,
+    atasnamasendiri: 1,
+    milikpribadi: 1,
+    atasnamapribadi: 1,
+    kontrak: 2,
+    sewa: 2,
+    ngontrak: 2,
+    kos: 3,
+    kost: 3,
+    keluarga: 4,
+    rumahkeluarga: 4,
+    atasnamakeluarga: 4,
+  }
+
+  return mapping[keyword] ?? null
+}
+
 function toExternalInteger(value?: string): number | null {
   const raw = String(value ?? '').trim()
   if (!raw) return null
@@ -120,8 +154,8 @@ function normalizeDriverApps(driverApps?: string): string {
 }
 
 function isNoDriverAccount(driverApps?: string): boolean {
-  const value = normalizeDriverApps(driverApps).toLowerCase()
-  return value === 'tidak ada akun'
+  const value = normalizeKeyword(normalizeDriverApps(driverApps))
+  return value === 'tidakadaakun'
 }
 
 function formatSourceInfoLabel(sourceInfo?: string): string {
@@ -218,6 +252,13 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
 function buildExternalApiPayload(payload: RegistrationPayload) {
   const age = calculateAge(payload.birthDate)
   const noAccount = isNoDriverAccount(payload.driverApps)
+  const mappedDomicile = toExternalInteger(payload.domicile)
+  const mappedHomeOwnership = mapHomeOwnershipForApi(payload.houseOwnership)
+  const mappedDriverApp = payload.driverApps ?? ''
+  const mappedPersonalDriverApp = noAccount ? '' : (payload.activeAccountSelf ?? '')
+  const mappedDriverDuration = noAccount ? '' : (payload.driverExperience ?? '')
+  const mappedSourceDetail = buildSourceDetail(payload)
+  const mappedSimType = mapSimTypeForApi(payload.simType)
 
   return {
     name: payload.name ?? '',
@@ -226,15 +267,16 @@ function buildExternalApiPayload(payload: RegistrationPayload) {
     identity_number: payload.ktpNumber ?? '',
     // External API expects an integer foreign-key value for domicile.
     // Send null when FE still provides a human-readable label.
-    domicile: toExternalInteger(payload.domicile),
+    domicile: mappedDomicile,
     address: payload.currentAddress ?? '',
-    home_ownership_status: payload.houseOwnership ?? '',
-    online_driver_app: payload.driverApps ?? '',
-    personal_online_driver_app: noAccount ? '' : (payload.activeAccountSelf ?? ''),
-    online_driver_duration: noAccount ? '' : (payload.driverExperience ?? ''),
+    // External API expects integer FK, not the display label.
+    home_ownership_status: mappedHomeOwnership,
+    online_driver_app: mappedDriverApp,
+    personal_online_driver_app: mappedPersonalDriverApp,
+    online_driver_duration: mappedDriverDuration,
     pool_preference: payload.handoverLocation ?? '',
     information_source: payload.sourceInfo ?? '',
-    detail_information_source: buildSourceDetail(payload),
+    detail_information_source: mappedSourceDetail,
     promo_code: payload.promoCode ?? '',
     registered_from: 'Website Mobis',
     emergency_phone_number: normalizePhone(payload.emergencyPhone),
@@ -243,9 +285,56 @@ function buildExternalApiPayload(payload: RegistrationPayload) {
     lead_place_of_birth: payload.birthPlace ?? '',
     lead_date_of_birth: payload.birthDate ?? '',
     lead_sim_no: payload.simNumber ?? '',
-    lead_sim_type: mapSimTypeForApi(payload.simType),
+    lead_sim_type: mappedSimType,
     lead_sim_expire_date: payload.simValidUntil ?? '',
+    // Backward/forward compatibility for endpoints that expect lead_* keys.
+    lead_name: payload.name ?? '',
+    lead_phone_number: normalizePhone(payload.phone),
+    lead_age: age,
+    lead_no_ktp: payload.ktpNumber ?? '',
+    lead_domicile: mappedDomicile,
+    lead_address: payload.currentAddress ?? '',
+    lead_home_ownership_status: mappedHomeOwnership,
+    lead_online_driver_app: mappedDriverApp,
+    lead_personal_online_driver_app: mappedPersonalDriverApp,
+    lead_online_driver_duration: mappedDriverDuration,
+    lead_pool_preference: payload.handoverLocation ?? '',
+    lead_information_source: payload.sourceInfo ?? '',
+    lead_detail_information_source: mappedSourceDetail,
+    lead_promo_code: payload.promoCode ?? '',
+    lead_registered_from: 'Website Mobis',
+    lead_emergency_phone_number: normalizePhone(payload.emergencyPhone),
+    lead_emergency_contact_name: payload.emergencyName ?? '',
+    lead_emergency_contact_relation: payload.emergencyRelation ?? '',
   }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function isRetriableSheetsError(error: unknown): boolean {
+  const err = error as any
+  const status = Number(err?.code ?? err?.status ?? err?.response?.status ?? 0)
+  if ([408, 425, 429, 500, 502, 503, 504].includes(status)) return true
+
+  const text = String(err?.message ?? '')
+  return /timeout|timed out|econnreset|socket hang up|rate limit|quota/i.test(text)
+}
+
+function stripHtmlTags(value: string): string {
+  return value.replace(/<[^>]*>/g, ' ')
+}
+
+function summarizeExternalApiError(status: number, responseText: string): string {
+  const plain = stripHtmlTags(String(responseText || ''))
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const sqlStateMatch = plain.match(/SQLSTATE\[[^\]]+\][^.?!]*/i)?.[0]?.trim()
+  const core = (sqlStateMatch || plain).slice(0, 220)
+
+  return core ? `External API failed (${status}): ${core}` : `External API failed (${status})`
 }
 
 async function sendLeadToExternalApi(payload: RegistrationPayload) {
@@ -269,9 +358,7 @@ async function sendLeadToExternalApi(payload: RegistrationPayload) {
   const responseText = await response.text()
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to send lead to external API. Status: ${response.status}. Response: ${responseText}`,
-    )
+    throw new Error(summarizeExternalApiError(response.status, responseText))
   }
 
   return {
@@ -295,15 +382,45 @@ export async function appendLeadToSheet(payload: RegistrationPayload) {
   const sheets = getSheetsClient()
 
   // WAJIB berhasil
-  const sheetResponse = await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range: `${sheetName}!A:Z`,
-    valueInputOption: 'USER_ENTERED',
-    insertDataOption: 'INSERT_ROWS',
-    requestBody: {
-      values: [row],
-    },
-  })
+  const maxAttempts = 3
+  let sheetResponse: { data?: { updates?: { updatedRows?: number | null } | null } } | null = null
+  let lastSheetError: unknown = null
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      sheetResponse = await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: `${sheetName}!A:Z`,
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: {
+          values: [row],
+        },
+      })
+      break
+    } catch (error) {
+      lastSheetError = error
+      const canRetry = attempt < maxAttempts && isRetriableSheetsError(error)
+
+      if (!canRetry) {
+        throw error
+      }
+
+      // Backoff sederhana: 400ms, 800ms
+      await sleep(attempt * 400)
+    }
+  }
+
+  if (!sheetResponse) {
+    throw (lastSheetError instanceof Error
+      ? lastSheetError
+      : new Error('Google Sheets append failed without response'))
+  }
+
+  const updatedRows = Number(sheetResponse.data?.updates?.updatedRows ?? 0)
+  if (!Number.isFinite(updatedRows) || updatedRows < 1) {
+    throw new Error('Google Sheets append did not persist any row')
+  }
 
   console.log('Append response data:', sheetResponse.data)
 
