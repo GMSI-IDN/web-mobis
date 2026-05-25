@@ -12,6 +12,8 @@ import { RenderHero } from '@/heros/RenderHero'
 import { generateMeta } from '@/utilities/generateMeta'
 import { isKnownOptionalRelationError } from '@/utilities/isMissingRelationError'
 import { buildFaqStructuredData } from '@/utilities/buildFaqStructuredData'
+import { buildLocalBusinessStructuredData } from '@/utilities/buildLocalBusinessStructuredData'
+import { getPublicURL } from '@/utilities/getURL'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 
@@ -46,6 +48,7 @@ export default async function Page({ params: paramsPromise }: Args) {
 
   const { hero, layout } = page
   const faqStructuredData = buildFaqStructuredData(layout)
+  const localBusinessSchemas = buildLocalBusinessStructuredData(layout, getPublicURL())
 
   return (
     <article className="pb-24">
@@ -61,6 +64,12 @@ export default async function Page({ params: paramsPromise }: Args) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+        />
+      ) : null}
+      {localBusinessSchemas.length > 0 ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchemas) }}
         />
       ) : null}
     </article>

@@ -5,12 +5,22 @@ export const AreaChipsBlock: Block = {
   labels: { singular: 'Area Chips', plural: 'Area Chips' },
   fields: [
     { name: 'title', type: 'text', defaultValue: 'KAMI TERSEDIA DI' },
+    { name: 'description', type: 'textarea', required: false },
     {
       name: 'areas',
       type: 'array',
       required: true,
       fields: [
         { name: 'label', type: 'text', required: true }, // contoh: Jabodetabek
+        {
+          name: 'description',
+          type: 'textarea',
+          required: false,
+          admin: {
+            description:
+              'Deskripsi singkat layanan di kota ini — tampil langsung di halaman dan dibaca Google (maks. 160 karakter disarankan).',
+          },
+        },
         { name: 'PoolImage', type: 'upload', relationTo: 'media', required: false },
 
         // ✅ daftar lokasi untuk modal

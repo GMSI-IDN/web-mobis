@@ -14,12 +14,18 @@ type Pool = {
 
 type Area = {
   label?: string
+  description?: string
   PoolImage?: Media | string | null
   pools?: Pool[]
 }
 
+function toAreaId(label: string): string {
+  return 'rental-mobil-' + label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+}
+
 type Props = {
   title?: string
+  description?: string
   areas?: Area[]
 }
 
@@ -29,7 +35,7 @@ function getMediaUrl(poolImage: Area['PoolImage']): string | null {
   return poolImage.url ?? null
 }
 
-export default function AreaChipsBlockComponent({ title, areas }: Props) {
+export default function AreaChipsBlockComponent({ title, description, areas }: Props) {
   const modalElRef = useRef<HTMLDivElement | null>(null)
   const bsModalRef = useRef<any>(null)
 
@@ -92,6 +98,7 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
     <section className="area-section">
       <div className="container py-4 text-center">
         {title ? <h2 className="area-title">{title}</h2> : null}
+        {description ? <p className="area-section-description">{description}</p> : null}
 
         <div className="row g-3 g-lg-4 justify-content-center">
           {(areas ?? []).map((a, i) => {
@@ -100,8 +107,10 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
               (typeof a?.PoolImage === 'string' ? '' : a?.PoolImage?.alt) ||
               (a?.label ? `Lokasi pool Mobis ${a.label}` : 'Lokasi pool Mobis')
 
+            const areaId = a?.label ? toAreaId(a.label) : undefined
+
             return (
-              <div className="col-12 col-md-4" key={i}>
+              <div className="col-12 col-md-4" key={i} id={areaId}>
                 {/* ✅ Card jadi button supaya tidak pindah halaman */}
                 <button
                   type="button"
@@ -135,6 +144,19 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
                     </div>
                   </div>
                 </button>
+
+                {/* ✅ Konten visible untuk SEO — dibaca Google */}
+                {a?.pools && a.pools.length > 0 && (
+                  <ul className="area-pools-seo" aria-label={`Pool point ${a?.label ?? ''}`}>
+                    {a.pools.map((p) => (
+                      <li key={p.name}>
+                        <a href={p.mapUrl ?? '#'} target="_blank" rel="noopener noreferrer">
+                          {p.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )
           })}

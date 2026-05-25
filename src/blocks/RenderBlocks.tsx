@@ -64,33 +64,8 @@ export const RenderBlocks: React.FC<{
           const Block = blockComponents[blockType as BlockTypeKey]
           if (!Block) return null
 
-          // spacing per block
-          const wrapperClass =
-            blockType === 'bannerCarousel'
-              ? 'my-0'
-              : blockType === 'areaChips'
-                ? 'my-0'
-                : blockType === 'aboutSplit'
-                  ? 'my-0'
-                  : blockType === 'unitsAvailable'
-                    ? 'my-0'
-                    : blockType === 'programCard'
-                      ? 'my-0'
-                      : blockType === 'requirements'
-                        ? 'my-0'
-                        : blockType === 'registrationFlow'
-                          ? 'my-0'
-                          : blockType === 'testimonials'
-                            ? 'my-0'
-                            : blockType === 'registrationForm'
-                              ? 'my-0'
-                              : blockType === 'footerSimple'
-                                ? 'my-0'
-                                : blockType === 'programDual'
-                                  ? 'my-0'
-                                  : blockType === 'faqAccordion'
-                                    ? 'my-0'
-                                  : 'my-4 my-md-5'
+          const standardBlocks = new Set(['archive', 'content', 'cta', 'formBlock', 'mediaBlock'])
+          const wrapperClass = standardBlocks.has(blockType) ? 'my-4 my-md-5' : 'my-0'
 
           return (
             <div className={wrapperClass} key={index}>

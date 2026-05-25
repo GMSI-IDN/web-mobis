@@ -12,9 +12,8 @@ const normalizeAbsoluteURL = (raw?: string): string | undefined => {
   const value = trim(raw)
   if (!value) return undefined
 
-  const withProtocol = HAS_PROTOCOL_REGEX.test(value)
-    ? value
-    : `${LOCAL_ADDRESS_REGEX.test(value) ? 'http' : 'https'}://${value}`
+  const protocol = LOCAL_ADDRESS_REGEX.test(value) ? 'http' : 'https'
+  const withProtocol = HAS_PROTOCOL_REGEX.test(value) ? value : `${protocol}://${value}`
 
   try {
     return new URL(withProtocol).toString().replace(/\/+$/, '')
@@ -56,8 +55,9 @@ export const getServerSideURL = (): string => {
  */
 export const getClientSideURL = (): string => {
   if (canUseDOM) {
-    const { protocol, hostname, port } = window.location
-    return `${protocol}//${hostname}${port ? `:${port}` : ''}`
+    const { protocol, hostname, port } = globalThis.location
+    const portSuffix = port ? `:${port}` : ''
+    return `${protocol}//${hostname}${portSuffix}`
   }
 
   return (
@@ -109,25 +109,3 @@ export const getAllowedOrigins = (): string[] => {
   // remove duplicate
   return [...new Set(origins)]
 }
-
-// import canUseDOM from './canUseDOM'
-// export const getServerSideURL = () => {
-//   return (
-//     process.env.NEXT_PUBLIC_SERVER_URL ||
-//     (process.env.VERCEL_PROJECT_PRODUCTION_URL
-//       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-//       : 'http://localhost:3000')
-//   )
-// }
-// export const getClientSideURL = () => {
-//   if (canUseDOM) {
-//     const protocol = window.location.protocol
-//     const domain = window.location.hostname
-//     const port = window.location.port
-//     return `${protocol}//${domain}${port ? `:${port}` : ''}`
-//   }
-//   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-//     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-//   }
-//   return process.env.NEXT_PUBLIC_SERVER_URL || ''
-// }

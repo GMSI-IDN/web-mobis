@@ -70,7 +70,7 @@
 
 .customers-list-summary__stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.8rem;
 }
 
@@ -79,6 +79,13 @@
   border: 1px solid var(--theme-elevation-100);
   border-radius: 14px;
   background: linear-gradient(180deg, var(--theme-elevation-0), var(--theme-elevation-25));
+}
+
+.customers-list-summary__stat--repeat {
+  border-color: rgba(239, 68, 68, 0.22);
+  background:
+    radial-gradient(circle at top right, rgba(239, 68, 68, 0.08), transparent 55%),
+    linear-gradient(180deg, var(--theme-elevation-0), var(--theme-elevation-25));
 }
 
 .customers-list-summary__stat span {
@@ -92,6 +99,15 @@
 .customers-list-summary__stat strong {
   font-size: 1.35rem;
   line-height: 1;
+}
+
+.customers-list-summary__stat em {
+  display: block;
+  margin-block-start: 0.28rem;
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 600;
+  color: #991b1b;
 }
 
 .customers-list-summary__note {

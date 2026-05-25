@@ -25,13 +25,20 @@ type RegionStat = {
   percentage: number
 }
 
-type Panel = 'custom' | 'hourly' | 'history' | 'region' | 'trend'
+type Panel = 'custom' | 'duplicates' | 'hourly' | 'history' | 'region' | 'trend'
 type CustomAccordionPanel = 'top-hours' | 'trend'
 type RegionDataPanel = 'line' | 'pie' | 'rank'
 type RegionSource = 'domicile' | 'handover'
 type RegionStatPeriod = 'day' | 'month' | 'week' | 'year'
 type TrendGranularity = 'day' | 'month' | 'week'
 type TimeBucketGranularity = 'hour' | TrendGranularity
+
+type RepeatGroup = {
+  count: number
+  key: string
+  latestName: string
+  type: 'ktp' | 'phone'
+}
 
 type Props = {
   daily: Bucket[]
@@ -41,6 +48,12 @@ type Props = {
   regionStats: RegionStat[]
   recentDocs: CustomerHistoryItem[]
   recentTotalDocs: number
+  repeatStats: {
+    newCount: number
+    repeatCount: number
+    unknownCount: number
+    topGroups: RepeatGroup[]
+  }
   totalDocs: number
   weekly: Bucket[]
   yearly: Bucket[]
@@ -66,7 +79,7 @@ type CustomSummaryState = {
   averagePerDay: number
   customTrends: Record<TrendGranularity, TrendBucket[]>
   endISO: string
-  growthVsPrevRangePct: number
+  growthVsPrevRangePct: number | null
   isTruncated: boolean
   promoDocs: number
   promoRatePct: number
@@ -321,10 +334,6 @@ function startOfJakartaMonth(date: Date) {
   )
 }
 
-function startOfJakartaYear(date: Date) {
-  const jakarta = toJakartaDate(date)
-  return fromJakartaDate(new Date(Date.UTC(jakarta.getUTCFullYear(), 0, 1, 0, 0, 0, 0)))
-}
 
 function addJakartaMonths(date: Date, months: number) {
   const jakarta = toJakartaDate(date)
@@ -517,6 +526,26 @@ function Bars({
   )
 }
 
+function smoothPath(pts: Array<{ x: number; y: number }>, tension = 0.28): string {
+  if (pts.length === 0) return ''
+  if (pts.length === 1) return `M ${pts[0].x},${pts[0].y}`
+  if (pts.length === 2) return `M ${pts[0].x},${pts[0].y} L ${pts[1].x},${pts[1].y}`
+
+  let d = `M ${pts[0].x},${pts[0].y}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[Math.min(pts.length - 1, i + 2)]
+    const cp1x = p1.x + (p2.x - p0.x) * tension
+    const cp1y = p1.y + (p2.y - p0.y) * tension
+    const cp2x = p2.x - (p3.x - p1.x) * tension
+    const cp2y = p2.y - (p3.y - p1.y) * tension
+    d += ` C ${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`
+  }
+  return d
+}
+
 function buildRegionLineChartData(params: {
   docs: CustomerRangeDoc[]
   endISO: string
@@ -609,148 +638,210 @@ function RegionLineChart({
   title: string
 }) {
   const [hiddenSeriesLabels, setHiddenSeriesLabels] = useState<string[]>([])
+
   const pointsCount = data.labels.length
   const rotateAxisLabels = pointsCount > 18
   const width = 760
-  const height = rotateAxisLabels ? 242 : 220
-  const paddingTop = 16
-  const paddingRight = 14
-  const paddingBottom = rotateAxisLabels ? 56 : 34
-  const paddingLeft = 28
+  const height = rotateAxisLabels ? 258 : 234
+  const paddingTop = 20
+  const paddingRight = 18
+  const paddingBottom = rotateAxisLabels ? 62 : 40
+  const paddingLeft = 44
   const chartWidth = width - paddingLeft - paddingRight
   const chartHeight = height - paddingTop - paddingBottom
+  const bottomY = paddingTop + chartHeight
+
   const visibleSeries = useMemo(
-    () => data.series.filter((series) => !hiddenSeriesLabels.includes(series.label)),
+    () => data.series.filter((s) => !hiddenSeriesLabels.includes(s.label)),
     [data.series, hiddenSeriesLabels],
   )
-  const maxCount = Math.max(1, ...visibleSeries.flatMap((series) => series.values))
+  const maxCount = Math.max(1, ...visibleSeries.flatMap((s) => s.values))
   const hasVisibleSeries = visibleSeries.length > 0
-  const maxTicks = Math.max(4, Math.floor(chartWidth / 56))
+  const maxTicks = Math.max(4, Math.floor(chartWidth / 60))
   const labelStep = pointsCount <= maxTicks ? 1 : Math.ceil(pointsCount / maxTicks)
   const axisFontSize = pointsCount > 24 ? 8 : pointsCount > 16 ? 9 : 10
-  const pointValueStep = Math.max(1, labelStep * 2)
+
+  const seriesGeometry = useMemo(
+    () =>
+      visibleSeries.map((series, sIdx) => {
+        const pts = series.values.map((value, i) => ({
+          label: data.labels[i] ?? '',
+          value,
+          x:
+            pointsCount === 1
+              ? paddingLeft + chartWidth / 2
+              : paddingLeft + (i / (pointsCount - 1)) * chartWidth,
+          y: paddingTop + chartHeight - (value / maxCount) * chartHeight,
+        }))
+        const linePath = smoothPath(pts)
+        const first = pts[0]
+        const last = pts.at(-1)
+        const areaPath =
+          pts.length > 0 && first && last
+            ? `${linePath} L ${last.x.toFixed(2)},${bottomY} L ${first.x.toFixed(2)},${bottomY} Z`
+            : ''
+        const gradId = `lc-g-${sIdx}-${series.color.replace('#', '')}`
+        return { areaPath, gradId, linePath, pts, series }
+      }),
+    [
+      visibleSeries,
+      pointsCount,
+      paddingLeft,
+      chartWidth,
+      paddingTop,
+      chartHeight,
+      maxCount,
+      bottomY,
+      data.labels,
+    ],
+  )
 
   useEffect(() => {
     setHiddenSeriesLabels((prev) =>
-      prev.filter((label) => data.series.some((series) => series.label === label)),
+      prev.filter((label) => data.series.some((s) => s.label === label)),
     )
   }, [data.series])
 
   const toggleSeriesVisibility = useCallback((label: string) => {
-    setHiddenSeriesLabels((prev) => {
-      if (prev.includes(label)) return prev.filter((item) => item !== label)
-      return [...prev, label]
-    })
+    setHiddenSeriesLabels((prev) =>
+      prev.includes(label) ? prev.filter((item) => item !== label) : [...prev, label],
+    )
   }, [])
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1] as const
 
   return (
     <section className="mobis-reports__panel">
       <div className="mobis-reports__panel-head">
         <h5>{title}</h5>
       </div>
-      <div className="mobis-reports__table-wrap">
+
+      <div className="mobis-reports__linechart-outer">
         {pointsCount === 0 || data.series.length === 0 ? (
-          <div className="mobis-reports__empty" style={{ padding: '1rem' }}>
+          <p className="mobis-reports__empty" style={{ padding: '1.5rem 0' }}>
             Belum ada data komparasi.
-          </div>
+          </p>
         ) : !hasVisibleSeries ? (
-          <div className="mobis-reports__empty" style={{ padding: '1rem' }}>
+          <p className="mobis-reports__empty" style={{ padding: '1.5rem 0' }}>
             Semua kota disembunyikan. Aktifkan minimal 1 kota di legend.
-          </div>
+          </p>
         ) : (
-          <div className="mobis-reports__region-linechart-wrap">
+          <div className="mobis-reports__linechart-scroll">
             <svg
-              className="mobis-reports__region-linechart"
+              className="mobis-reports__linechart-svg"
               viewBox={`0 0 ${width} ${height}`}
               role="img"
               aria-label={`${title} berdasarkan waktu dan jumlah pendaftar`}
             >
-              <line
-                x1={paddingLeft}
-                y1={height - paddingBottom}
-                x2={width - paddingRight}
-                y2={height - paddingBottom}
-                stroke="var(--theme-elevation-180)"
-                strokeWidth="1"
-              />
+              <defs>
+                {seriesGeometry.map(({ gradId, series }) => (
+                  <linearGradient key={gradId} id={gradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={series.color} stopOpacity="0.2" />
+                    <stop offset="80%" stopColor={series.color} stopOpacity="0.03" />
+                    <stop offset="100%" stopColor={series.color} stopOpacity="0" />
+                  </linearGradient>
+                ))}
+              </defs>
+
+              {/* Y-axis grid + tick labels */}
+              {yTicks.map((ratio) => {
+                const y = paddingTop + chartHeight * (1 - ratio)
+                const tickValue = Math.round(maxCount * ratio)
+                const isBaseline = ratio === 0
+                return (
+                  <g key={`ytick-${ratio}`}>
+                    <line
+                      x1={paddingLeft}
+                      y1={y}
+                      x2={width - paddingRight}
+                      y2={y}
+                      stroke={isBaseline ? 'var(--theme-elevation-200)' : 'var(--theme-elevation-100)'}
+                      strokeWidth={isBaseline ? 1 : 0.8}
+                      strokeDasharray={isBaseline ? undefined : '4 5'}
+                    />
+                    <text
+                      x={paddingLeft - 6}
+                      y={y + 3.5}
+                      textAnchor="end"
+                      fontSize="8.5"
+                      fill="var(--theme-text)"
+                      opacity="0.48"
+                    >
+                      {formatCompactNumber(tickValue)}
+                    </text>
+                  </g>
+                )
+              })}
+
+              {/* Y-axis vertical rule */}
               <line
                 x1={paddingLeft}
                 y1={paddingTop}
                 x2={paddingLeft}
-                y2={height - paddingBottom}
-                stroke="var(--theme-elevation-180)"
+                y2={bottomY}
+                stroke="var(--theme-elevation-200)"
                 strokeWidth="1"
               />
 
-              {[0.25, 0.5, 0.75].map((ratio) => {
-                const y = paddingTop + chartHeight * ratio
+              {/* Area fills (rendered first, under lines) */}
+              {seriesGeometry.map(({ areaPath, gradId, series }) =>
+                areaPath ? (
+                  <path key={`area-${series.label}`} d={areaPath} fill={`url(#${gradId})`} />
+                ) : null,
+              )}
+
+              {/* Lines */}
+              {seriesGeometry.map(({ linePath, series }) => (
+                <path
+                  key={`line-${series.label}`}
+                  className="mobis-reports__linechart-path"
+                  d={linePath}
+                  fill="none"
+                  stroke={series.color}
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ))}
+
+              {/* Dots + value labels + tooltips */}
+              {seriesGeometry.map(({ pts, series }) => {
+                const valueStep = Math.max(1, labelStep * 2)
                 return (
-                  <line
-                    key={`grid-${ratio}`}
-                    x1={paddingLeft}
-                    y1={y}
-                    x2={width - paddingRight}
-                    y2={y}
-                    stroke="var(--theme-elevation-120)"
-                    strokeDasharray="3 3"
-                    strokeWidth="1"
-                  />
-                )
-              })}
-
-              {visibleSeries.map((series) => {
-                const pointsGeometry = series.values.map((value, idx) => {
-                  const x =
-                    pointsCount === 1
-                      ? paddingLeft + chartWidth / 2
-                      : paddingLeft + (idx / (pointsCount - 1)) * chartWidth
-                  const y = paddingTop + chartHeight - (value / maxCount) * chartHeight
-                  return { idx, value, x, y }
-                })
-                const points = pointsGeometry.map((point) => `${point.x},${point.y}`).join(' ')
-
-                return (
-                  <g key={`line-${series.label}`}>
-                    <polyline
-                      points={points}
-                      fill="none"
-                      stroke={series.color}
-                      strokeWidth="2.4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-
-                    {pointsGeometry.map((point) => {
-                      const isBoundary =
-                        point.idx === 0 || point.idx === pointsGeometry.length - 1
+                  <g key={`dots-${series.label}`}>
+                    {pts.map((pt, i) => {
+                      const isBoundary = i === 0 || i === pts.length - 1
                       const showValue =
-                        point.value > 0 &&
-                        (pointsCount <= 24 || isBoundary || point.idx % pointValueStep === 0)
-                      const valueY =
-                        point.y - 8 < paddingTop + 4 ? point.y + 12 : point.y - 8
+                        pt.value > 0 &&
+                        (pointsCount <= 24 || isBoundary || i % valueStep === 0)
+                      const valueY = pt.y - 11 < paddingTop + 4 ? pt.y + 14 : pt.y - 11
 
                       return (
-                        <g key={`point-${series.label}-${point.idx}`}>
+                        <g key={`dot-${series.label}-${i}`}>
+                          {/* Soft glow ring */}
+                          <circle cx={pt.x} cy={pt.y} r="6.5" fill={series.color} opacity="0.1" />
+                          {/* Main dot */}
                           <circle
-                            cx={point.x}
-                            cy={point.y}
-                            r="3.2"
-                            fill="var(--theme-bg)"
+                            cx={pt.x}
+                            cy={pt.y}
+                            r="4"
+                            fill="var(--theme-elevation-0)"
                             stroke={series.color}
-                            strokeWidth="1.8"
+                            strokeWidth="2.2"
                           >
-                            <title>{`${series.label} (${data.labels[point.idx]}): ${formatCompactNumber(point.value)}`}</title>
+                            <title>{`${series.label} (${pt.label}): ${formatCompactNumber(pt.value)}`}</title>
                           </circle>
                           {showValue ? (
                             <text
-                              x={point.x}
+                              x={pt.x}
                               y={valueY}
                               textAnchor="middle"
                               fontSize="8"
+                              fontWeight="700"
                               fill={series.color}
-                              opacity="0.92"
+                              opacity="0.9"
                             >
-                              {formatCompactNumber(point.value)}
+                              {formatCompactNumber(pt.value)}
                             </text>
                           ) : null}
                         </g>
@@ -760,27 +851,24 @@ function RegionLineChart({
                 )
               })}
 
+              {/* X-axis labels */}
               {data.labels.map((label, idx) => {
-                const shouldRender =
-                  idx === 0 || idx === pointsCount - 1 || idx % labelStep === 0
-                if (!shouldRender) return null
-
+                if (idx !== 0 && idx !== pointsCount - 1 && idx % labelStep !== 0) return null
                 const x =
                   pointsCount === 1
                     ? paddingLeft + chartWidth / 2
                     : paddingLeft + (idx / (pointsCount - 1)) * chartWidth
-                const y = height - paddingBottom + (rotateAxisLabels ? 20 : 16)
-
+                const y = bottomY + (rotateAxisLabels ? 20 : 16)
                 return (
                   <text
-                    key={`label-${label}-${idx}`}
+                    key={`xlabel-${idx}`}
                     x={x}
                     y={y}
                     textAnchor={rotateAxisLabels ? 'end' : 'middle'}
                     transform={rotateAxisLabels ? `rotate(-28 ${x} ${y})` : undefined}
                     fontSize={axisFontSize}
                     fill="var(--theme-text)"
-                    opacity="0.72"
+                    opacity="0.62"
                   >
                     {label}
                   </text>
@@ -790,19 +878,24 @@ function RegionLineChart({
           </div>
         )}
       </div>
+
       {data.series.length > 0 ? (
         <div className="mobis-reports__region-mini-legend">
-          {data.series.map((series) => (
-            <button
-              className={`mobis-reports__region-mini-legend-item ${hiddenSeriesLabels.includes(series.label) ? 'is-off' : ''}`}
-              key={`mini-legend-${series.label}`}
-              onClick={() => toggleSeriesVisibility(series.label)}
-              type="button"
-            >
-              <span style={{ backgroundColor: series.color }} aria-hidden="true" />
-              <small>{series.label}</small>
-            </button>
-          ))}
+          {data.series.map((series) => {
+            const isOff = hiddenSeriesLabels.includes(series.label)
+            return (
+              <button
+                className={`mobis-reports__region-mini-legend-item${isOff ? ' is-off' : ''}`}
+                key={`legend-${series.label}`}
+                onClick={() => toggleSeriesVisibility(series.label)}
+                style={{ '--lc': series.color } as React.CSSProperties}
+                type="button"
+              >
+                <span style={{ backgroundColor: series.color }} aria-hidden="true" />
+                <small>{series.label}</small>
+              </button>
+            )
+          })}
         </div>
       ) : null}
     </section>
@@ -817,6 +910,7 @@ export default function ReportsTabsClient({
   regionStats,
   recentDocs,
   recentTotalDocs,
+  repeatStats,
   totalDocs,
   weekly,
   yearly,
@@ -850,10 +944,7 @@ export default function ReportsTabsClient({
   const [regionSource, setRegionSource] = useState<RegionSource>('handover')
   const [regionStatPeriod, setRegionStatPeriod] = useState<RegionStatPeriod>('month')
 
-  const dayCount = daily[daily.length - 1]?.count ?? 0
-  const weekCount = weekly[weekly.length - 1]?.count ?? 0
-  const monthCount = monthly[monthly.length - 1]?.count ?? 0
-  const yearCount = yearly[yearly.length - 1]?.count ?? 0
+  const dayCount = daily.at(-1)?.count ?? 0
 
   const maxHourly = Math.max(1, ...hourly.map((bucket) => bucket.count))
   const busiestHour = hourly.reduce<Bucket | null>((winner, bucket) => {
@@ -878,7 +969,7 @@ export default function ReportsTabsClient({
         week: toTrendBuckets(weekly),
       },
       endISO: now.toISOString(),
-      growthVsPrevRangePct: 0,
+      growthVsPrevRangePct: null,
       isTruncated: false,
       promoDocs,
       promoRatePct: promoRate,
@@ -1131,7 +1222,10 @@ export default function ReportsTabsClient({
   const regionSummaryToShow = regionSummaryState ?? defaultRegionSummary
   const regionPeriodLabel = useMemo(() => getRegionPeriodLabel(regionStatPeriod), [regionStatPeriod])
   const regionSourceLabel = useMemo(() => getRegionSourceLabel(regionSource), [regionSource])
-  const regionRangeDocs = regionSummaryToShow.docs || []
+  const regionRangeDocs = useMemo(
+    () => regionSummaryToShow.docs || [],
+    [regionSummaryToShow.docs],
+  )
   const regionPeriodStartISO = useMemo(() => {
     const endDate = new Date(regionSummaryToShow.endISO)
     if (Number.isNaN(endDate.getTime())) return regionSummaryToShow.startISO
@@ -1273,6 +1367,14 @@ export default function ReportsTabsClient({
         >
           <span>Panel Wilayah</span>
           <small>Distribusi pendaftar per wilayah</small>
+        </button>
+        <button
+          className={`mobis-reports__panel-tab ${activePanel === 'duplicates' ? 'is-active' : ''}`}
+          onClick={() => setActivePanel('duplicates')}
+          type="button"
+        >
+          <span>Panel Berulang</span>
+          <small>Pendaftar baru vs berulang</small>
         </button>
       </section>
 
@@ -1421,7 +1523,11 @@ export default function ReportsTabsClient({
               </article>
               <article className="mobis-reports__custom-card">
                 <span>Pertumbuhan vs Periode Sebelumnya</span>
-                <strong>{summaryToShow.growthVsPrevRangePct.toFixed(1)}%</strong>
+                <strong>
+                  {summaryToShow.growthVsPrevRangePct != null
+                    ? `${summaryToShow.growthVsPrevRangePct.toFixed(1)}%`
+                    : '—'}
+                </strong>
               </article>
             </div>
 
@@ -1870,6 +1976,92 @@ export default function ReportsTabsClient({
                 ) : null}
               </div>
             </div>
+          </section>
+        ) : null}
+
+        {activePanel === 'duplicates' ? (
+          <section className="mobis-reports__panel">
+            <div className="mobis-reports__panel-head">
+              <h5>Analisis Pendaftar Baru vs Berulang</h5>
+              <p>Diidentifikasi berdasarkan kesamaan nomor KTP dan nomor telepon</p>
+            </div>
+
+            <div className="mobis-reports__dup-summary">
+              <article className="mobis-reports__dup-card mobis-reports__dup-card--new">
+                <span>Pendaftar Baru</span>
+                <strong>{repeatStats.newCount.toLocaleString('id-ID')}</strong>
+                <em>
+                  {totalDocs > 0
+                    ? ((repeatStats.newCount / totalDocs) * 100).toFixed(1) + '% dari total'
+                    : '0%'}
+                </em>
+              </article>
+              <article className="mobis-reports__dup-card mobis-reports__dup-card--repeat">
+                <span>Pendaftar Berulang</span>
+                <strong>{repeatStats.repeatCount.toLocaleString('id-ID')}</strong>
+                <em>
+                  {totalDocs > 0
+                    ? ((repeatStats.repeatCount / totalDocs) * 100).toFixed(1) + '% dari total'
+                    : '0%'}
+                </em>
+              </article>
+              <article className="mobis-reports__dup-card">
+                <span>Tidak Teridentifikasi</span>
+                <strong>{repeatStats.unknownCount.toLocaleString('id-ID')}</strong>
+                <em>Tidak ada KTP dan telepon</em>
+              </article>
+            </div>
+
+            {repeatStats.topGroups.length === 0 ? (
+              <p className="mobis-reports__empty" style={{ padding: '1.2rem 0' }}>
+                Tidak ada pendaftar berulang yang terdeteksi.
+              </p>
+            ) : (
+              <>
+                <div className="mobis-reports__panel-head mobis-reports__panel-head--sub">
+                  <h5>Daftar Pendaftar Berulang</h5>
+                  <p>Diurutkan dari yang paling banyak mendaftar</p>
+                </div>
+                <div className="mobis-reports__table-wrap">
+                  <table className="mobis-reports__table mobis-reports__table--dup">
+                    <thead>
+                      <tr>
+                        <th style={{ inlineSize: '3rem' }}>#</th>
+                        <th>Nama</th>
+                        <th>Nomor Identifikasi</th>
+                        <th>Jenis</th>
+                        <th className="text-end">Jumlah Daftar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {repeatStats.topGroups.map((group, idx) => (
+                        <tr key={`${group.type}-${group.key}`}>
+                          <td style={{ opacity: 0.55, fontWeight: 700 }}>{idx + 1}</td>
+                          <td style={{ fontWeight: 700 }}>{group.latestName}</td>
+                          <td>
+                            <span className="mobis-reports__dup-id">{group.key}</span>
+                          </td>
+                          <td>
+                            <span
+                              className={`mobis-reports__badge ${
+                                group.type === 'ktp'
+                                  ? 'mobis-reports__badge--ktp'
+                                  : 'mobis-reports__badge--phone'
+                              }`}
+                            >
+                              {group.type === 'ktp' ? 'KTP' : 'Telepon'}
+                            </span>
+                          </td>
+                          <td className="text-end">
+                            <strong>{group.count}x</strong>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </section>
         ) : null}
       </section>

@@ -1,5 +1,7 @@
 import * as migration_20260427_072500_fix_registration_form_online_app from './20260427_072500_fix_registration_form_online_app'
 import * as migration_20260429_103000_add_faq_accordion_block from './20260429_103000_add_faq_accordion_block'
+import * as migration_20260518_add_area_chips_description from './20260518_add_area_chips_description'
+import * as migration_20260525_add_area_chips_block_description from './20260525_add_area_chips_block_description'
 
 export const migrations = [
   {
@@ -11,5 +13,15 @@ export const migrations = [
     up: migration_20260429_103000_add_faq_accordion_block.up,
     down: migration_20260429_103000_add_faq_accordion_block.down,
     name: '20260429_103000_add_faq_accordion_block',
+  },
+  {
+    up: migration_20260518_add_area_chips_description.up,
+    down: migration_20260518_add_area_chips_description.down,
+    name: '20260518_add_area_chips_description',
+  },
+  {
+    up: migration_20260525_add_area_chips_block_description.up,
+    down: migration_20260525_add_area_chips_block_description.down,
+    name: '20260525_add_area_chips_block_description',
   },
 ]

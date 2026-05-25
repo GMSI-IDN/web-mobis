@@ -232,8 +232,13 @@ export interface Page {
       }
     | {
         title?: string | null;
+        description?: string | null;
         areas: {
           label: string;
+          /**
+           * Deskripsi singkat layanan di kota ini — tampil langsung di halaman dan dibaca Google (maks. 160 karakter disarankan).
+           */
+          description?: string | null;
           PoolImage?: (number | null) | Media;
           pools?:
             | {
@@ -1558,10 +1563,12 @@ export interface PagesSelect<T extends boolean = true> {
           | T
           | {
               title?: T;
+              description?: T;
               areas?:
                 | T
                 | {
                     label?: T;
+                    description?: T;
                     PoolImage?: T;
                     pools?:
                       | T
