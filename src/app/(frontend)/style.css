@@ -128,10 +128,10 @@ body {
 }
 
 .area-section-description {
-  font-size: 0.95rem;
-  color: #6c757d;
+  font-size: 0.8rem;
+  color: #1e5610;
   margin: -0.25rem auto 1.5rem;
-  max-width: 600px;
+  max-width: 900px;
   line-height: 1.6;
 }
 
