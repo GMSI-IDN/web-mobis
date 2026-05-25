@@ -26,38 +26,6 @@ body {
   display: none;
 }
 
-/* ===== Heading Scale ===== */
-h1, .h1 {
-  font-size: clamp(1.75rem, 1.4rem + 1.75vw, 2.5rem);
-  font-weight: 800;
-  line-height: 1.15;
-}
-h2, .h2 {
-  font-size: clamp(1.3rem, 1.1rem + 1vw, 1.9rem);
-  font-weight: 700;
-  line-height: 1.2;
-}
-h3, .h3 {
-  font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.45rem);
-  font-weight: 700;
-  line-height: 1.25;
-}
-h4, .h4 {
-  font-size: clamp(0.95rem, 0.88rem + 0.35vw, 1.2rem);
-  font-weight: 600;
-  line-height: 1.3;
-}
-h5, .h5 {
-  font-size: clamp(0.88rem, 0.83rem + 0.25vw, 1.05rem);
-  font-weight: 600;
-  line-height: 1.35;
-}
-h6, .h6 {
-  font-size: clamp(0.8rem, 0.77rem + 0.15vw, 0.9rem);
-  font-weight: 600;
-  line-height: 1.4;
-}
-
 /* primary color */
 .primary-color {
   color: #3BAC1F;
@@ -241,15 +209,6 @@ h6, .h6 {
 }
 
 
-.footer-mobis__icon:hover {
-  transform: translateY(-2px);
-  opacity: 0.85;
-}
-
-
-.area-section {
-  background: linear-gradient(#EDFBE9 0%, #48B414 40%, #48B414 80%);
-}
 
 .bg-success-gradient {
   background: linear-gradient(179.88deg, #9CEA2A 9.4%, #159A06 99.89%);
@@ -275,9 +234,6 @@ h6, .h6 {
 
 .bg_gradient_city_location {
   background: linear-gradient(360deg, #48B414 0%, rgba(255, 255, 255, 0.49) 100%);
-}
-.bg_gradient_avaliabel_programs {
-  background: linear-gradient(360deg, #3BAC1F 0%, rgba(255, 255, 255, 0.14) 100%);
 }
 
 .bg_gradient_programs {
