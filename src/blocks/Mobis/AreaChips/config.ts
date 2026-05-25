@@ -1,11 +1,25 @@
 import type { Block } from 'payload'
+import {
+  FixedToolbarFeature,
+  InlineToolbarFeature,
+  lexicalEditor,
+} from '@payloadcms/richtext-lexical'
 
 export const AreaChipsBlock: Block = {
   slug: 'areaChips',
   labels: { singular: 'Area Chips', plural: 'Area Chips' },
   fields: [
     { name: 'title', type: 'text', defaultValue: 'KAMI TERSEDIA DI' },
-    { name: 'description', type: 'textarea', required: false },
+    {
+      name: 'description',
+      type: 'richText',
+      required: false,
+      editor: lexicalEditor({
+        features: ({ rootFeatures }) => {
+          return [...rootFeatures, FixedToolbarFeature(), InlineToolbarFeature()]
+        },
+      }),
+    },
     {
       name: 'areas',
       type: 'array',

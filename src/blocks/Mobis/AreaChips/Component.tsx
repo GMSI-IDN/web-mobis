@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { RichText } from '@payloadcms/richtext-lexical/react'
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 
 type Media = {
   url?: string
@@ -25,7 +27,7 @@ function toAreaId(label: string): string {
 
 type Props = {
   title?: string
-  description?: string
+  description?: SerializedEditorState | null
   areas?: Area[]
 }
 
@@ -98,7 +100,7 @@ export default function AreaChipsBlockComponent({ title, description, areas }: P
     <section className="area-section">
       <div className="container py-4 text-center">
         {title ? <h2 className="area-title">{title}</h2> : null}
-        {description ? <p className="area-section-description">{description}</p> : null}
+        {description && typeof description === 'object' ? <div className="area-section-description"><RichText data={description} /></div> : null}
 
         <div className="row g-3 g-lg-4 justify-content-center">
           {(areas ?? []).map((a, i) => {
