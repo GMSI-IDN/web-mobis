@@ -891,6 +891,7 @@ export interface AboutSplitBlock {
  */
 export interface UnitsAvailableBlock {
   title: string;
+  description?: string | null;
   units: {
     name: string;
     image?: (number | null) | Media;
@@ -1722,6 +1723,7 @@ export interface AboutSplitBlockSelect<T extends boolean = true> {
  */
 export interface UnitsAvailableBlockSelect<T extends boolean = true> {
   title?: T;
+  description?: T;
   units?:
     | T
     | {

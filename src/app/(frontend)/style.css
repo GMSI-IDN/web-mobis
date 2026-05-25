@@ -128,6 +128,14 @@ body {
   padding: 0.35rem 0 1rem;
 }
 
+.units-description {
+  font-size: 0.85rem;
+  color: #374151;
+  margin: 0.5rem auto 0;
+  max-width: 700px;
+  line-height: 1.6;
+}
+
 .area-section-description {
   font-size: 0.8rem;
   color: #1e5610;

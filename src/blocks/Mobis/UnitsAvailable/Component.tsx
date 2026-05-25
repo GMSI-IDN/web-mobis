@@ -4,6 +4,7 @@ import React from 'react'
 
 type Props = {
   title?: string
+  description?: string | null
   units?: { name: string; image?: any }[]
 }
 
@@ -25,12 +26,13 @@ function resolveUnitAlt(unitName?: string, image?: { alt?: string; filename?: st
   return `${unitName || 'Unit mobil'} untuk rental driver online`
 }
 
-export const UnitsAvailable: React.FC<Props> = ({ title, units }) => {
+export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) => {
   return (
     <section id="unit_mobil" className="bg-success-subtle">
       <div className="container py-4">
         <div className="text-center mb-3">
           <h2 className="small fw-bold text-success mb-0">{title}</h2>
+          {description && <p className="units-description">{description}</p>}
         </div>
 
         <div className="row g-3 justify-content-center">
