@@ -250,6 +250,10 @@ export interface Page {
         areas: {
           label: string;
           /**
+           * Centang untuk menampilkan label "Partner Mobis" di atas gambar card.
+           */
+          isPartner?: boolean | null;
+          /**
            * Deskripsi singkat layanan di kota ini — tampil langsung di halaman dan dibaca Google (maks. 160 karakter disarankan).
            */
           description?: string | null;
@@ -1583,6 +1587,7 @@ export interface PagesSelect<T extends boolean = true> {
                 | T
                 | {
                     label?: T;
+                    isPartner?: T;
                     description?: T;
                     PoolImage?: T;
                     pools?:

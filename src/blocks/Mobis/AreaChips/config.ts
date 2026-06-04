@@ -27,6 +27,14 @@ export const AreaChipsBlock: Block = {
       fields: [
         { name: 'label', type: 'text', required: true }, // contoh: Jabodetabek
         {
+          name: 'isPartner',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            description: 'Centang untuk menampilkan label "Partner Mobis" di atas gambar card.',
+          },
+        },
+        {
           name: 'description',
           type: 'textarea',
           required: false,

@@ -16,6 +16,7 @@ type Pool = {
 
 type Area = {
   label?: string
+  isPartner?: boolean
   description?: string
   PoolImage?: Media | string | null
   pools?: Pool[]
@@ -120,6 +121,9 @@ export default function AreaChipsBlockComponent({ title, description, areas }: P
                   onClick={() => openModalForArea(i)}
                 >
                   <div className="area-thumb">
+                    {a?.isPartner && (
+                      <span className="area-partner-badge">Partner Mobis</span>
+                    )}
                     {imgUrl ? (
                       <img src={imgUrl} alt={alt} loading="lazy" decoding="async" fetchPriority="low" />
                     ) : (
