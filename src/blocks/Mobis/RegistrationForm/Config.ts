@@ -67,13 +67,11 @@ export const RegistrationFormConfig: Block = {
         makeOptionArray('emRel', 'Emergency Relation Options'),
         makeOptionArray('drvExp', 'Driver Experience Options'),
         makeOptionArray('handover', 'Handover Location Options'),
-        // NOTE: "Aplikasi Driver Online" options are intentionally NOT a CMS-editable
-        // array — that would require a new table
-        // (pages_blocks_registration_form_opts_online_app) and a DB migration. The
-        // options are hardcoded in Component.tsx (`defaults.onlineApp`) instead, so no
-        // schema change is needed. To make them CMS-editable later, re-enable the line
-        // below and run `pnpm migrate` (idempotent migration already exists in repo):
-        // makeOptionArray('onlineApp', 'Aplikasi Driver Online Options'),
+        // CMS-editable "Aplikasi Driver Online" options. Backing table
+        // `pages_blocks_registration_form_opts_online_app` is created by migration
+        // 20260427_072500_fix_registration_form_online_app (already applied). Any DB
+        // that hasn't run it yet must `pnpm migrate` (idempotent, additive-only).
+        makeOptionArray('onlineApp', 'Aplikasi Driver Online Options'),
         makeOptionArray('source', 'Source Info Options'),
       ],
     },
