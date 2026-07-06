@@ -2,6 +2,8 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
+import { incrementVoucherUsed } from '@/lib/vouchers/incrementVoucherUsed'
+
 function normalizeCode(v: unknown) {
   return String(v ?? '')
     .trim()
@@ -99,7 +101,20 @@ export async function POST(req: Request) {
     )
   }
 
-  // 5) buat redemption log
+  // 5) reserve the slot first (atomic guard against quota overflow under
+  //    concurrent applies) BEFORE writing the redemption log, so a lost race
+  //    never leaves an APPLIED redemption without a matching increment.
+  const increment = await incrementVoucherUsed(payload, Number(voucherIdAny))
+
+  if (!increment.ok) {
+    const message =
+      increment.reason === 'quota_exhausted'
+        ? 'Kuota voucher habis'
+        : 'Voucher tidak ditemukan'
+    return NextResponse.json({ ok: false, message }, { status: 400 })
+  }
+
+  // 6) buat redemption log
   // customer harus number sesuai type: number | Customer | undefined
   await payload.create({
     collection: 'voucher_redemptions',
@@ -111,13 +126,6 @@ export async function POST(req: Request) {
     },
   })
 
-  // 6) increment used
-  await payload.update({
-    collection: 'vouchers',
-    id: voucherIdAny,
-    data: { used: used + 1 },
-  })
-
   return NextResponse.json({
     ok: true,
     message: 'Voucher berhasil di-apply',
@@ -125,7 +133,7 @@ export async function POST(req: Request) {
       voucherId: voucherIdStr,
       code: voucher.code,
       quota,
-      used: used + 1,
+      used: increment.used,
       customerId: customerIdNum,
     },
   })

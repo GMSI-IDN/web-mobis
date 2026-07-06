@@ -3,6 +3,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { validateRegistrationPayload } from '@/lib/validation/registration'
+import { incrementVoucherUsed } from '@/lib/vouchers/incrementVoucherUsed'
 import { appendLeadToSheet } from '@/services/googleSheets/appendLead'
 import { sendMetaConversionsApiEvent } from '@/services/meta/sendConversionsApiEvent'
 import type { RegistrationPayload } from '@/types/registration'
@@ -449,35 +450,47 @@ export async function POST(req: Request) {
     if (promoResult.provided && promoResult.valid) {
       step = 'increment-voucher-used'
 
-      const updateVoucherUsage = async () => {
-        const latestVoucher = await payload.findByID({
-          collection: 'vouchers',
-          id: promoResult.voucherId,
-          depth: 0,
+      // Atomic guard against quota overflow under concurrent registrations.
+      const increment = await incrementVoucherUsed(payload, promoResult.voucherId)
+
+      if (!increment.ok) {
+        // The customer row was already created optimistically with promoApplied=true.
+        // The voucher could not actually be claimed (race lost the last slot, or it
+        // was disabled/removed between validation and now), so reconcile the record
+        // to reflect that the promo did not apply — no oversell, no false claim.
+        const promoError =
+          increment.reason === 'quota_exhausted'
+            ? 'Kuota voucher habis saat pendaftaran diproses.'
+            : 'Voucher tidak lagi tersedia saat pendaftaran diproses.'
+
+        console.warn('[API /registration] Voucher increment skipped:', {
+          reason: increment.reason,
+          voucherId: promoResult.voucherId,
+          customerId: customer.id,
         })
 
-        const latestUsed = Number(latestVoucher?.used ?? promoResult.used)
-        const nextUsed = Number.isFinite(latestUsed) ? latestUsed + 1 : promoResult.used + 1
+        step = 'reconcile-customer-promo'
+        try {
+          await payload.update({
+            collection: 'customers',
+            id: customer.id,
+            data: {
+              promoApplied: false,
+              promoAppliedAt: null,
+              voucher: null,
+              promoError,
+            },
+          })
+        } catch (reconcileErr) {
+          console.warn('[API /registration] Failed to reconcile promo on customer:', reconcileErr)
+        }
 
-        await payload.update({
-          collection: 'vouchers',
-          id: promoResult.voucherId,
-          data: {
-            used: nextUsed,
-          },
-        })
-      }
-
-      try {
-        await updateVoucherUsage()
-      } catch (err) {
-        if (!isIdUniqueValidationError(err)) throw err
-
-        step = 'resync-vouchers-id-sequence'
-        await resyncCollectionIdSequence(payload, 'vouchers')
-
-        step = 'increment-voucher-used-retry'
-        await updateVoucherUsage()
+        promoResult = {
+          provided: true,
+          valid: false,
+          code: promoResult.code,
+          error: promoError,
+        }
       }
     }
 
@@ -561,16 +574,35 @@ export async function POST(req: Request) {
       stack: err?.stack,
     })
 
+    const statusCode = Number(err?.statusCode) || 500
+
+    // Only surface details for deliberate client-side (4xx) errors we author
+    // (validation, KTP cooldown, promo). For unexpected 5xx failures, return a
+    // generic message and never leak the internal pipeline step, DB payloads,
+    // or raw error text to the client — the full detail is already logged above.
+    if (statusCode >= 400 && statusCode < 500) {
+      const fieldErrors =
+        err?.errors && typeof err.errors === 'object' && !Array.isArray(err.errors)
+          ? err.errors
+          : undefined
+
+      return NextResponse.json(
+        {
+          ok: false,
+          code: err?.code,
+          message: err?.message ?? 'Data tidak valid.',
+          errors: fieldErrors,
+        },
+        { status: statusCode },
+      )
+    }
+
     return NextResponse.json(
       {
         ok: false,
-        step,
-        code: err?.code,
-        errors: err?.errors,
-        data: err?.data,
-        message: err?.message ?? 'Server error saat proses registration',
+        message: 'Terjadi kesalahan pada server. Silakan coba lagi.',
       },
-      { status: err?.statusCode ?? 500 },
+      { status: 500 },
     )
   }
 }
