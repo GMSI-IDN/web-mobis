@@ -1037,13 +1037,6 @@ export interface RegistrationFormBlock {
           id?: string | null;
         }[]
       | null;
-    onlineApp?:
-      | {
-          label: string;
-          value: string;
-          id?: string | null;
-        }[]
-      | null;
     source?:
       | {
           label: string;
@@ -1879,13 +1872,6 @@ export interface RegistrationFormBlockSelect<T extends boolean = true> {
               id?: T;
             };
         handover?:
-          | T
-          | {
-              label?: T;
-              value?: T;
-              id?: T;
-            };
-        onlineApp?:
           | T
           | {
               label?: T;
