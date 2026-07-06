@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 
-const UPSTREAM =
-  process.env.MOBIS_ASSISTANT_API_BASE ||
-  'https://stg-api-chatbot.global-mobility-service.co.id/chats' // contoh:
+// Fail-closed: when MOBIS_ASSISTANT_API_BASE is unset we fall back to the local
+// STUB below (see `if (!UPSTREAM)`), NOT to a hardcoded staging host. A missing
+// env in production must never silently proxy real user chats to staging.
+const UPSTREAM = process.env.MOBIS_ASSISTANT_API_BASE || ''
 
 export async function POST(req: Request) {
   try {
