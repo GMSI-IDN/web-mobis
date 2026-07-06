@@ -19,7 +19,6 @@ type Out = {
   success: boolean
   message?: string
   steps?: Step[]
-  raw?: any
   error?: string
 }
 
@@ -172,7 +171,8 @@ export async function POST(req: Request) {
       success: m.success,
       message: m.message,
       steps,
-      raw, // keep raw untuk debug (bisa kamu hapus di prod)
+      // NOTE: raw upstream response intentionally NOT forwarded to the client —
+      // it exposes internal WordPress AJAX structure/fields. Kept server-side only.
     }
 
     // kalau WP response http error, tetap forward sebagai 200 agar UI bisa tampilkan message
