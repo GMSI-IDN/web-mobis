@@ -42,6 +42,7 @@ type FormValues = {
   emergencyPhone: string
   emergencyRelation: string
   driverApps: string
+  driverAppsOther: string
   activeAccountSelf: string
   driverExperience: string
   handoverLocation: string
@@ -189,6 +190,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     emergencyPhone: '',
     emergencyRelation: '',
     driverApps: '',
+    driverAppsOther: '',
     activeAccountSelf: '',
     driverExperience: '',
     handoverLocation: '',
@@ -314,6 +316,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
   const birthDateRange = useMemo(() => getBirthDateRange(18, 62), [])
   const isNoDriverAccount = normalizeValue(values.driverApps) === 'tidak_ada_akun'
+  const isOtherApp = normalizeValue(values.driverApps) === 'lainnya'
   const ktpFieldError =
     touched.ktpNumber && (errors.ktpNumber || serverFieldErrors.ktpNumber)
       ? errors.ktpNumber || serverFieldErrors.ktpNumber
@@ -368,6 +371,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     allValues: FormValues,
   ): string {
     const noDriverAccount = normalizeValue(allValues.driverApps) === 'tidak_ada_akun'
+    const otherApp = normalizeValue(allValues.driverApps) === 'lainnya'
     const sourceKey = normalizeValue(allValues.sourceInfo)
     const needSourceDetail = [
       'instagram',
@@ -459,6 +463,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         if (!String(value).trim()) return 'Aplikasi driver online wajib dipilih.'
         return ''
 
+      case 'driverAppsOther':
+        if (!otherApp) return ''
+        if (!String(value).trim()) return 'Sebutkan aplikasi driver online yang digunakan.'
+        return ''
+
       case 'activeAccountSelf':
         if (noDriverAccount) return ''
         if (!String(value).trim()) return 'Pilih salah satu status akun driver online.'
@@ -542,6 +551,14 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
           driverExperience: '',
         }
       }
+
+      const otherApp = normalizeValue(String(nextValue)) === 'lainnya'
+      if (!otherApp) {
+        nextValues = {
+          ...nextValues,
+          driverAppsOther: '',
+        }
+      }
     }
 
     if (field === 'sourceInfo') {
@@ -572,11 +589,13 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         ...prev,
         activeAccountSelf: '',
         driverExperience: '',
+        driverAppsOther: '',
       }))
       setTouched((prev) => ({
         ...prev,
         activeAccountSelf: false,
         driverExperience: false,
+        driverAppsOther: false,
       }))
     }
 
@@ -630,6 +649,12 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         phone: onlyDigits(values.phone),
         ktpNumber: onlyDigits(values.ktpNumber),
         emergencyPhone: onlyDigits(values.emergencyPhone),
+        // When "Lainnya" is chosen, store the free-text app name so it reads
+        // cleanly in the admin (the raw driverAppsOther is still kept in ...values
+        // and preserved in the backend rawPayload backup).
+        driverApps: isOtherApp
+          ? values.driverAppsOther.trim() || 'Lainnya'
+          : values.driverApps,
         agree: values.agree ? '1' : '0',
         metaEventId,
         metaSourcePath: window.location.pathname,
@@ -1023,6 +1048,27 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                   ) : null}
                 </div>
               </div>
+
+              {isOtherApp ? (
+                <div className="row g-2 align-items-md-center mb-2">
+                  <div className={labelCol}>
+                    <label className="form-label reg-label mb-0">Aplikasi lainnya</label>
+                  </div>
+                  <div className={fieldCol}>
+                    <input
+                      type="text"
+                      name="driverAppsOther"
+                      className={`form-control form-control-sm ${touched.driverAppsOther && errors.driverAppsOther ? 'is-invalid' : ''}`}
+                      placeholder="Sebutkan aplikasi driver online yang digunakan"
+                      value={values.driverAppsOther}
+                      onChange={(e) => setField('driverAppsOther', e.target.value)}
+                    />
+                    {touched.driverAppsOther && errors.driverAppsOther ? (
+                      <div className="invalid-feedback d-block">{errors.driverAppsOther}</div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
 
               {!isNoDriverAccount ? (
                 <>

@@ -67,10 +67,10 @@ export const RegistrationFormConfig: Block = {
         makeOptionArray('emRel', 'Emergency Relation Options'),
         makeOptionArray('drvExp', 'Driver Experience Options'),
         makeOptionArray('handover', 'Handover Location Options'),
-        // Temporary: disabled to keep staging admin working on DBs that do not have
-        // pages_blocks_registration_form_opts_online_app table yet.
-        // Re-enable after migration is applied on staging/prod.
-        // makeOptionArray('onlineApp', 'Online App Options'),
+        // Table `pages_blocks_registration_form_opts_online_app` is created by the
+        // idempotent migration 20260427_072500_fix_registration_form_online_app.
+        // Run `pnpm migrate` on any DB that hasn't applied it yet.
+        makeOptionArray('onlineApp', 'Aplikasi Driver Online Options'),
         makeOptionArray('source', 'Source Info Options'),
       ],
     },
