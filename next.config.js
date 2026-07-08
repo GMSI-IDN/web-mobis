@@ -15,11 +15,15 @@ const NEXT_PUBLIC_SERVER_URL =
 // Media URLs are built by getMediaUrl()/getClientSideURL() from NEXT_PUBLIC_SERVER_URL
 // (and PAYLOAD_PUBLIC_SERVER_URL as a fallback), which can differ from
 // VERCEL_PROJECT_PRODUCTION_URL (e.g. localhost in dev while Vercel env vars are also present).
-// Allowlist every candidate host so next/image never rejects a valid media URL.
+// In production the CMS/media backend is a separate domain (see getCMSURL() in
+// src/utilities/getURL.ts and the hardcoded OG image fallbacks) — allowlist every
+// candidate host so next/image never rejects a valid media URL.
 const IMAGE_HOST_CANDIDATES = [
   NEXT_PUBLIC_SERVER_URL,
   process.env.NEXT_PUBLIC_SERVER_URL,
   process.env.PAYLOAD_PUBLIC_SERVER_URL,
+  process.env.PAYLOAD_LOCAL_SERVER_URL,
+  'https://admin.rentalmobis.com',
 ]
 
 /** @type {import('next').NextConfig} */

@@ -69,6 +69,10 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Google service account credentials (see GOOGLE_SERVICE_ACCOUNT_JSON_PATH in .env).
+# Not covered by the standalone output trace since it's read via fs at runtime, not imported.
+COPY --from=builder --chown=nextjs:nodejs /app/private ./private
+
 USER nextjs
 
 EXPOSE 3000
