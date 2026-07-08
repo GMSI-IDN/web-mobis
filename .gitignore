@@ -6,6 +6,7 @@ node_modules
 .next
 .next-build*
 .next-webpack*
+# src/app/(frontend)/bootstrap-custom.generated.css
 .vercel
 tsconfig.tsbuildinfo
 

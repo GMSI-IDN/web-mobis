@@ -1,10 +1,7 @@
 'use client'
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
-import {
-  trackFacebookCustomEvent,
-  trackFacebookEventWithDedup,
-} from '@/utilities/pixelFacebook'
+import { trackFacebookCustomEvent, trackFacebookEventWithDedup } from '@/utilities/pixelFacebook'
 
 type Option = { label: string; value: string }
 
@@ -652,9 +649,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         // When "Lainnya" is chosen, store the free-text app name so it reads
         // cleanly in the admin (the raw driverAppsOther is still kept in ...values
         // and preserved in the backend rawPayload backup).
-        driverApps: isOtherApp
-          ? values.driverAppsOther.trim() || 'Lainnya'
-          : values.driverApps,
+        driverApps: isOtherApp ? values.driverAppsOther.trim() || 'Lainnya' : values.driverApps,
         agree: values.agree ? '1' : '0',
         metaEventId,
         metaSourcePath: window.location.pathname,
@@ -1146,7 +1141,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 <div className={fieldCol}>
                   <SelectField
                     name="handoverLocation"
-                    placeholder="Pilih preferensi"
+                    placeholder="Pilih Lokasi"
                     options={HANDOVER_OPTS}
                     value={values.handoverLocation}
                     onChange={(value) => setField('handoverLocation', value)}

@@ -2,10 +2,33 @@
 
 import React, { useId, useEffect } from 'react'
 import Link from 'next/link'
+import { getImageProps } from 'next/image'
 import ScrollButton from '@/components/ui/ScrollButton'
 import { trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
+import { getMediaUrl } from '@/utilities/getMediaUrl'
 
-type Media = { url?: string }
+type Media = { url?: string; width?: number | null; height?: number | null }
+
+const DESKTOP_FALLBACK_WIDTH = 1920
+const DESKTOP_FALLBACK_HEIGHT = 640
+const MOBILE_FALLBACK_WIDTH = 768
+const MOBILE_FALLBACK_HEIGHT = 960
+
+function buildBannerSrcSet(media: Media | undefined, fallbackWidth: number, fallbackHeight: number) {
+  const url = media?.url
+  if (!url) return { srcSet: undefined, imgProps: undefined }
+
+  const { props } = getImageProps({
+    src: getMediaUrl(url),
+    width: media?.width || fallbackWidth,
+    height: media?.height || fallbackHeight,
+    quality: 82,
+    alt: '',
+  })
+
+  const { srcSet, ...imgProps } = props
+  return { srcSet, imgProps }
+}
 
 type Slide = {
   isActive?: boolean
@@ -102,9 +125,18 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
 
           <div className="carousel-inner banner-inner-fullbleed">
             {activeSlides.map((s, i) => {
-              const desktopUrl = s?.backgroundImage?.url ?? ''
-              const mobileUrl = s?.backgroundImageMobile?.url ?? desktopUrl
               const isFirstSlide = i === 0
+
+              const desktop = buildBannerSrcSet(
+                s?.backgroundImage,
+                DESKTOP_FALLBACK_WIDTH,
+                DESKTOP_FALLBACK_HEIGHT,
+              )
+              const mobile = buildBannerSrcSet(
+                s?.backgroundImageMobile ?? s?.backgroundImage,
+                MOBILE_FALLBACK_WIDTH,
+                MOBILE_FALLBACK_HEIGHT,
+              )
 
               const ctaText = s?.ctaText ?? 'Daftar Sekarang'
               const rawCtaLink = s?.ctaLink?.trim() || '#registration'
@@ -114,18 +146,22 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
               return (
                 <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
                   <div className="banner-slide-fullbleed position-relative">
-                    <picture>
-                      <source media="(max-width: 767.98px)" srcSet={mobileUrl} />
-                      <source media="(min-width: 768px)" srcSet={desktopUrl} />
-                      <img
-                        className="banner-img-fullbleed"
-                        src={desktopUrl}
-                        alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
-                        loading={isFirstSlide ? 'eager' : 'lazy'}
-                        fetchPriority={isFirstSlide ? 'high' : 'auto'}
-                        decoding="async"
-                      />
-                    </picture>
+                    {desktop.imgProps ? (
+                      <picture>
+                        {mobile.srcSet && (
+                          <source media="(max-width: 767.98px)" srcSet={mobile.srcSet} />
+                        )}
+                        <source media="(min-width: 768px)" srcSet={desktop.srcSet} />
+                        <img
+                          {...desktop.imgProps}
+                          className="banner-img-fullbleed"
+                          alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
+                          loading={isFirstSlide ? 'eager' : 'lazy'}
+                          fetchPriority={isFirstSlide ? 'high' : 'auto'}
+                          decoding="async"
+                        />
+                      </picture>
+                    ) : null}
 
                     <div className="banner-cta-fullbleed position-absolute start-50 translate-middle-x text-center">
                       {isSectionLink ? (

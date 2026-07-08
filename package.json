@@ -6,8 +6,10 @@
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" next build",
-    "prebuild": "npm run generate:importmap",
+    "prebuild": "npm run generate:importmap && npm run build:bootstrap-css",
     "postbuild": "next-sitemap --config next-sitemap.config.cjs",
+    "build:bootstrap-css": "sass \"src/app/(frontend)/bootstrap-custom.scss\" \"src/app/(frontend)/bootstrap-custom.generated.css\" --load-path=node_modules --no-source-map --style=compressed",
+    "predev": "npm run build:bootstrap-css",
     "dev": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" next dev",
     "dev:prod": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" rm -rf .next && pnpm build && pnpm start",
     "generate:importmap": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" payload generate:importmap",

@@ -4,6 +4,7 @@ import { PayloadRedirects } from '@/components/PayloadRedirects'
 import configPromise from '@payload-config'
 import { getPayload, type RequiredDataFromCollectionSlug } from 'payload'
 import { draftMode } from 'next/headers'
+import { unstable_cache } from 'next/cache'
 import React, { cache } from 'react'
 import { homeStatic } from '@/endpoints/seed/home-static'
 
@@ -93,6 +94,29 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
   const { isEnabled: draft } = await draftMode()
 
+  if (draft) {
+    return fetchPageBySlug({ slug, draft: true, overrideAccess: true })
+  }
+
+  return getCachedPageBySlug(slug)
+})
+
+const getCachedPageBySlug = (slug: string) =>
+  unstable_cache(
+    () => fetchPageBySlug({ slug, draft: false, overrideAccess: false }),
+    [`page_${slug}`],
+    { tags: [`page_${slug}`] },
+  )()
+
+async function fetchPageBySlug({
+  slug,
+  draft,
+  overrideAccess,
+}: {
+  slug: string
+  draft: boolean
+  overrideAccess: boolean
+}) {
   const payload = await getPayload({ config: configPromise })
   try {
     const result = await payload.find({
@@ -100,7 +124,7 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
       draft,
       limit: 1,
       pagination: false,
-      overrideAccess: draft,
+      overrideAccess,
       where: {
         slug: {
           equals: slug,
@@ -116,4 +140,4 @@ const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
 
     throw error
   }
-})
+}
