@@ -41,10 +41,13 @@ const nextConfig = {
   },
   images: {
     qualities: [75, 82],
-    // Local dev serves media from the same localhost origin; Next's SSRF guard blocks
-    // the image optimizer from fetching private/loopback IPs by default. Production media
-    // hosts are always public domains, so this only relaxes the check in development.
-    dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production',
+    // Next's SSRF guard blocks the image optimizer from fetching hosts that resolve to
+    // private/loopback IPs. In production, rentalmobis.com/admin.rentalmobis.com are both
+    // routed to this same container via the reverse proxy (see docker-compose VIRTUAL_HOST),
+    // so the image optimizer ends up calling itself through a hairpin route that can resolve
+    // to an internal IP. remotePatterns above already restricts fetches to these specific,
+    // trusted hostnames, so relaxing this check here doesn't open up arbitrary SSRF.
+    dangerouslyAllowLocalIP: true,
     remotePatterns: [...new Set(IMAGE_HOST_CANDIDATES.filter(Boolean))]
       .map((item) => {
         try {
