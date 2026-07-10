@@ -1,5 +1,6 @@
 import { getEnv } from '@/lib/env'
 import { getSheetsClient } from './client'
+import { neutralizeSpreadsheetFormula as esc } from '@/lib/security/sanitize'
 import type { RegistrationPayload } from '@/types/registration'
 
 function resolveSpreadsheetId(handoverLocation?: string): string {
@@ -216,21 +217,27 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
   const simType = mapSimTypeForSheet(payload.simType)
   const noAccount = isNoDriverAccount(payload.driverApps)
 
+  // Free-text fields are neutralized against Google Sheets formula injection
+  // (a leading =/+/-/@ etc. would otherwise execute as a live formula for
+  // whoever opens the sheet, since we write with valueInputOption:
+  // 'USER_ENTERED'). buildWhatsappHyperlink() cells are intentional formulas
+  // built only from digit-only normalized phone numbers, not raw user text,
+  // so they're left as-is.
   return [
-    payload.name ?? '',
+    esc(payload.name ?? ''),
     buildWhatsappHyperlink(payload.phone),
     ageDisplay,
     payload.ktpNumber ?? '',
-    payload.domicile ?? '',
-    payload.currentAddress ?? '',
-    payload.houseOwnership ?? '',
-    payload.driverApps ?? '',
-    noAccount ? '' : (payload.activeAccountSelf ?? ''),
-    noAccount ? '' : (payload.driverExperience ?? ''),
-    payload.handoverLocation ?? '',
-    payload.sourceInfo ?? '',
-    payload.sourceDetail ?? '',
-    payload.promoCode ?? '',
+    esc(payload.domicile ?? ''),
+    esc(payload.currentAddress ?? ''),
+    esc(payload.houseOwnership ?? ''),
+    esc(payload.driverApps ?? ''),
+    noAccount ? '' : esc(payload.activeAccountSelf ?? ''),
+    noAccount ? '' : esc(payload.driverExperience ?? ''),
+    esc(payload.handoverLocation ?? ''),
+    esc(payload.sourceInfo ?? ''),
+    esc(payload.sourceDetail ?? ''),
+    esc(payload.promoCode ?? ''),
     // payload.sourceInfo === 'facebook' ? (payload.sourceDetail ?? '') : '',
     // buildSheetSourceSummary(payload),
     'Website Mobis',
@@ -239,11 +246,11 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
     datePart,
     timePart,
     buildWhatsappHyperlink(payload.emergencyPhone),
-    payload.emergencyName ?? '',
-    payload.emergencyRelation ?? '',
-    payload.birthPlace ?? '',
+    esc(payload.emergencyName ?? ''),
+    esc(payload.emergencyRelation ?? ''),
+    esc(payload.birthPlace ?? ''),
     payload.birthDate ?? '',
-    payload.simNumber ?? '',
+    esc(payload.simNumber ?? ''),
     simType,
     payload.simValidUntil ?? '',
   ]

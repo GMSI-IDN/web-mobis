@@ -6,9 +6,16 @@ import { validateRegistrationPayload } from '@/lib/validation/registration'
 import { incrementVoucherUsed } from '@/lib/vouchers/incrementVoucherUsed'
 import { appendLeadToSheet } from '@/services/googleSheets/appendLead'
 import { sendMetaConversionsApiEvent } from '@/services/meta/sendConversionsApiEvent'
+import { getClientIp } from '@/lib/http/getClientIp'
+import { checkRateLimit } from '@/lib/security/rateLimit'
 import type { RegistrationPayload } from '@/types/registration'
 
 const KTP_REAPPLY_COOLDOWN_MONTHS = 3
+const REGISTRATION_RATE_LIMIT = { limit: 5, windowMs: 10 * 60 * 1000 }
+// A human filling this multi-section form realistically takes longer than
+// this. Submissions faster than this (plus a filled honeypot) are treated
+// as bots. See `formRenderedAtRef` in RegistrationForm/Component.tsx.
+const MIN_HUMAN_SUBMIT_MS = 3000
 
 function isTruthyEnv(value: string | undefined) {
   return ['1', 'true', 'yes', 'on'].includes(String(value ?? '').trim().toLowerCase())
@@ -55,17 +62,6 @@ function getCookieValue(cookieHeader: string | null, name: string): string | und
   }
 
   return undefined
-}
-
-function getClientIp(req: Request): string | undefined {
-  const forwardedFor = normalizeText(req.headers.get('x-forwarded-for'))
-  if (forwardedFor) {
-    const first = forwardedFor.split(',')[0]?.trim()
-    if (first) return first
-  }
-
-  const realIp = normalizeText(req.headers.get('x-real-ip'))
-  return realIp || undefined
 }
 
 function splitName(name: string): { firstName?: string; lastName?: string } {
@@ -288,6 +284,19 @@ async function resyncCollectionIdSequence(payload: any, tableName: string) {
 export async function POST(req: Request) {
   let step = 'init'
   try {
+    const clientIp = getClientIp(req) ?? 'unknown'
+    const rate = checkRateLimit(`registration:${clientIp}`, REGISTRATION_RATE_LIMIT)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'RATE_LIMITED',
+          message: 'Terlalu banyak percobaan pendaftaran. Silakan coba lagi beberapa saat lagi.',
+        },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(rate.retryAfterMs / 1000)) } },
+      )
+    }
+
     const bypassGoogleSheets = isTruthyEnv(process.env.REGISTRATION_BYPASS_GOOGLE_SHEETS)
     const metaDebug = isTruthyEnv(process.env.REGISTRATION_META_DEBUG)
 
@@ -297,12 +306,37 @@ export async function POST(req: Request) {
       id: _ignoredClientId,
       metaEventId: rawMetaEventId,
       metaSourcePath: rawMetaSourcePath,
+      website: honeypotRaw,
+      formRenderedAt: formRenderedAtRaw,
       ...bodyWithoutId
     } =
       body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
     const metaEventId = sanitizeMetaEventId(rawMetaEventId)
     const metaSourcePath = sanitizeSourcePath(rawMetaSourcePath)
     // console.log('[API /registration] payload received:', body)
+
+    step = 'bot-check'
+    const honeypotValue = normalizeText(honeypotRaw)
+    const formRenderedAt = Number(formRenderedAtRaw)
+    const elapsedMs = Number.isFinite(formRenderedAt) ? Date.now() - formRenderedAt : null
+    const looksLikeBot =
+      Boolean(honeypotValue) || (elapsedMs !== null && elapsedMs < MIN_HUMAN_SUBMIT_MS)
+
+    if (looksLikeBot) {
+      console.warn('[API /registration] Blocked suspected bot submission:', {
+        honeypotFilled: Boolean(honeypotValue),
+        elapsedMs,
+        ip: getClientIp(req),
+      })
+
+      // Respond as if the submission succeeded (no Sheets/DB/Meta write
+      // happens) so scripted bots don't detect the block and adapt.
+      return NextResponse.json({
+        ok: true,
+        message: 'Terkirim ke Google Sheets + tersimpan ke database.',
+        customerId: 0,
+      })
+    }
 
     step = 'validate-payload'
     const reg: RegistrationPayload = validateRegistrationPayload(bodyWithoutId)

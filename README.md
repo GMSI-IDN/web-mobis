@@ -48,6 +48,11 @@ pnpm dev
 ```bash
 pnpm build
 pnpm start
+
+docker ps --format '{{.Names}}\t{{.Image}}'          # cari nama container-nya
+docker exec <nama-container> mkdir -p /app/private/secrets
+docker cp ./private/secrets/credentials.json <nama-container>:/app/private/secrets/credentials.json
+docker exec <nama-container> ls -la /app/private/secrets/credentials.json   # verifikasi
 ```
 
 ### Build Production (Disarankan untuk Staging/Server)

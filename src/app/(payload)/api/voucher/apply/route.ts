@@ -3,12 +3,17 @@ import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
 import { incrementVoucherUsed } from '@/lib/vouchers/incrementVoucherUsed'
+import { checkRateLimit } from '@/lib/security/rateLimit'
+import { assertNoSuspiciousMarkup } from '@/lib/security/sanitize'
+
+const VOUCHER_APPLY_RATE_LIMIT = { limit: 30, windowMs: 60 * 1000 }
 
 function normalizeCode(v: unknown) {
   return String(v ?? '')
     .trim()
     .toUpperCase()
     .replace(/\s+/g, '')
+    .slice(0, 50)
 }
 
 function toNumberId(v: unknown): number | null {
@@ -25,8 +30,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
   }
 
+  const rate = checkRateLimit(`voucher-apply:${user.id}`, VOUCHER_APPLY_RATE_LIMIT)
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { ok: false, message: 'Terlalu banyak percobaan. Silakan coba lagi sebentar lagi.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rate.retryAfterMs / 1000)) } },
+    )
+  }
+
   const body = await req.json().catch(() => ({}) as any)
   const code = normalizeCode(body?.code)
+
+  try {
+    assertNoSuspiciousMarkup(code, 'code', 'Kode promo mengandung karakter yang tidak diperbolehkan.')
+  } catch (err: any) {
+    return NextResponse.json({ ok: false, message: err?.message }, { status: 400 })
+  }
 
   // ✅ FIX: customerId harus numeric sesuai type Payload kamu
   const customerIdNum = toNumberId(body?.customerId)

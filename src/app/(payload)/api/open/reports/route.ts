@@ -2,6 +2,10 @@ import config from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import { isExcludedLeadName } from '@/lib/customers/testLeadFilter'
+import { getClientIp } from '@/lib/http/getClientIp'
+import { checkRateLimit } from '@/lib/security/rateLimit'
+
+const REPORTS_RATE_LIMIT = { limit: 60, windowMs: 60 * 1000 }
 
 type TrendGranularity = 'day' | 'month' | 'week'
 type RegionPeriod = 'day' | 'month' | 'week' | 'year'
@@ -659,6 +663,21 @@ export async function GET(req: Request) {
         {
           headers,
           status: 401,
+        },
+      )
+    }
+
+    const rateKey = `reports:${matchedCredential.domain}:${providedKey}:${getClientIp(req) ?? 'unknown'}`
+    const rate = checkRateLimit(rateKey, REPORTS_RATE_LIMIT)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: 'Terlalu banyak permintaan. Silakan coba lagi sebentar lagi.',
+        },
+        {
+          headers: { ...headers, 'Retry-After': String(Math.ceil(rate.retryAfterMs / 1000)) },
+          status: 429,
         },
       )
     }
