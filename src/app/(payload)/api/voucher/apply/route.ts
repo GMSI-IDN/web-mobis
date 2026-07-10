@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   const code = normalizeCode(body?.code)
 
   try {
-    assertNoSuspiciousMarkup(code, 'code', 'Kode promo mengandung karakter yang tidak diperbolehkan.')
+    assertNoSuspiciousMarkup(code, 'code')
   } catch (err: any) {
     return NextResponse.json({ ok: false, message: err?.message }, { status: 400 })
   }

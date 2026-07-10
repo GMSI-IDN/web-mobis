@@ -20,12 +20,12 @@ function validateRatingBody(body: any) {
 
   const review = body?.review ? sanitizeFreeText(body.review, 1000) : undefined
   if (review) {
-    assertNoSuspiciousMarkup(review, 'review', 'Ulasan mengandung karakter yang tidak diperbolehkan.')
+    assertNoSuspiciousMarkup(review, 'review')
   }
 
   const username = body?.username ? sanitizeFreeText(body.username, 100) : undefined
   if (username) {
-    assertNoSuspiciousMarkup(username, 'username', 'Nama mengandung karakter yang tidak diperbolehkan.')
+    assertNoSuspiciousMarkup(username, 'username')
   }
 
   return {

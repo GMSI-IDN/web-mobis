@@ -3,6 +3,15 @@ import React, { useEffect, useState } from 'react'
 
 type Cat = { id: number; name: string }
 
+// Mirrors the backend check in src/lib/security/sanitize.ts
+// (containsSuspiciousMarkup) — instant feedback for the same rule the
+// Payload collection's field `validate` enforces server-side.
+const SUSPICIOUS_INPUT_PATTERN =
+  /[<>]|javascript:|data:text\/html|(?:https?|ftp):\/\/|www\.[a-z0-9-]/i
+function hasSuspiciousMarkup(value: string) {
+  return SUSPICIOUS_INPUT_PATTERN.test(value)
+}
+
 function extractErrorMessage(data: any, status: number) {
   if (typeof data?.message === 'string' && data.message.trim()) return data.message
 
@@ -122,6 +131,10 @@ export default function VoucherForm({
     const c = normalizeCode(code)
     if (!categoryId) return setErr('Kategori wajib dipilih.')
     if (!c) return setErr('Kode wajib diisi.')
+    if (c.length > 50 || hasSuspiciousMarkup(c)) return setErr('Format teks tidak diterima.')
+    if (description && (description.length > 500 || hasSuspiciousMarkup(description))) {
+      return setErr('Format teks tidak diterima.')
+    }
     if (!Number.isFinite(quota) || quota < 0) return setErr('Quota tidak valid.')
     const categoryIdNum = toNumberId(categoryId)
     if (categoryIdNum === null) return setErr('Kategori tidak valid.')
@@ -220,6 +233,7 @@ export default function VoucherForm({
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="MOBIS10"
+              maxLength={50}
               disabled={disabled}
             />
             <div className="form-text">Auto uppercase & tanpa spasi.</div>
@@ -339,6 +353,7 @@ export default function VoucherForm({
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              maxLength={500}
               disabled={disabled}
             />
           </div>

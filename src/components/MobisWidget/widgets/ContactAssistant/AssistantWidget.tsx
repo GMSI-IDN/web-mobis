@@ -13,7 +13,8 @@ import type { ChatMsg, ChatResponse } from './types'
 // Mirrors the backend check in src/lib/security/sanitize.ts
 // (containsSuspiciousMarkup) — instant feedback for the same rule the
 // server enforces, not a separate security boundary.
-const SUSPICIOUS_INPUT_PATTERN = /[<>]|javascript:|data:text\/html/i
+const SUSPICIOUS_INPUT_PATTERN =
+  /[<>]|javascript:|data:text\/html|(?:https?|ftp):\/\/|www\.[a-z0-9-]/i
 function hasSuspiciousMarkup(value: string) {
   return SUSPICIOUS_INPUT_PATTERN.test(value)
 }
@@ -61,7 +62,7 @@ export default function AssistantWidget({
 
     if (!trimmed) return 'Nama wajib diisi.'
     if (trimmed.length < 2) return 'Nama minimal 2 karakter.'
-    if (hasSuspiciousMarkup(trimmed)) return 'Tidak boleh mengandung karakter < > atau javascript:.'
+    if (hasSuspiciousMarkup(trimmed)) return 'Format teks tidak diterima.'
 
     return ''
   }
@@ -152,7 +153,7 @@ export default function AssistantWidget({
       setMessages((prev) => [
         ...prev,
         { id: uid(), role: 'user', text },
-        { id: uid(), role: 'bot', text: 'Pesan tidak boleh mengandung karakter < > atau javascript:.' },
+        { id: uid(), role: 'bot', text: 'Maaf, pesan tidak dapat dikirim. Silakan coba tulis ulang.' },
       ])
       return
     }
@@ -196,7 +197,7 @@ export default function AssistantWidget({
     if (rating <= 0) return
 
     if (hasSuspiciousMarkup(review.trim())) {
-      setReviewError('Ulasan tidak boleh mengandung karakter < > atau javascript:.')
+      setReviewError('Format teks tidak diterima.')
       return
     }
     setReviewError('')

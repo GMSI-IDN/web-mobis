@@ -68,7 +68,8 @@ function onlyDigits(value: string) {
 // Mirrors the backend check in src/lib/security/sanitize.ts
 // (containsSuspiciousMarkup) — instant feedback for the same rule the
 // server enforces, not a separate security boundary.
-const SUSPICIOUS_INPUT_PATTERN = /[<>]|javascript:|data:text\/html/i
+const SUSPICIOUS_INPUT_PATTERN =
+  /[<>]|javascript:|data:text\/html|(?:https?|ftp):\/\/|www\.[a-z0-9-]/i
 function hasSuspiciousMarkup(value: string) {
   return SUSPICIOUS_INPUT_PATTERN.test(value)
 }
@@ -395,7 +396,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     ].includes(sourceKey)
 
     if (typeof value === 'string' && hasSuspiciousMarkup(value)) {
-      return 'Tidak boleh mengandung karakter < > atau javascript:.'
+      return 'Format teks tidak diterima.'
     }
 
     switch (name) {

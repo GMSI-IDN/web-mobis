@@ -48,6 +48,15 @@ function toNumberId(v: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
+// Mirrors the backend check in src/lib/security/sanitize.ts
+// (containsSuspiciousMarkup) — instant feedback for the same rule the
+// Payload collection's field `validate` enforces server-side.
+const SUSPICIOUS_INPUT_PATTERN =
+  /[<>]|javascript:|data:text\/html|(?:https?|ftp):\/\/|www\.[a-z0-9-]/i
+function hasSuspiciousMarkup(value: string) {
+  return SUSPICIOUS_INPUT_PATTERN.test(value)
+}
+
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'))
 const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, minute) =>
   String(minute).padStart(2, '0'),
@@ -158,6 +167,10 @@ export default function VoucherFormPanel({
     const c = normalizeCode(code)
     if (!categoryId) return setErr('Kategori wajib dipilih.')
     if (!c) return setErr('Kode wajib diisi.')
+    if (c.length > 50 || hasSuspiciousMarkup(c)) return setErr('Format teks tidak diterima.')
+    if (description && (description.length > 500 || hasSuspiciousMarkup(description))) {
+      return setErr('Format teks tidak diterima.')
+    }
     if (!Number.isFinite(quota) || quota < 0) return setErr('Quota tidak valid.')
 
     const startAtISO = toISOFromDateAndTime({
@@ -228,6 +241,9 @@ export default function VoucherFormPanel({
 
     const name = normalizeUpper(categoryName)
     if (!name) return setCategoryErr('Nama kategori wajib diisi.')
+    if (name.length > 100 || hasSuspiciousMarkup(name)) {
+      return setCategoryErr('Format teks tidak diterima.')
+    }
 
     setCategoryLoading(true)
     try {
@@ -308,6 +324,7 @@ export default function VoucherFormPanel({
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="MOBIS10"
+            maxLength={50}
             disabled={disabled}
           />
           <small className="voucher-dashboard__hint">Otomatis uppercase dan tanpa spasi.</small>
@@ -436,6 +453,7 @@ export default function VoucherFormPanel({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={disabled}
+            maxLength={500}
             placeholder="Catatan internal, syarat promo, atau konteks campaign"
           />
         </label>
@@ -570,6 +588,7 @@ export default function VoucherFormPanel({
                 placeholder="FACEBOOK / INSTAGRAM"
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
+                maxLength={100}
                 disabled={categoryDisabled}
               />
               <button

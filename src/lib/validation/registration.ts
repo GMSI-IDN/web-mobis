@@ -33,7 +33,7 @@ function optionalText(value: unknown, maxLen: number, field: string): string | u
   if (!value) return undefined
   const sanitized = sanitizeFreeText(value, maxLen)
   if (!sanitized) return undefined
-  assertNoSuspiciousMarkup(sanitized, field, 'Input mengandung karakter yang tidak diperbolehkan.')
+  assertNoSuspiciousMarkup(sanitized, field)
   return sanitized
 }
 
@@ -78,7 +78,7 @@ export function validateRegistrationPayload(body: any): RegistrationPayload {
     throw err
   }
 
-  assertNoSuspiciousMarkup(name, 'name', 'Nama mengandung karakter yang tidak diperbolehkan.')
+  assertNoSuspiciousMarkup(name, 'name')
 
   // optional fields (sanitized: trimmed, control chars stripped, length-capped,
   // rejected outright if they contain HTML/script markup)

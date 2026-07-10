@@ -25,21 +25,29 @@ export function neutralizeSpreadsheetFormula(value: unknown): string {
 }
 
 // Free-text fields on these forms (names, addresses, chat messages, etc.)
-// have no legitimate reason to contain HTML/script markup. Rather than try
-// to sanitize/strip and hope every XSS vector is covered, reject the whole
-// submission outright — fail closed instead of silently cleaning input.
-const SUSPICIOUS_INPUT_PATTERN = /[<>]|javascript:|data:text\/html/i
+// have no legitimate reason to contain HTML/script markup or a URL. Rather
+// than try to sanitize/strip and hope every XSS/spam-link vector is covered,
+// reject the whole submission outright — fail closed instead of silently
+// cleaning input.
+const SUSPICIOUS_INPUT_PATTERN =
+  /[<>]|javascript:|data:text\/html|(?:https?|ftp):\/\/|www\.[a-z0-9-]/i
 
 export function containsSuspiciousMarkup(value: unknown): boolean {
   return SUSPICIOUS_INPUT_PATTERN.test(String(value ?? ''))
 }
 
-export function assertNoSuspiciousMarkup(value: unknown, field: string, message: string): void {
+// Deliberately vague, and deliberately the same message/code shape as an
+// ordinary format-validation failure (see INVALID_KTP_NUMBER etc. in
+// src/lib/validation/registration.ts). Do not describe which characters or
+// patterns were rejected here — that's a roadmap for bypassing the filter.
+const GENERIC_REJECTION_MESSAGE = 'Format teks tidak diterima.'
+
+export function assertNoSuspiciousMarkup(value: unknown, field: string): void {
   if (!containsSuspiciousMarkup(value)) return
 
-  const err = new Error(message)
+  const err = new Error(GENERIC_REJECTION_MESSAGE)
   ;(err as any).statusCode = 400
-  ;(err as any).code = 'SUSPICIOUS_INPUT'
-  ;(err as any).errors = { [field]: message }
+  ;(err as any).code = 'INVALID_FORMAT'
+  ;(err as any).errors = { [field]: GENERIC_REJECTION_MESSAGE }
   throw err
 }

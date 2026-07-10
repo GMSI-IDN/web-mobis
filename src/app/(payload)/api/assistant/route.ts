@@ -17,11 +17,11 @@ function validateChatBody(body: any): { query: string; username?: string; phoneN
     ;(err as any).statusCode = 400
     throw err
   }
-  assertNoSuspiciousMarkup(query, 'query', 'Pesan mengandung karakter yang tidak diperbolehkan.')
+  assertNoSuspiciousMarkup(query, 'query')
 
   const username = body?.username ? sanitizeFreeText(body.username, 100) : undefined
   if (username) {
-    assertNoSuspiciousMarkup(username, 'username', 'Nama mengandung karakter yang tidak diperbolehkan.')
+    assertNoSuspiciousMarkup(username, 'username')
   }
 
   const phoneRaw = body?.phoneNumber ? String(body.phoneNumber) : ''
