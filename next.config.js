@@ -26,10 +26,65 @@ const IMAGE_HOST_CANDIDATES = [
   'https://admin.rentalmobis.com',
 ]
 
+// Known production hostnames (also referenced in src/utilities/getURL.ts /
+// IMAGE_HOST_CANDIDATES above). admin.rentalmobis.com hosts the Payload admin
+// panel, which live-previews frontend pages in an iframe — so it needs to
+// stay in frame-ancestors even though it's a different origin from the
+// public site.
+const FRONTEND_HOST = 'https://rentalmobis.com'
+const ADMIN_HOST = 'https://admin.rentalmobis.com'
+
+// Applies to public/frontend routes only (excludes /admin and /api) so the
+// Payload admin UI — which needs inline styles/scripts for its own editor
+// chrome — is never at risk of being broken by this CSP.
+const FRONTEND_CSP = [
+  `default-src 'self'`,
+  `script-src 'self' https://connect.facebook.net`,
+  `style-src 'self' 'unsafe-inline'`,
+  `img-src 'self' data: blob: ${ADMIN_HOST} https://www.facebook.com`,
+  `font-src 'self' data:`,
+  `connect-src 'self' https://www.facebook.com`,
+  `frame-src 'none'`,
+  `frame-ancestors 'self' ${FRONTEND_HOST} ${ADMIN_HOST}`,
+  `object-src 'none'`,
+  `base-uri 'self'`,
+  `form-action 'self'`,
+  `upgrade-insecure-requests`,
+].join('; ')
+
+const SECURITY_HEADERS = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000' },
+]
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
+  // Required for the Docker image build — the Dockerfile copies
+  // .next/standalone as its runtime server (see Dockerfile's "runner" stage).
+  output: 'standalone',
   productionBrowserSourceMaps: false,
+  async headers() {
+    return [
+      {
+        // Every route: safe headers that don't depend on CSP script/style
+        // allowances, so they're fine on /admin and /api too.
+        source: '/:path*',
+        headers: SECURITY_HEADERS,
+      },
+      {
+        // Frontend-only: CSP and framing rules, kept off /admin and /api so
+        // the Payload admin panel (and live preview) are never at risk.
+        source: '/((?!admin|api).*)',
+        headers: [
+          { key: 'Content-Security-Policy', value: FRONTEND_CSP },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        ],
+      },
+    ]
+  },
   // ✅ ADD THIS
   sassOptions: {
     includePaths: [

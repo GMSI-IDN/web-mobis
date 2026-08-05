@@ -345,10 +345,8 @@ function summarizeExternalApiError(status: number, responseText: string): string
 }
 
 async function sendLeadToExternalApi(payload: RegistrationPayload) {
-  // const url = getEnv('MOBIS_LEAD_API_URL')
-  // const publicKey = getEnv('MOBIS_LEAD_API_PUBLIC_KEY')
-  const url = 'https://stgapi.fleet-management-system.co.id/public/mobis/leads'
-  const publicKey = 'R01TeE1TSWluZG9uZXNpYTIwMjQ='
+  const url = getEnv('MOBIS_LEAD_API_URL')
+  const publicKey = getEnv('MOBIS_LEAD_API_PUBLIC_KEY')
 
   const body = buildExternalApiPayload(payload)
 

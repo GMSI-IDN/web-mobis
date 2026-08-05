@@ -9,8 +9,9 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 import PageClient from './page.client'
 
+// Doesn't call draftMode()/cookies()/headers(), so ISR works normally here
+// (force-dynamic was neutering the revalidate window below — removed).
 export const revalidate = 600
-export const dynamic = 'force-dynamic'
 const POSTS_PER_PAGE = 12
 
 const parsePageNumber = (value: string): number | null => {

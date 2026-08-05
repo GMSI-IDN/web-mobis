@@ -10,9 +10,15 @@ import { fileURLToPath } from 'url'
 
 import { anyone } from '../access/anyone'
 import { authenticated } from '../access/authenticated'
+import { optimizeImageUpload } from '@/lib/media/optimizeImageUpload'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+// Every image size below is re-encoded as WebP at upload time — see
+// optimizeImageUpload (converts + compresses the original to <=700KB) and
+// each imageSize's formatOptions (converts the derived thumbnails too).
+const IMAGE_SIZE_FORMAT_OPTIONS = { format: 'webp' as const, options: { quality: 78 } }
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -22,6 +28,9 @@ export const Media: CollectionConfig = {
     delete: authenticated,
     read: anyone,
     update: authenticated,
+  },
+  hooks: {
+    beforeOperation: [optimizeImageUpload],
   },
   fields: [
     {
@@ -56,33 +65,40 @@ export const Media: CollectionConfig = {
       {
         name: 'thumbnail',
         width: 300,
+        formatOptions: IMAGE_SIZE_FORMAT_OPTIONS,
       },
       {
         name: 'square',
         width: 500,
         height: 500,
+        formatOptions: IMAGE_SIZE_FORMAT_OPTIONS,
       },
       {
         name: 'small',
         width: 600,
+        formatOptions: IMAGE_SIZE_FORMAT_OPTIONS,
       },
       {
         name: 'medium',
         width: 900,
+        formatOptions: IMAGE_SIZE_FORMAT_OPTIONS,
       },
       {
         name: 'large',
         width: 1400,
+        formatOptions: IMAGE_SIZE_FORMAT_OPTIONS,
       },
       {
         name: 'xlarge',
         width: 1920,
+        formatOptions: IMAGE_SIZE_FORMAT_OPTIONS,
       },
       {
         name: 'og',
         width: 1200,
         height: 630,
         crop: 'center',
+        formatOptions: IMAGE_SIZE_FORMAT_OPTIONS,
       },
     ],
   },
