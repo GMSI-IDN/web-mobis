@@ -39,11 +39,11 @@ const ADMIN_HOST = 'https://admin.rentalmobis.com'
 // chrome — is never at risk of being broken by this CSP.
 const FRONTEND_CSP = [
   `default-src 'self'`,
-  `script-src 'self' https://connect.facebook.net`,
+  `script-src 'self' https://connect.facebook.net https://analytics.tiktok.com`,
   `style-src 'self' 'unsafe-inline'`,
-  `img-src 'self' data: blob: ${ADMIN_HOST} https://www.facebook.com`,
+  `img-src 'self' data: blob: ${ADMIN_HOST} https://www.facebook.com https://analytics.tiktok.com`,
   `font-src 'self' data:`,
-  `connect-src 'self' https://www.facebook.com`,
+  `connect-src 'self' https://www.facebook.com https://analytics.tiktok.com`,
   `frame-src 'none'`,
   `frame-ancestors 'self' ${FRONTEND_HOST} ${ADMIN_HOST}`,
   `object-src 'none'`,

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { trackFacebookCustomEvent, trackFacebookEventWithDedup } from '@/utilities/pixelFacebook'
+import { trackCustomEvent, trackEventWithDedup } from '@/utilities/pixelTracking'
 
 type Option = { label: string; value: string }
 
@@ -101,7 +101,7 @@ function getBirthDateRange(minAge: number, maxAge: number) {
 }
 
 const trackRegistrationSubmitClick = ({ buttonText }: { buttonText: string }) => {
-  trackFacebookCustomEvent('ClickRegistrationSubmit', {
+  trackCustomEvent('ClickRegistrationSubmit', {
     button_text: buttonText + '-submit',
     section: 'Registration Form',
     target: '/api/registration',
@@ -127,8 +127,8 @@ const trackRegistrationSuccess = ({
     currency: 'IDR',
   }
 
-  trackFacebookCustomEvent('RegistrationSuccess', basePayload)
-  trackFacebookEventWithDedup('CompleteRegistration', basePayload, { eventID: eventId })
+  trackCustomEvent('RegistrationSuccess', basePayload)
+  trackEventWithDedup('CompleteRegistration', basePayload, { eventID: eventId })
 }
 
 function createMetaEventId() {

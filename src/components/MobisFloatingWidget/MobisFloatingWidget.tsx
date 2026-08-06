@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
 import './mobis-widget.css'
 
 type Active = 'none' | 'register' | 'status' | 'chat'
@@ -10,22 +9,6 @@ type ChatState = 'open' | 'minimized'
 type ChatMsg = {
   from: 'bot' | 'user'
   text: string
-}
-
-const trackFloatingWidgetClick = ({
-  buttonText,
-  target,
-}: {
-  buttonText: string
-  target: '#mobis-floating-status' | '#mobis-floating-chat'
-}) => {
-  void trackFacebookCustomEvent('ClickFloatingWidgetCTA', {
-    button_text: buttonText,
-    section: 'Floating Widget',
-    target,
-    target_type: 'modal',
-    page_path: window.location.pathname,
-  })
 }
 
 export default function MobisFloatingWidget() {
@@ -105,13 +88,7 @@ export default function MobisFloatingWidget() {
         <button
           type="button"
           className="mobis-btn mobis-btn--yellow"
-          onClick={() => {
-            trackFloatingWidgetClick({
-              buttonText: 'Check Status Pendaftaran',
-              target: '#mobis-floating-status',
-            })
-            open('status')
-          }}
+          onClick={() => open('status')}
           aria-label="Status Pendaftaran"
         >
           Status Pendaftaran
@@ -120,13 +97,7 @@ export default function MobisFloatingWidget() {
         <button
           type="button"
           className="mobis-btn mobis-btn--green"
-          onClick={() => {
-            trackFloatingWidgetClick({
-              buttonText: 'Mulai Chat',
-              target: '#mobis-floating-chat',
-            })
-            open('chat')
-          }}
+          onClick={() => open('chat')}
           aria-label="Hubungi Kami"
         >
           Hubungi Kami

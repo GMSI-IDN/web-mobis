@@ -4,7 +4,7 @@ import React, { useId, useEffect } from 'react'
 import Link from 'next/link'
 import { getImageProps } from 'next/image'
 import ScrollButton from '@/components/ui/ScrollButton'
-import { trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
+import { trackCustomEvent } from '@/utilities/pixelTracking'
 import { getMediaUrl } from '@/utilities/getMediaUrl'
 
 type Media = { url?: string; width?: number | null; height?: number | null }
@@ -86,7 +86,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
     ctaLink: string
     targetType: 'section' | 'link'
   }) => {
-    trackFacebookCustomEvent('ClickBannerCarouselCTA', {
+    trackCustomEvent('ClickBannerCarouselCTA', {
       button_text: ctaText,
       section: 'Banner Carousel',
       target: ctaLink,

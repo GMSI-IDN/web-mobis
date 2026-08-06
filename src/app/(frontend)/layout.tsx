@@ -9,6 +9,7 @@ import { draftMode } from 'next/headers'
 import { AdminBar } from '@/components/AdminBar'
 import { BootstrapClient } from '@/components/BootstrapClient'
 import PixelFacebook from '@/components/PixelFacebook'
+import PixelTiktok from '@/components/PixelTiktok'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
 import { Providers } from '@/providers'
@@ -28,6 +29,9 @@ export default async function FrontendLayout({ children }: { children: React.Rea
 
         <Suspense fallback={null}>
           <PixelFacebook />
+        </Suspense>
+        <Suspense fallback={null}>
+          <PixelTiktok />
         </Suspense>
 
         <Header />
