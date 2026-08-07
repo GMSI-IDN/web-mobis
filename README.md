@@ -43,37 +43,165 @@ pnpm install
 pnpm dev
 ```
 
-### Build Production
+### Build Production — Manual
+
+> Deploy ke staging/production sekarang lewat CI/CD, lihat [Deployment (CI/CD)](#deployment-cicd) di bawah. Langkah manual ini untuk troubleshooting atau build lokal.
 
 ```bash
 pnpm build
 pnpm start
+```
 
+Jika container belum punya kredensial Google service account (lihat [Isu yang diketahui](#isu-yang-diketahui)):
+
+```bash
 docker ps --format '{{.Names}}\t{{.Image}}'          # cari nama container-nya
 docker exec <nama-container> mkdir -p /app/private/secrets
 docker cp ./private/secrets/credentials.json <nama-container>:/app/private/secrets/credentials.json
 docker exec <nama-container> ls -la /app/private/secrets/credentials.json   # verifikasi
 ```
 
-### Build Production (Disarankan untuk Staging/Server)
+### Migrasi Schema
 
-Urutan ini penting agar perubahan schema Payload (blok baru, field baru, tabel/kolom baru) tidak membuat halaman admin seperti `Pages` menjadi blank:
+Perubahan schema Payload (blok baru, field baru, tabel/kolom baru) **tidak** diterapkan otomatis — `PAYLOAD_DB_PUSH=false` dan pipeline CI/CD sengaja tidak pernah menjalankan migrasi. Kalau schema berubah tapi migrasi belum dijalankan, halaman admin seperti `Pages` bisa blank.
+
+Di server (staging/production), jalankan lewat **Actions → DB Migrate (MANUAL)**. Jangan `pnpm migrate` langsung ke DB live — workflow itu mengambil `pg_dump` terverifikasi lebih dulu.
+
+Untuk development lokal:
 
 ```bash
 pnpm migrate:status
 pnpm migrate
 pnpm generate:importmap
 pnpm build
-pnpm start
 ```
 
 Catatan:
 
 - Jangan membuat tabel/kolom Payload manual di DB. Gunakan migration Payload agar tabel `live` dan `versions` (`_pages_v_*`) ikut sinkron.
-- Jika muncul gejala blank setelah update schema, cek dulu migration status dan jalankan `pnpm migrate` sebelum build.
 - Hindari memakai DB yang sama untuk local dan staging. Jika terpaksa, pastikan `PAYLOAD_DB_PUSH=false` supaya local tidak mengubah schema staging otomatis.
+- `src/migrations/20260525_area_chips_description_to_richtext.ts` melakukan `DROP COLUMN` lalu re-add di `up()`. Kalau `migrate:status` menunjukkannya **pending** pada DB yang kolomnya sudah berisi data — berhenti, tulis migrasi manual.
+
+## Deployment (CI/CD)
+
+Push ke branch `staging` atau `production` memicu deploy otomatis via GitHub Actions. Panduan setup lengkap: **[docs/CICD-SETUP.md](docs/CICD-SETUP.md)**.
+
+```text
+push (staging | production)
+   ↓
+ci.yml — guard + tsc --noEmit + eslint     (tanpa secrets, tidak bisa menyentuh DB)
+   ↓ gagal → berhenti, server tidak pernah dihubungi
+_deploy.yml — ssh ke server
+   ↓
+git reset --hard → compose build → compose up -d → health check
+      │                                   │
+      gagal: container lama               gagal: rollback otomatis
+      tetap melayani                      ke image :previous
+```
+
+Prinsip yang dijaga: **pipeline tidak mengubah data pada server maupun database yang sudah berjalan.**
+
+- Tidak pernah menjalankan migrasi (dipisah ke workflow manual `migrate.yml`)
+- Tidak pernah menyentuh volume upload — hanya di-assert ada sebelum & sesudah
+- Build memakai role Postgres **read-only**, jadi terbukti tidak bisa menulis
+- `.github/scripts/guard-no-mutations.sh` memblokir merge bila ada `down -v`, `volume rm`, `git clean`, `migrate` di jalur deploy, atau `PAYLOAD_DB_PUSH=true` masuk repo
+
+Staging dan production berada di **server berbeda dengan path berbeda**. Semua nilai spesifik-server tinggal di GitHub Environment (Variables + Secrets), bukan di kode — logika deploy-nya sendiri tidak diduplikasi sama sekali.
+
+### Di mana variabel ditaruh
+
+| Lokasi | Kapan dipakai | Isinya |
+|---|---|---|
+| **GitHub → Environments → *Secrets*** | Saat workflow jalan | 5 kredensial SSH: `SSH_HOST`, `SSH_USER`, `SSH_PORT`, `SSH_PASSWORD`, `SSH_KNOWN_HOSTS` |
+| **GitHub → Environments → *Variables*** | Saat workflow jalan | Konfigurasi host: `APP_DIR`, `COMPOSE_SERVICE`, `CONTAINER_NAME`, `APP_PORT`, `UPLOADS_VOLUME`, `EXTERNAL_HEALTH_URL` (opsional: `HEALTH_PATH`) |
+| **Server: `<APP_DIR>/build.env`** (`chmod 600`) | Hanya saat `docker compose build` | `PAYLOAD_SECRET`, `DATABASE_URL` (versi read-only), semua `NEXT_PUBLIC_*`, `PAYLOAD_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITE_URL` |
+| **Server: `docker-compose.yml` blok `environment:`** | Saat container jalan | Seluruh variabel runtime |
+| **Server: `src/private/secrets/credentials.json`** | Runtime, dibaca via `fs` | Service account Google — file, bukan env var |
+
+Tidak ada satu pun path, nama container, atau port yang ditulis di dalam workflow. Menambah atau memindahkan server = ubah Variables di Settings → Environments, tanpa menyentuh kode.
+
+Kredensial database, Payload, dan Google **tidak pernah masuk ke GitHub**. Karena build terjadi di server, semuanya cukup ada di sana.
+
+### Konfigurasi tiap Environment
+
+**Settings → Environments**, buat `staging` dan `production`. Nama variable identik di keduanya, hanya nilainya berbeda:
+
+| Variable | `staging` | `production` |
+|---|---|---|
+| `APP_DIR` | `/home/gmsindonesia/ComapnyProfile/mobis.co.id` | `/home/<user>/ComapnyProfile-production/mobis.co.id` |
+| `COMPOSE_SERVICE` | `mobis-stg` | *cek di server* |
+| `CONTAINER_NAME` | `stg-mobis` | *cek di server* |
+| `APP_PORT` | `7884` | *cek di server* |
+| `UPLOADS_VOLUME` | `mobiscoid_mobis_stg_payload_uploads` | *cek di server* |
+| `EXTERNAL_HEALTH_URL` | `https://stg-mobis.global-mobility-service.co.id/api/widget/status-check` | `https://<domain-prod>/api/widget/status-check` |
+
+Ambil nilai yang belum diketahui langsung dari servernya:
+
+```bash
+cd <APP_DIR>
+grep -A1 '^services:' docker-compose.yml      # -> COMPOSE_SERVICE
+docker ps --format '{{.Names}}\t{{.Ports}}'   # -> CONTAINER_NAME + APP_PORT
+docker volume ls | grep -i upload             # -> UPLOADS_VOLUME
+```
+
+Kalau ada variable wajib yang kosong, workflow berhenti di step pertama dan menyebut variable mana yang belum diisi — **sebelum** menyambung ke server mana pun.
+
+### Mendapatkan nilai Secrets
+
+`SSH_HOST`, `SSH_USER`, dan `SSH_PORT` sebaiknya tidak ditebak — tanyakan ke SSH client sendiri, karena alias di `~/.ssh/config` bisa menyembunyikan host dan port sebenarnya:
+
+```bash
+ssh -G <alias-server> | grep -E '^hostname |^port |^user '
+```
+
+Kalau `hostname` yang keluar masih berupa alias (bukan IP), pastikan alias itu bisa di-resolve dari luar. Alias yang hanya ada di file `hosts` lokal **tidak akan dikenali GitHub** — pakai IP-nya.
+
+`SSH_KNOWN_HOSTS` adalah sidik jari server, dipakai `StrictHostKeyChecking=yes` untuk memastikan GitHub menyambung ke server yang benar. Ambil dengan host dan port persis dari perintah di atas, lalu salin **seluruh output apa adanya**:
+
+```bash
+ssh-keyscan -p <port> <host>
+```
+
+Alternatif yang lebih aman — ambil dari kunci yang sudah Anda percayai sejak pertama kali SSH ke sana (tetap berfungsi walau entrinya ter-*hash*):
+
+```bash
+ssh-keygen -F <host>
+```
+
+Uji dulu sebelum mengisi GitHub. Kalau ini berhasil, workflow juga akan berhasil:
+
+```bash
+ssh -o StrictHostKeyChecking=yes -p <port> <user>@<host> "echo CONNECT-OK; docker ps --format '{{.Names}}'"
+```
+
+Detail lengkap termasuk contoh output dan penyebab kegagalan umum: [docs/CICD-SETUP.md](docs/CICD-SETUP.md) bagian 7.
+
+Tiga penyebab `Host key verification failed`:
+
+- **`SSH_HOST` tidak sama persis dengan yang di-keyscan.** IP dan hostname dianggap dua host berbeda walau menunjuk mesin yang sama.
+- **Port non-standar mengubah format barisnya** jadi `[host]:port ssh-ed25519 ...` dengan kurung siku. `ssh-keyscan -p <port>` menghasilkannya otomatis — jangan mengetik manual.
+- **Host key server berubah** karena server dibangun ulang atau OpenSSH di-reinstall. Perbaikannya jalankan ulang `ssh-keyscan` dan perbarui secret-nya.
+
+Dua hal yang mudah terlewat:
+
+- **`UPLOADS_VOLUME` jangan ditebak.** Namanya dibentuk Docker Compose dari nama folder `APP_DIR` (`mobis.co.id` → `mobiscoid`) + nama volume di compose. Salah nilai = pipeline menolak deploy, karena volume di-assert ada sebelum jalan.
+- **Folder terakhir kedua server bernama sama** (`mobis.co.id`), jadi project name Compose-nya juga sama. Aman selama keduanya di host berbeda — tapi kalau suatu saat dijalankan di host yang sama, nama container dan volume akan bertabrakan.
+
+Dua hal yang sering tertukar:
+
+- **`build.env` harus file terpisah.** `docker compose` menginterpolasi `${VAR}` di `build.args` dari *process environment*, bukan dari blok `environment:` milik service — jadi nilai di `environment:` tidak akan pernah sampai ke proses build.
+- **Beberapa variabel wajib ada saat build, bukan cukup saat runtime.** `PAYLOAD_SECRET` + `DATABASE_URL` karena `next build` mem-prerender `/posts` yang memanggil `getPayload()`; semua `NEXT_PUBLIC_*` karena di-*inline* ke bundle client; `PAYLOAD_PUBLIC_SERVER_URL` dkk karena `next.config.js` menghitung `images.remotePatterns` saat build.
+
+## Isu yang diketahui
+
+- **Kredensial Google tidak ada di image runtime.** Dockerfile server tidak menyalin `private/`, sementara `src/services/googleSheets/client.ts:13` me-resolve `path.join(process.cwd(), GOOGLE_SERVICE_ACCOUNT_JSON_PATH)` = `/app/private/secrets/credentials.json`. Integrasi Google Sheets akan melempar `Credential file not found`. Saat ini tertutupi oleh `REGISTRATION_BYPASS_GOOGLE_SHEETS=true`. Perbaikan ada di [docs/CICD-SETUP.md](docs/CICD-SETUP.md) bagian 3.
+- **`GOOGLE_SHEETS_SPREADSHEET_ID_MALANG` dibaca via `getEnv()`** (melempar error kalau kosong) di `src/services/googleSheets/appendLead.ts:35`, tapi tidak ada di `.env.example`. Pendaftaran wilayah Malang akan 500.
+- **File media hilang di volume upload staging** — DB punya baris `media` yang menunjuk file yang tidak ada di `mobiscoid_mobis_stg_payload_uploads`. Sumber file aslinya belum ditemukan.
+- **Test bawaan masih boilerplate Payload.** `tests/e2e/frontend.e2e.spec.ts` meng-assert judul "Payload Website Template", dan script `test` di `package.json` hardcode `pnpm` padahal lockfile-nya npm. Karena itu test tidak dipakai sebagai gate CI.
 
 ## Environment Variables Penting
+
+Daftar di bawah adalah **nama** variabelnya. Untuk **di mana** masing-masing ditaruh saat deploy (GitHub vs `build.env` vs blok `environment:` compose), lihat [Di mana variabel ditaruh](#di-mana-variabel-ditaruh).
 
 ### Core
 

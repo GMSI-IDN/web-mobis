@@ -463,7 +463,7 @@ export default async function ReportsView({
           <h2 className="mobis-reports__title">Statistik Per Hari, Minggu, Bulan, dan Tahun</h2>
           <p className="mobis-reports__description">
             Data diambil langsung dari koleksi <strong>customers</strong>. Entri test
-            (nama mengandung "test"/"punten") sudah dikeluarkan dari semua angka.
+            (nama mengandung &quot;test&quot;/&quot;punten&quot;) sudah dikeluarkan dari semua angka.
           </p>
         </div>
 

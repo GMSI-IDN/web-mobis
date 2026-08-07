@@ -1,7 +1,7 @@
 import type { CollectionBeforeOperationHook, CollectionBeforeValidateHook } from 'payload'
 import { resyncTableIdSequence } from '@/lib/db/resyncPostgresSequences'
 
-function stripTopLevelId<T extends unknown>(input: T): T {
+function stripTopLevelId<T>(input: T): T {
   if (!input || typeof input !== 'object') return input
 
   const data = input as Record<string, unknown>

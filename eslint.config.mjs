@@ -31,7 +31,25 @@ const eslintConfig = [
     },
   },
   {
-    ignores: ['.next/'],
+    // These components render inside the Payload admin panel and link across the
+    // Payload/Next boundary (/admin, /admin/reports, /admin/collections/*). A full
+    // page load is intentional there — next/link would client-side navigate into a
+    // different React tree and break the admin shell. The rule can't tell the
+    // difference, so it's a false positive in exactly these files.
+    files: [
+      'src/components/AdminNav/**',
+      'src/components/Customers/**',
+      'src/components/Dashboard/**',
+      'src/components/Reports/**',
+    ],
+    rules: {
+      '@next/next/no-html-link-for-pages': 'off',
+    },
+  },
+  {
+    // Build output dirs. `.next-*` variants are local-only (gitignored) but linting
+    // them exhausts the default heap — see the NODE_OPTIONS in package.json's lint script.
+    ignores: ['.next/', '.next-*/', 'playwright-report/', 'test-results/'],
   },
 ]
 

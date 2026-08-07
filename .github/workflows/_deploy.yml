@@ -1,0 +1,158 @@
+name: _deploy
+
+# Reusable deploy, host-agnostic.
+#
+# Semua nilai spesifik-server datang dari GitHub Environment VARIABLES (vars.*),
+# bukan dari file ini. Menambah atau memindahkan server = ubah variable di
+# Settings -> Environments, tanpa menyentuh kode.
+#
+# Variables yang wajib ada di tiap environment:
+#   APP_DIR              path absolut folder compose di server
+#   COMPOSE_SERVICE      service key di docker-compose.yml
+#   CONTAINER_NAME       nama container (dipakai juga sebagai nama image)
+#   APP_PORT             port yang didengarkan app di dalam container
+#   UPLOADS_VOLUME       named volume berisi upload Payload
+# Opsional:
+#   HEALTH_PATH          default /api/widget/status-check
+#   EXTERNAL_HEALTH_URL  kalau diisi, dicek lewat nginx-proxy setelah probe internal
+#
+# Uses raw `ssh` + `sshpass` rather than a third-party action. For a pipeline whose
+# entire premise is "do not mutate the live system", handing the server credential
+# to a third-party Docker action is the wrong trade. The host key is pinned via
+# SSH_KNOWN_HOSTS, and the deploy script is shipped from the triggering commit so
+# deploy logic is always reviewed alongside the code it deploys.
+#
+# Password auth (not keys) because the server account cannot add an authorized_keys
+# entry. Consequences worth knowing: the password grants a full interactive shell
+# if it ever leaks, cannot be scoped per-command, and rotating it silently breaks
+# every deploy until SSH_PASSWORD is updated. If key auth becomes possible later,
+# switch to `ssh -i` + BatchMode=yes and drop sshpass entirely.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment name (staging | production)
+        required: true
+        type: string
+      git_ref:
+        description: Branch to check out on the server
+        required: true
+        type: string
+    secrets:
+      SSH_HOST:
+        required: true
+      SSH_USER:
+        required: true
+      SSH_PORT:
+        required: true
+      SSH_PASSWORD:
+        required: true
+      SSH_KNOWN_HOSTS:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      # Never cancel a deploy mid-swap — a half-applied deploy is worse than a slow one.
+      cancel-in-progress: false
+    env:
+      APP_DIR: ${{ vars.APP_DIR }}
+      COMPOSE_SERVICE: ${{ vars.COMPOSE_SERVICE }}
+      CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+      APP_PORT: ${{ vars.APP_PORT }}
+      UPLOADS_VOLUME: ${{ vars.UPLOADS_VOLUME }}
+      HEALTH_PATH: ${{ vars.HEALTH_PATH || '/api/widget/status-check' }}
+      EXTERNAL_HEALTH_URL: ${{ vars.EXTERNAL_HEALTH_URL }}
+    steps:
+      # Fail before a single packet reaches any server. A missing variable would
+      # otherwise surface as a confusing remote error (empty paths, wrong container)
+      # instead of "you forgot to set this".
+      - name: Verify environment variables are set
+        run: |
+          missing=""
+          for name in APP_DIR COMPOSE_SERVICE CONTAINER_NAME APP_PORT UPLOADS_VOLUME; do
+            eval "value=\${$name}"
+            [ -n "$value" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Environment '${{ inputs.environment }}' belum lengkap. Variable kosong:$missing — isi di Settings -> Environments -> ${{ inputs.environment }} -> Variables"
+            exit 1
+          fi
+          echo "target '${{ inputs.environment }}' -> $CONTAINER_NAME @ $APP_DIR"
+
+      - uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+
+      - name: Pin server host key
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Build, swap and health-check on the server
+        env:
+          # `sshpass -e` reads the password from SSHPASS. Never use `-p`: that puts
+          # the password in the process list, visible to every user on the runner.
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+          RUN_TAG: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          # The script travels base64-encoded inside the remote command rather than
+          # on stdin: sshpass drives ssh through a pty to answer the password prompt,
+          # which makes `... bash -s < script` unreliable. This is deterministic.
+          SCRIPT_B64="$(base64 -w0 .github/scripts/remote-deploy.sh)"
+          REMOTE_TMP="/tmp/mobis-deploy-${RUN_TAG}.sh"
+
+          sshpass -e ssh \
+              -o StrictHostKeyChecking=yes \
+              -o UserKnownHostsFile=~/.ssh/known_hosts \
+              -o PubkeyAuthentication=no \
+              -o PreferredAuthentications=password \
+              -o NumberOfPasswordPrompts=1 \
+              -p "${{ secrets.SSH_PORT }}" \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              "printf '%s' '${SCRIPT_B64}' | base64 -d > '${REMOTE_TMP}' || exit 1
+               APP_DIR='${APP_DIR}' \
+               GIT_REF='${{ inputs.git_ref }}' \
+               TARGET_SHA='${{ github.sha }}' \
+               SERVICE='${COMPOSE_SERVICE}' \
+               CONTAINER='${CONTAINER_NAME}' \
+               PORT='${APP_PORT}' \
+               HEALTH_PATH='${HEALTH_PATH}' \
+               UPLOADS_VOLUME='${UPLOADS_VOLUME}' \
+               bash '${REMOTE_TMP}'
+               rc=\$?
+               rm -f '${REMOTE_TMP}'
+               exit \$rc"
+
+      # The in-container probe proves the app is up; this proves the whole
+      # nginx-proxy + TLS path in front of it is too.
+      - name: External health check
+        if: vars.EXTERNAL_HEALTH_URL != ''
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 10 "$EXTERNAL_HEALTH_URL" | grep -q '"ok":true'; then
+              echo "external health OK"
+              exit 0
+            fi
+            echo "attempt $i failed, retrying in 5s"
+            sleep 5
+          done
+          echo "::error::external health check never succeeded"
+          exit 1
+
+      # No key file to scrub with password auth — SSHPASS lives only in the step's
+      # env and dies with the runner. This just clears the pinned host key.
+      - name: Clean up
+        if: always()
+        run: rm -f ~/.ssh/known_hosts

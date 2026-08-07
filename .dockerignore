@@ -17,6 +17,10 @@ backdoor
 # it into the runtime image on purpose (Google service account credentials
 # are read via fs at runtime, see GOOGLE_SERVICE_ACCOUNT_JSON_PATH in .env).
 
+# Runtime uploads live in a named docker volume mounted at /app/public/media.
+# Anything baked in here would just be masked by that mount at runtime.
+public/media/
+
 tsconfig.tsbuildinfo
 *.log
 npm-debug.log*

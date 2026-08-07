@@ -1,0 +1,118 @@
+name: DB Migrate (MANUAL)
+
+# The only workflow allowed to write to the database.
+#
+# Two independent locks stand in front of an actual migration:
+#   1. `confirm` must be typed exactly (MIGRATE-STAGING / MIGRATE-PRODUCTION)
+#   2. the GitHub Environment's required-reviewers approval
+#
+# The default action is `status`, which is a pure read — the zero-effort path
+# cannot mutate anything.
+#
+# WARNING: src/migrations/20260525_area_chips_description_to_richtext.ts DROPs and
+# re-adds a column in up(). If migrate:status ever shows it as PENDING on a database
+# where that column holds data, STOP and hand-write the migration instead.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        required: true
+      action:
+        description: 'status = read-only. up = APPLIES MIGRATIONS to the live database.'
+        type: choice
+        options: [status, up]
+        default: status
+        required: true
+      confirm:
+        description: 'Required for `up`: type MIGRATE-STAGING or MIGRATE-PRODUCTION exactly'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: ${{ inputs.action }} on ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    env:
+      APP_DIR: ${{ vars.APP_DIR }}
+      CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate confirmation
+        if: inputs.action == 'up'
+        run: |
+          EXPECT="MIGRATE-$(echo '${{ inputs.environment }}' | tr '[:lower:]' '[:upper:]')"
+          if [ "${{ inputs.confirm }}" != "$EXPECT" ]; then
+            echo "::error::Confirmation mismatch. Expected exactly: $EXPECT"
+            exit 1
+          fi
+          echo "confirmation accepted"
+
+      # Nilai host diambil dari GitHub Environment Variables — sumber yang sama
+      # dipakai deploy.yml, jadi tidak ada dua tempat yang bisa saling menyimpang.
+      - name: Verify environment variables are set
+        run: |
+          missing=""
+          [ -n "$APP_DIR" ]        || missing="$missing APP_DIR"
+          [ -n "$CONTAINER_NAME" ] || missing="$missing CONTAINER_NAME"
+          if [ -n "$missing" ]; then
+            echo "::error::Environment '${{ inputs.environment }}' belum lengkap. Variable kosong:$missing — isi di Settings -> Environments -> ${{ inputs.environment }} -> Variables"
+            exit 1
+          fi
+          echo "target '${{ inputs.environment }}' -> $CONTAINER_NAME @ $APP_DIR"
+
+      - name: Install sshpass
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+
+      - name: Pin server host key
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      # The pg_dump stays on the server and is never uploaded as an artifact —
+      # it contains the entire `customers` collection (PII). Only its path is logged.
+      - name: Run migration procedure
+        env:
+          # `-e` reads from SSHPASS; `-p` would expose the password in the process list.
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+          RUN_TAG: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          # base64 rather than stdin — sshpass drives ssh through a pty, which makes
+          # `bash -s < script` unreliable.
+          SCRIPT_B64="$(base64 -w0 .github/scripts/remote-migrate.sh)"
+          REMOTE_TMP="/tmp/mobis-migrate-${RUN_TAG}.sh"
+
+          sshpass -e ssh \
+              -o StrictHostKeyChecking=yes \
+              -o UserKnownHostsFile=~/.ssh/known_hosts \
+              -o PubkeyAuthentication=no \
+              -o PreferredAuthentications=password \
+              -o NumberOfPasswordPrompts=1 \
+              -p "${{ secrets.SSH_PORT }}" \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              "printf '%s' '${SCRIPT_B64}' | base64 -d > '${REMOTE_TMP}' || exit 1
+               APP_DIR='${APP_DIR}' \
+               CONTAINER='${CONTAINER_NAME}' \
+               ACTION='${{ inputs.action }}' \
+               bash '${REMOTE_TMP}'
+               rc=\$?
+               rm -f '${REMOTE_TMP}'
+               exit \$rc"
+
+      - name: Clean up
+        if: always()
+        run: rm -f ~/.ssh/known_hosts

@@ -1,0 +1,39 @@
+name: Deploy
+
+# push to staging -> CI gate -> SSH deploy to the staging host.
+#
+# The deploy job cannot start unless the CI gate is green (`needs: ci`), and the
+# CI gate has no secrets at all — so a broken commit never reaches the server.
+
+on:
+  push:
+    branches: [staging, production]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  staging:
+    if: github.ref == 'refs/heads/staging'
+    needs: ci
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: staging
+      git_ref: staging
+    secrets: inherit
+
+  # Production ada di server berbeda dengan path berbeda. Semua perbedaan itu
+  # tinggal di GitHub Environment `production` (Variables + Secrets), bukan di
+  # file ini — jadi tidak ada yang perlu diubah di sini untuk menambah host.
+  production:
+    if: github.ref == 'refs/heads/production'
+    needs: ci
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: production
+      git_ref: production
+    secrets: inherit

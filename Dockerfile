@@ -24,7 +24,11 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ARG RUN_MIGRATIONS_ON_BUILD=true
+# Migrations are NEVER run from a build — a build pointed at the live DATABASE_URL
+# would silently mutate the production database on every push. Use the manual
+# .github/workflows/migrate.yml workflow instead (it takes a verified pg_dump first).
+# .github/scripts/guard-no-mutations.sh fails CI if this default is flipped back.
+ARG RUN_MIGRATIONS_ON_BUILD=false
 ENV RUN_MIGRATIONS_ON_BUILD=${RUN_MIGRATIONS_ON_BUILD}
 
 # Next.js collects completely anonymous telemetry data about general usage.
