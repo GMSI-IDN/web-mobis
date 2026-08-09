@@ -39,7 +39,13 @@ const ADMIN_HOST = 'https://admin.rentalmobis.com'
 // chrome — is never at risk of being broken by this CSP.
 const FRONTEND_CSP = [
   `default-src 'self'`,
-  `script-src 'self' https://connect.facebook.net https://analytics.tiktok.com`,
+  // 'unsafe-inline' is required: Next.js's App Router streams RSC payloads via
+  // inline <script>self.__next_f.push(...)</script> tags (one per streamed
+  // chunk), with content that differs on every render — a static hash/nonce
+  // allowlist can't cover it without per-request middleware. Without this,
+  // React's Flight client sees those chunks blocked and throws "Connection
+  // closed" mid-stream, so hydration never completes and the page renders blank.
+  `script-src 'self' 'unsafe-inline' https://connect.facebook.net https://analytics.tiktok.com`,
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' data: blob: ${ADMIN_HOST} https://www.facebook.com https://analytics.tiktok.com`,
   `font-src 'self' data:`,
