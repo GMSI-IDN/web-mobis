@@ -24,6 +24,11 @@ function buildBannerSrcSet(media: Media | undefined, fallbackWidth: number, fall
     height: media?.height || fallbackHeight,
     quality: 82,
     alt: '',
+    // TEMP: next/image's built-in optimizer rejects every remotePatterns entry on the
+    // current production build (Turbopack images-manifest.json regex bug — confirmed
+    // even `localhost` fails to match). Bypass the optimizer for CMS-hosted images until
+    // the Next.js version is upgraded/patched. Remove once verified fixed upstream.
+    unoptimized: true,
   })
 
   const { srcSet, ...imgProps } = props
