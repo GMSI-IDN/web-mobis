@@ -1,0 +1,41 @@
+.git
+.gitignore
+
+node_modules
+.next
+.next-build
+.next-build-verify
+.next-webpack
+.next-webpack-2
+
+.env
+.env.example
+test.env
+backdoor
+
+# NOTE: `private/` is intentionally NOT ignored here — the Dockerfile copies
+# it into the runtime image on purpose (Google service account credentials
+# are read via fs at runtime, see GOOGLE_SERVICE_ACCOUNT_JSON_PATH in .env).
+
+# Runtime uploads live in a named docker volume mounted at /app/public/media.
+# Anything baked in here would just be masked by that mount at runtime.
+public/media/
+
+tsconfig.tsbuildinfo
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+.vscode
+.cursor
+
+README.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+tests
+playwright-report
+test-results
+blob-report
+playwright/.cache

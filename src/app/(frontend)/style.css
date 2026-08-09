@@ -25,13 +25,14 @@ body {
 .hide-widget-area ~ .mobis-widget-root {
   display: none;
 }
+
 /* primary color */
 .primary-color {
   color: #3BAC1F;
 }
 
 .bg-gradient-form {
-  background: linear-gradient(180deg,#FFF 10%, #daedcc 50% , #45c62b 100%);
+  background: linear-gradient(180deg, #ffffff 8%, #daedcc 50%, #45c62b 100%);
 }
 
 .btn-register {
@@ -71,15 +72,19 @@ body {
 }
 
 .area-modal-close-btn {
-  width: 3rem;
-  height: 3rem;
-  margin-left: auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.2rem;
   border: 1px solid rgba(220, 38, 38, 0.18);
   border-radius: 999px;
   background: rgba(220, 38, 38, 0.1);
   color: #b91c1c;
-  font-size: 1.05rem;
-  font-weight: 800;
+  font-size: 1rem;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -88,7 +93,65 @@ body {
   border-color: rgba(220, 38, 38, 0.3);
   background: rgba(220, 38, 38, 0.14);
   color: #991b1b;
-  box-shadow: 0 0 0 0.25rem rgba(220, 38, 38, 0.12);
+  box-shadow: 0 0 0 0.18rem rgba(220, 38, 38, 0.12);
+}
+
+.area-modal-content {
+  border: 0;
+}
+
+.area-modal-header {
+  position: relative;
+  justify-content: center;
+  padding: 1.1rem 1.25rem 0.25rem;
+}
+
+.area-modal-title {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #1f2937;
+  font-size: clamp(1.55rem, 1.25rem + 1vw, 2.1rem);
+  line-height: 1.15;
+  padding-right: 2.6rem;
+}
+
+.area-modal-header .area-modal-close-btn {
+  position: absolute;
+  top: 0.95rem;
+  right: 1.05rem;
+}
+
+.area-modal-body {
+  padding: 0.35rem 0 1rem;
+}
+
+.units-description {
+  font-size: 0.85rem;
+  color: #374151;
+  margin: 0.5rem auto 0;
+  max-width: 700px;
+  line-height: 1.6;
+}
+
+.area-section-description {
+  font-size: 0.8rem;
+  color: #1e5610;
+  margin: -0.25rem auto 1.5rem;
+  max-width: 900px;
+  line-height: 1.6;
+}
+
+.area-pools-list .list-group-item {
+  border: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 0.95rem 1.4rem;
+}
+
+.area-pools-list .list-group-item:last-child {
+  border-bottom: 0;
 }
 
 .text-justify {
@@ -131,7 +194,7 @@ body {
 .footer-mobis {
   padding: 1rem 2rem;
   color: #fff;
-  background: linear-gradient(180deg,#45c62b 0%, #09af04 80%);
+  background: linear-gradient(180deg, #2fa90d 0%, #289b0a 52%, #228a08 100%);
   width: 100%;
 }
 
@@ -155,15 +218,6 @@ body {
 }
 
 
-.footer-mobis__icon:hover {
-  transform: translateY(-2px);
-  opacity: 0.85;
-}
-
-
-.area-section {
-  background: linear-gradient(#EDFBE9 0%, #48B414 40%, #48B414 80%);
-}
 
 .bg-success-gradient {
   background: linear-gradient(179.88deg, #9CEA2A 9.4%, #159A06 99.89%);
@@ -189,9 +243,6 @@ body {
 
 .bg_gradient_city_location {
   background: linear-gradient(360deg, #48B414 0%, rgba(255, 255, 255, 0.49) 100%);
-}
-.bg_gradient_avaliabel_programs {
-  background: linear-gradient(360deg, #3BAC1F 0%, rgba(255, 255, 255, 0.14) 100%);
 }
 
 .bg_gradient_programs {
@@ -421,11 +472,24 @@ body {
   background: linear-gradient(360deg, #48b414 30%, #edfbe9 90%);
 }
 
+/* SEO-only list — hidden visually, indexed by Google */
+.area-pools-seo {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 /* TITLE */
 .area-title {
   font-weight: 800;
   letter-spacing: 0.5px;
-  color: #1e9b1e; /* hijau judul */
+  color: #1e9b1e;
   font-size: 14px;
   margin-bottom: 14px;
 }
@@ -449,6 +513,26 @@ body {
 /* IMAGE */
 .area-thumb {
   background: #e9ecef;
+  position: relative;
+}
+
+.area-partner-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  background: linear-gradient(135deg, #ffffff 0%, #edfbe9 100%);
+  color: #1e9b1e;
+  text-shadow: 0 1px 2px rgba(30, 155, 30, 0.2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  user-select: none;
 }
 
 .area-thumb img {
@@ -534,6 +618,160 @@ body {
   z-index: 5;
 }
 
+/* ===== FAQ Section ===== */
+.faq-mobis-section {
+  background: linear-gradient(180deg, #45c62b 0%, #39b619 55%, #2fa90d 100%);
+}
+
+.faq-mobis-title {
+  margin: 0 0 1rem;
+  text-align: center;
+  color: #f4ffe9;
+  font-size: clamp(1.1rem, 0.95rem + 0.65vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(22, 101, 22, 0.28);
+}
+
+.faq-mobis-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.faq-mobis-item {
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(13, 86, 10, 0.18);
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.faq-mobis-item.is-open {
+  box-shadow: 0 12px 24px rgba(13, 86, 10, 0.2);
+  transform: translateY(-1px);
+}
+
+.faq-mobis-trigger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0.95rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  text-align: left;
+}
+
+.faq-mobis-question {
+  color: #2f8e17;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.faq-mobis-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 999px;
+  background: #35af20;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.faq-mobis-symbol {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-1px) scale(1);
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-mobis-symbol::before,
+.faq-mobis-symbol::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: #ffffff;
+  transform-origin: center;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-mobis-symbol::before {
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+.faq-mobis-symbol::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.faq-mobis-answer-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  background: #ffffff;
+  transition: grid-template-rows 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
+}
+
+.faq-mobis-item.is-open .faq-mobis-answer-wrap {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.faq-mobis-answer-inner {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 1rem;
+  transition: padding 0.28s ease;
+}
+
+.faq-mobis-item.is-open .faq-mobis-answer-inner {
+  padding: 0.75rem 1rem 1rem;
+}
+
+.faq-mobis-item.is-open .faq-mobis-symbol {
+  transform: translateY(-1px) scale(1.08);
+}
+
+.faq-mobis-item.is-open .faq-mobis-symbol::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.faq-mobis-item.is-open .faq-mobis-symbol::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.faq-mobis-answer {
+  margin: 0;
+  color: #1f2937;
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-mobis-answer-wrap,
+  .faq-mobis-answer-inner,
+  .faq-mobis-symbol,
+  .faq-mobis-symbol::before,
+  .faq-mobis-symbol::after,
+  .faq-mobis-item {
+    transition: none !important;
+  }
+}
+
 
 .btn-banner-cta-fullbleed {
   color: #3BAC1F;
@@ -578,6 +816,23 @@ body {
 }
 
 @media (max-width: 769px) {
+  .area-modal-title {
+    font-size: clamp(1.25rem, 5vw, 1.7rem);
+    padding-right: 2.2rem;
+  }
+
+  .area-modal-header .area-modal-close-btn {
+    top: 0.85rem;
+    right: 0.9rem;
+    width: 2rem;
+    height: 2rem;
+    flex-basis: 2rem;
+  }
+
+  .area-pools-list .list-group-item {
+    padding: 0.85rem 1rem;
+  }
+
   .banner-cta-fullbleed {
     bottom: 22px;
   }
@@ -624,15 +879,11 @@ body {
 
 @media (max-width:541) {
   .about-rounded {
-    width: 25rem !important;
+    width: 15rem !important;
   }
 
   .m-mobis-button{
       margin-bottom: 2.5rem;
-  }
-
-  .about-rounded {
-    width: 15rem !important;
   }
 
   .banner-slide-fullbleed {
@@ -741,6 +992,3 @@ body {
     }
 
 }
-
-
-

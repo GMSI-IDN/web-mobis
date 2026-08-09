@@ -4,17 +4,17 @@ const defaultOpenGraph: Metadata['openGraph'] = {
   type: 'website',
   locale: 'id_ID',
   description:
-    'Solusi punya mobil untuk taksi online tanpa ribet. Gratis servis rutin, bayar mingguan, dan tersedia opsi jadi hak milik.',
+    'Cari rental driver online terpercaya? MOBIS sedia sewa mobil dan kendaraan untuk taksi online dengan proses cepat, bayar mingguan, & program rent to own.',
   images: [
     {
-      url: 'https://rentalmobis.com/assets/img/Banner.webp',
+      url: 'https://admin.rentalmobis.com/api/media/file/banner-bebas_pilih_aplikasi-1-1200x630.webp',
       width: 1200,
       height: 630,
-      alt: 'Program Sewa & Kredit Mobil Taksi Online',
+      alt: 'Sewa Mobil & Rental Driver Online',
     },
   ],
   siteName: 'Rental MOBIS',
-  title: 'Program Sewa & Kredit Mobil Taksi Online | Rental MOBIS',
+  title: 'Sewa Mobil & Rental Driver Online | Rental MOBIS',
 }
 
 export const mergeOpenGraph = (og?: Metadata['openGraph']): Metadata['openGraph'] => {

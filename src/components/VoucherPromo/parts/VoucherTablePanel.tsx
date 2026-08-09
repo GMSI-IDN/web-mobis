@@ -2,14 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 
-type Cat = { id: string; name: string }
+type Cat = { id: number; name: string }
 type Voucher = {
-  id: string
+  id: number
   code: string
   quota: number
   used?: number
   enabled?: boolean
-  category?: string | { id: string; name?: string }
+  category?: number | { id: number; name?: string }
 }
 
 async function api(url: string, init?: RequestInit) {
@@ -32,6 +32,17 @@ function pct(used: number, quota: number) {
   if (v < 0) return 0
   if (v > 100) return 100
   return v
+}
+
+function parseNonNegativeInteger(raw: string): number | null {
+  const trimmed = String(raw ?? '').trim()
+  if (!trimmed) return null
+  if (!/^\d+$/.test(trimmed)) return null
+
+  const parsed = Number(trimmed)
+  if (!Number.isFinite(parsed) || parsed < 0) return null
+
+  return parsed
 }
 
 function getVisiblePages(page: number, totalPages: number) {
@@ -72,7 +83,7 @@ export default function VoucherTablePanel({
   onSearchChange?: (value: string) => void
   search: string
 }) {
-  const [busyId, setBusyId] = useState<string>('')
+  const [busyId, setBusyId] = useState<number | null>(null)
   const [pageSize, setPageSize] = useState<number>(10)
   const [page, setPage] = useState<number>(1)
   const disabled = Boolean(loadingGlobal) || Boolean(busyId)
@@ -105,12 +116,14 @@ export default function VoucherTablePanel({
       })
       onChanged?.()
     } finally {
-      setBusyId('')
+      setBusyId(null)
     }
   }
 
   async function updateQuota(v: Voucher, value: number) {
     if (!Number.isFinite(value) || value < 0) return
+    if (value === Number(v.quota ?? 0)) return
+
     setBusyId(v.id)
     try {
       await api(`/api/vouchers/${v.id}`, {
@@ -119,7 +132,7 @@ export default function VoucherTablePanel({
       })
       onChanged?.()
     } finally {
-      setBusyId('')
+      setBusyId(null)
     }
   }
 
@@ -132,7 +145,7 @@ export default function VoucherTablePanel({
       await api(`/api/vouchers/${v.id}`, { method: 'DELETE' })
       onChanged?.()
     } finally {
-      setBusyId('')
+      setBusyId(null)
     }
   }
 
@@ -210,7 +223,7 @@ export default function VoucherTablePanel({
             >
               <option value="">Semua kategori</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={String(c.id)}>
                   {c.name}
                 </option>
               ))}
@@ -322,7 +335,20 @@ export default function VoucherTablePanel({
                       min={0}
                       step={1}
                       disabled={busyId === v.id}
-                      onBlur={(e) => updateQuota(v, Number(e.target.value))}
+                      onBlur={(e) => {
+                        const nextQuota = parseNonNegativeInteger(e.target.value)
+                        if (nextQuota === null) {
+                          e.currentTarget.value = String(quota)
+                          return
+                        }
+
+                        if (nextQuota === quota) {
+                          e.currentTarget.value = String(quota)
+                          return
+                        }
+
+                        void updateQuota(v, nextQuota)
+                      }}
                     />
                   </td>
 

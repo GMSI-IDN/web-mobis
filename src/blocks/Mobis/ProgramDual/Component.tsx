@@ -30,6 +30,23 @@ type Props = {
   }
 }
 
+function resolveProgramHeaderAlt(side?: ProgramSide) {
+  const explicitAlt = side?.headerImage?.alt?.trim()
+  if (explicitAlt) return explicitAlt
+
+  const filename = side?.headerImage?.filename?.toLowerCase() || ''
+  if (filename.includes('pro-mingguan')) return 'Program rental driver online mingguan'
+  if (filename.includes('program_rwo') || filename.includes('rwo')) {
+    return 'Program rent to own rental driver online'
+  }
+
+  if ((side?.title || '').toLowerCase().includes('mingguan')) {
+    return 'Program rental driver online mingguan'
+  }
+
+  return side?.title || 'Program rental driver online MOBIS'
+}
+
 function ProgramCard({
   side,
   cardBgClass,
@@ -48,8 +65,7 @@ function ProgramCard({
   if (!side) return null
 
   const headerUrl = side.headerImage?.url
-  const headerAlt =
-    side.headerImage?.alt || side.headerImage?.filename || side.title || 'Program Mobis'
+  const headerAlt = resolveProgramHeaderAlt(side)
 
   return (
     <div className="program-card position-relative">
@@ -93,6 +109,8 @@ function ProgramCard({
 }
 
 export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
+  const normalizedTitle =
+    title?.trim() === 'Program Rental' ? 'Pilihan Program Rental Driver Online' : title
   const sectionBgClass = style?.sectionBgClass ?? 'bg-white'
   const cardBgClass = style?.cardBgClass ?? 'bg-success'
   const cardTextClass = style?.cardTextClass ?? 'text-white'
@@ -105,7 +123,7 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
       <div className="container py-4">
         {title ? (
           <div className="text-center mb-3">
-            <h2 className="h6 fw-bold text-success mb-0">{title}</h2>
+            <h2 className="h6 fw-bold text-success mb-0">{normalizedTitle}</h2>
           </div>
         ) : null}
 

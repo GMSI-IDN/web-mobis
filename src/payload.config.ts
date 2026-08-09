@@ -1,7 +1,7 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import sharp from 'sharp'
 import path from 'path'
-import { buildConfig, PayloadRequest } from 'payload'
+import { buildConfig, defaultLoggerOptions, PayloadRequest } from 'payload'
 import { fileURLToPath } from 'url'
 
 import { Categories } from './collections/Categories'
@@ -18,9 +18,12 @@ import { getServerSideURL, getAllowedOrigins } from './utilities/getURL'
 import { CustomerCollections } from './collections/Customers'
 import { VoucherPromoCollections } from './collections/VoucherPromo'
 import { MobisWidgetsGlobal } from './components/MobisWidget/payload/MobisWidgets.global'
+import { resyncPostgresSequencesOnInit } from './lib/db/resyncPostgresSequences'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+const dbPushEnabled = process.env.PAYLOAD_DB_PUSH === 'true'
+const enableCustomAdmin = process.env.PAYLOAD_ENABLE_CUSTOM_ADMIN !== 'false'
 
 export default buildConfig({
   serverURL: getServerSideURL(),
@@ -31,14 +34,21 @@ export default buildConfig({
   },
 
   admin: {
-    components: {
-      beforeLogin: ['@/components/BeforeLogin'],
-      views: {
-        dashboard: {
-          Component: '@/components/Dashboard',
-        },
-      },
-    },
+    components: enableCustomAdmin
+      ? {
+          beforeLogin: ['@/components/BeforeLogin'],
+          beforeNavLinks: ['@/components/AdminNav/ReportsNavLink'],
+          views: {
+            dashboard: {
+              Component: '@/components/Dashboard',
+            },
+            reports: {
+              Component: '@/components/Reports',
+              path: '/reports',
+            },
+          },
+        }
+      : {},
     importMap: {
       baseDir: path.resolve(dirname),
     },
@@ -70,6 +80,7 @@ export default buildConfig({
   editor: defaultLexical,
 
   db: postgresAdapter({
+    push: dbPushEnabled,
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
@@ -93,6 +104,35 @@ export default buildConfig({
 
   secret: process.env.PAYLOAD_SECRET,
 
+  // Payload logs a hard ERROR for every request to a media file that is missing
+  // from disk (payload/uploads/endpoints/getFile.ts). It returns a 500 rather than
+  // throwing, so it is noise rather than a fault — but it fires once per request
+  // per image, which buries genuine errors in the log.
+  //
+  // Downgrade only that message to debug (hidden at the default `info` level,
+  // visible again with PAYLOAD_LOG_LEVEL=debug). Everything else is untouched.
+  logger: {
+    options: {
+      name: 'payload',
+      level: process.env.PAYLOAD_LOG_LEVEL || 'info',
+      hooks: {
+        logMethod(args, method, level) {
+          const [first] = args
+
+          // 50 = error. The level guard is also what stops this hook recursing
+          // when we re-emit the same message at debug below.
+          if (level >= 50 && typeof first === 'string' && first.includes('is missing on the disk')) {
+            this.debug(...args)
+            return
+          }
+
+          return method.apply(this, args)
+        },
+      },
+    },
+    destination: defaultLoggerOptions,
+  },
+
   sharp,
 
   typescript: {
@@ -112,5 +152,9 @@ export default buildConfig({
       },
     },
     tasks: [],
+  },
+
+  onInit: async (payload) => {
+    await resyncPostgresSequencesOnInit(payload)
   },
 })

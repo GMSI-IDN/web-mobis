@@ -2,7 +2,19 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 
-type Cat = { id: string; name: string; createdAt?: string }
+type Cat = { id: number; name: string; createdAt?: string }
+
+function extractErrorMessage(data: any, status: number) {
+  if (typeof data?.message === 'string' && data.message.trim()) return data.message
+
+  const nestedFieldMessage = data?.errors?.[0]?.data?.errors?.[0]?.message
+  if (typeof nestedFieldMessage === 'string' && nestedFieldMessage.trim()) return nestedFieldMessage
+
+  const directFieldMessage = data?.errors?.[0]?.message
+  if (typeof directFieldMessage === 'string' && directFieldMessage.trim()) return directFieldMessage
+
+  return `Request failed: ${status}`
+}
 
 async function api<T = unknown>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -14,7 +26,7 @@ async function api<T = unknown>(url: string, init?: RequestInit): Promise<T> {
     },
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data?.message || `Request failed: ${res.status}`)
+  if (!res.ok) throw new Error(extractErrorMessage(data, res.status))
   return data as T
 }
 
@@ -29,6 +41,64 @@ function normalizeUpper(v: string) {
   return String(v || '')
     .trim()
     .toUpperCase()
+}
+
+function toNumberId(v: string): number | null {
+  const n = Number(String(v || '').trim())
+  return Number.isFinite(n) ? n : null
+}
+
+// Mirrors the backend check in src/lib/security/sanitize.ts
+// (containsSuspiciousMarkup) — instant feedback for the same rule the
+// Payload collection's field `validate` enforces server-side.
+const SUSPICIOUS_INPUT_PATTERN =
+  /[<>]|javascript:|data:text\/html|(?:https?|ftp):\/\/|www\.[a-z0-9-]/i
+function hasSuspiciousMarkup(value: string) {
+  return SUSPICIOUS_INPUT_PATTERN.test(value)
+}
+
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'))
+const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, minute) =>
+  String(minute).padStart(2, '0'),
+)
+
+function formatDateInput(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getDefaultVoucherWindow() {
+  const start = new Date()
+  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000)
+
+  return {
+    startDate: formatDateInput(start),
+    startHour: String(start.getHours()).padStart(2, '0'),
+    startMinute: String(start.getMinutes()).padStart(2, '0'),
+    endDate: formatDateInput(end),
+    endHour: String(end.getHours()).padStart(2, '0'),
+    endMinute: String(end.getMinutes()).padStart(2, '0'),
+  }
+}
+
+function toISOFromDateAndTime(params: {
+  date: string
+  hour: string
+  minute: string
+}): string | null | undefined {
+  const date = String(params.date || '').trim()
+  const hour = String(params.hour || '').trim()
+  const minute = String(params.minute || '').trim()
+
+  if (!date && !hour && !minute) return null
+  if (!date || !hour || !minute) return undefined
+
+  const dt = new Date(`${date}T${hour}:${minute}:00`)
+  if (Number.isNaN(dt.getTime())) return null
+
+  return dt.toISOString()
 }
 
 function fmtDate(d?: string) {
@@ -61,15 +131,20 @@ export default function VoucherFormPanel({
   categories: Cat[]
   mode?: 'modal' | 'panel'
   onClose?: () => void
-  onSuccess?: () => void | Promise<void>
+  onSuccess?: (createdCode?: string) => void | Promise<void>
   loadingGlobal?: boolean
 }) {
+  const defaultWindow = getDefaultVoucherWindow()
   const [categoryId, setCategoryId] = useState('')
   const [code, setCode] = useState('')
   const [quota, setQuota] = useState<number>(10)
   const [enabled, setEnabled] = useState(true)
-  const [startAt, setStartAt] = useState('')
-  const [endAt, setEndAt] = useState('')
+  const [startDate, setStartDate] = useState(defaultWindow.startDate)
+  const [startHour, setStartHour] = useState(defaultWindow.startHour)
+  const [startMinute, setStartMinute] = useState(defaultWindow.startMinute)
+  const [endDate, setEndDate] = useState(defaultWindow.endDate)
+  const [endHour, setEndHour] = useState(defaultWindow.endHour)
+  const [endMinute, setEndMinute] = useState(defaultWindow.endMinute)
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
@@ -81,7 +156,7 @@ export default function VoucherFormPanel({
   const [categoryPage, setCategoryPage] = useState<number>(1)
 
   useEffect(() => {
-    if (!categoryId && categories?.[0]?.id) setCategoryId(categories[0].id)
+    if (!categoryId && categories?.[0]?.id) setCategoryId(String(categories[0].id))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories?.length])
 
@@ -92,27 +167,51 @@ export default function VoucherFormPanel({
     const c = normalizeCode(code)
     if (!categoryId) return setErr('Kategori wajib dipilih.')
     if (!c) return setErr('Kode wajib diisi.')
+    if (c.length > 50 || hasSuspiciousMarkup(c)) return setErr('Format teks tidak diterima.')
+    if (description && (description.length > 500 || hasSuspiciousMarkup(description))) {
+      return setErr('Format teks tidak diterima.')
+    }
     if (!Number.isFinite(quota) || quota < 0) return setErr('Quota tidak valid.')
 
-    if (startAt && endAt) {
-      const s = new Date(startAt).getTime()
-      const ed = new Date(endAt).getTime()
+    const startAtISO = toISOFromDateAndTime({
+      date: startDate,
+      hour: startHour,
+      minute: startMinute,
+    })
+    const endAtISO = toISOFromDateAndTime({
+      date: endDate,
+      hour: endHour,
+      minute: endMinute,
+    })
+
+    if (startAtISO === undefined || startAtISO === null && (startDate || startHour || startMinute)) {
+      return setErr('Start Date & Time harus lengkap (tanggal, jam, menit).')
+    }
+    if (endAtISO === undefined || endAtISO === null && (endDate || endHour || endMinute)) {
+      return setErr('Exp Date & Time harus lengkap (tanggal, jam, menit).')
+    }
+
+    if (startAtISO && endAtISO) {
+      const s = new Date(startAtISO as string).getTime()
+      const ed = new Date(endAtISO as string).getTime()
       if (!Number.isNaN(s) && !Number.isNaN(ed) && s >= ed) {
         return setErr('Start Date harus lebih kecil dari Exp Date.')
       }
     }
+    const categoryIdNum = toNumberId(categoryId)
+    if (categoryIdNum === null) return setErr('Kategori tidak valid.')
 
     setLoading(true)
     try {
       await api('/api/vouchers', {
         method: 'POST',
         body: JSON.stringify({
-          category: categoryId,
+          category: categoryIdNum,
           code: c,
           quota: Number(quota),
           enabled: Boolean(enabled),
-          startAt: startAt ? new Date(startAt).toISOString() : null,
-          endAt: endAt ? new Date(endAt).toISOString() : null,
+          startAt: startAtISO,
+          endAt: endAtISO,
           description: description || '',
         }),
       })
@@ -120,10 +219,15 @@ export default function VoucherFormPanel({
       setCode('')
       setQuota(10)
       setEnabled(true)
-      setStartAt('')
-      setEndAt('')
+      const nextDefaultWindow = getDefaultVoucherWindow()
+      setStartDate(nextDefaultWindow.startDate)
+      setStartHour(nextDefaultWindow.startHour)
+      setStartMinute(nextDefaultWindow.startMinute)
+      setEndDate(nextDefaultWindow.endDate)
+      setEndHour(nextDefaultWindow.endHour)
+      setEndMinute(nextDefaultWindow.endMinute)
       setDescription('')
-      await onSuccess?.()
+      await onSuccess?.(c)
     } catch (e: any) {
       setErr(e?.message ?? 'Gagal membuat voucher.')
     } finally {
@@ -137,6 +241,9 @@ export default function VoucherFormPanel({
 
     const name = normalizeUpper(categoryName)
     if (!name) return setCategoryErr('Nama kategori wajib diisi.')
+    if (name.length > 100 || hasSuspiciousMarkup(name)) {
+      return setCategoryErr('Format teks tidak diterima.')
+    }
 
     setCategoryLoading(true)
     try {
@@ -146,7 +253,7 @@ export default function VoucherFormPanel({
       })
 
       setCategoryName('')
-      if (created?.id) setCategoryId(created.id)
+      if (created?.id) setCategoryId(String(created.id))
       await onSuccess?.()
       setCategoryModalOpen(false)
     } catch (e: any) {
@@ -194,7 +301,7 @@ export default function VoucherFormPanel({
             >
               <option value="">-- pilih --</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={String(c.id)}>
                   {c.name}
                 </option>
               ))}
@@ -217,6 +324,7 @@ export default function VoucherFormPanel({
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="MOBIS10"
+            maxLength={50}
             disabled={disabled}
           />
           <small className="voucher-dashboard__hint">Otomatis uppercase dan tanpa spasi.</small>
@@ -260,25 +368,81 @@ export default function VoucherFormPanel({
         </div>
 
         <label className="voucher-dashboard__field voucher-dashboard__field--date">
-          <span>Start Date</span>
-          <input
-            type="date"
-            className="voucher-dashboard__input"
-            value={startAt}
-            onChange={(e) => setStartAt(e.target.value)}
-            disabled={disabled}
-          />
+          <span>Start Date & Time</span>
+          <div className="voucher-dashboard__field-inline">
+            <input
+              type="date"
+              className="voucher-dashboard__input"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              disabled={disabled}
+            />
+            <select
+              className="voucher-dashboard__input voucher-dashboard__input--sm"
+              value={startHour}
+              onChange={(e) => setStartHour(e.target.value)}
+              disabled={disabled}
+            >
+              <option value="">HH</option>
+              {HOUR_OPTIONS.map((hour) => (
+                <option key={`start-hour-${hour}`} value={hour}>
+                  {hour}
+                </option>
+              ))}
+            </select>
+            <select
+              className="voucher-dashboard__input voucher-dashboard__input--sm"
+              value={startMinute}
+              onChange={(e) => setStartMinute(e.target.value)}
+              disabled={disabled}
+            >
+              <option value="">MM</option>
+              {MINUTE_OPTIONS.map((minute) => (
+                <option key={`start-minute-${minute}`} value={minute}>
+                  {minute}
+                </option>
+              ))}
+            </select>
+          </div>
         </label>
 
         <label className="voucher-dashboard__field voucher-dashboard__field--date">
-          <span>Exp Date</span>
-          <input
-            type="date"
-            className="voucher-dashboard__input"
-            value={endAt}
-            onChange={(e) => setEndAt(e.target.value)}
-            disabled={disabled}
-          />
+          <span>Exp Date & Time</span>
+          <div className="voucher-dashboard__field-inline">
+            <input
+              type="date"
+              className="voucher-dashboard__input"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              disabled={disabled}
+            />
+            <select
+              className="voucher-dashboard__input voucher-dashboard__input--sm"
+              value={endHour}
+              onChange={(e) => setEndHour(e.target.value)}
+              disabled={disabled}
+            >
+              <option value="">HH</option>
+              {HOUR_OPTIONS.map((hour) => (
+                <option key={`end-hour-${hour}`} value={hour}>
+                  {hour}
+                </option>
+              ))}
+            </select>
+            <select
+              className="voucher-dashboard__input voucher-dashboard__input--sm"
+              value={endMinute}
+              onChange={(e) => setEndMinute(e.target.value)}
+              disabled={disabled}
+            >
+              <option value="">MM</option>
+              {MINUTE_OPTIONS.map((minute) => (
+                <option key={`end-minute-${minute}`} value={minute}>
+                  {minute}
+                </option>
+              ))}
+            </select>
+          </div>
         </label>
 
         <label className="voucher-dashboard__field voucher-dashboard__field--full">
@@ -289,6 +453,7 @@ export default function VoucherFormPanel({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={disabled}
+            maxLength={500}
             placeholder="Catatan internal, syarat promo, atau konteks campaign"
           />
         </label>
@@ -423,6 +588,7 @@ export default function VoucherFormPanel({
                 placeholder="FACEBOOK / INSTAGRAM"
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
+                maxLength={100}
                 disabled={categoryDisabled}
               />
               <button

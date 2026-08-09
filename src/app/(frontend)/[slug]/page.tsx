@@ -4,38 +4,21 @@ import { PayloadRedirects } from '@/components/PayloadRedirects'
 import configPromise from '@payload-config'
 import { getPayload, type RequiredDataFromCollectionSlug } from 'payload'
 import { draftMode } from 'next/headers'
+import { unstable_cache } from 'next/cache'
 import React, { cache } from 'react'
 import { homeStatic } from '@/endpoints/seed/home-static'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { RenderHero } from '@/heros/RenderHero'
 import { generateMeta } from '@/utilities/generateMeta'
+import { isKnownOptionalRelationError } from '@/utilities/isMissingRelationError'
+import { buildFaqStructuredData } from '@/utilities/buildFaqStructuredData'
+import { buildLocalBusinessStructuredData } from '@/utilities/buildLocalBusinessStructuredData'
+import { getPublicURL } from '@/utilities/getURL'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 
-export async function generateStaticParams() {
-  const payload = await getPayload({ config: configPromise })
-  const pages = await payload.find({
-    collection: 'pages',
-    draft: false,
-    limit: 1000,
-    overrideAccess: false,
-    pagination: false,
-    select: {
-      slug: true,
-    },
-  })
-
-  const params = pages.docs
-    ?.filter((doc) => {
-      return doc.slug !== 'home'
-    })
-    .map(({ slug }) => {
-      return { slug }
-    })
-
-  return params
-}
+export const dynamic = 'force-dynamic'
 
 type Args = {
   params: Promise<{
@@ -55,8 +38,8 @@ export default async function Page({ params: paramsPromise }: Args) {
     slug: decodedSlug,
   })
 
-  // Remove this code once your website is seeded
-  if (!page && slug === 'home') {
+  // Dev-only fallback to avoid empty home during local bootstrap
+  if (!page && slug === 'home' && process.env.NODE_ENV !== 'production') {
     page = homeStatic
   }
 
@@ -65,6 +48,8 @@ export default async function Page({ params: paramsPromise }: Args) {
   }
 
   const { hero, layout } = page
+  const faqStructuredData = buildFaqStructuredData(layout)
+  const localBusinessSchemas = buildLocalBusinessStructuredData(layout, getPublicURL())
 
   return (
     <article className="pb-24">
@@ -76,6 +61,18 @@ export default async function Page({ params: paramsPromise }: Args) {
 
       <RenderHero {...hero} />
       <RenderBlocks blocks={layout} />
+      {faqStructuredData ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+        />
+      ) : null}
+      {localBusinessSchemas.length > 0 ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchemas) }}
+        />
+      ) : null}
     </article>
   )
 }
@@ -97,20 +94,50 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
 const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
   const { isEnabled: draft } = await draftMode()
 
-  const payload = await getPayload({ config: configPromise })
+  if (draft) {
+    return fetchPageBySlug({ slug, draft: true, overrideAccess: true })
+  }
 
-  const result = await payload.find({
-    collection: 'pages',
-    draft,
-    limit: 1,
-    pagination: false,
-    overrideAccess: draft,
-    where: {
-      slug: {
-        equals: slug,
-      },
-    },
-  })
-
-  return result.docs?.[0] || null
+  return getCachedPageBySlug(slug)
 })
+
+const getCachedPageBySlug = (slug: string) =>
+  unstable_cache(
+    () => fetchPageBySlug({ slug, draft: false, overrideAccess: false }),
+    [`page_${slug}`],
+    { tags: [`page_${slug}`] },
+  )()
+
+async function fetchPageBySlug({
+  slug,
+  draft,
+  overrideAccess,
+}: {
+  slug: string
+  draft: boolean
+  overrideAccess: boolean
+}) {
+  const payload = await getPayload({ config: configPromise })
+  try {
+    const result = await payload.find({
+      collection: 'pages',
+      draft,
+      limit: 1,
+      pagination: false,
+      overrideAccess,
+      where: {
+        slug: {
+          equals: slug,
+        },
+      },
+    })
+
+    return result.docs?.[0] || null
+  } catch (error) {
+    if (isKnownOptionalRelationError(error) && process.env.NODE_ENV !== 'production') {
+      return null
+    }
+
+    throw error
+  }
+}

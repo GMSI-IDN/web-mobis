@@ -38,7 +38,7 @@ export const homeStatic: RequiredDataFromCollectionSlug<'pages'> = {
                 format: 0,
                 mode: 'normal',
                 style: '',
-                text: 'Daftar awal sewa kendaraan di Mobis dengan proses cepat, promo code menarik, dan pilihan program untuk driver online di Jabodetabek, Bandung, Surabaya, dan Bali.',
+                text: 'Daftar awal rental driver online dan sewa kendaraan di Mobis dengan proses cepat, promo code menarik, serta pilihan program untuk pengemudi taksi online di Jabodetabek, Bandung, Surabaya, dan Bali.',
                 version: 1,
               },
             ],
@@ -58,8 +58,8 @@ export const homeStatic: RequiredDataFromCollectionSlug<'pages'> = {
   },
   meta: {
     description:
-      'Mobis adalah website penyewaan kendaraan untuk driver online dengan pilihan mobil Calya dan Sigra, promo code pendaftaran, serta program kepemilikan.',
-    title: 'Rental Mobil Driver Online Calya & Sigra Jabodetabek',
+      'Cari rental driver online terpercaya? MOBIS sedia sewa mobil dan kendaraan untuk taksi online dengan proses cepat, bayar mingguan, dan program rent to own.',
+    title: 'Sewa Mobil & Rental Driver Online',
   },
   title: 'Home',
   layout: [],

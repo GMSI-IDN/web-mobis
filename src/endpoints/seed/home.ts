@@ -66,7 +66,7 @@ export const home: (args: HomeArgs) => RequiredDataFromCollectionSlug<'pages'> =
                   format: 0,
                   mode: 'normal',
                   style: '',
-                  text: 'Daftar awal sewa kendaraan di Mobis dengan proses cepat, promo code menarik, dan pilihan program yang sesuai untuk driver online di Jabodetabek, Bandung, Surabaya, dan Bali.',
+                  text: 'Daftar awal rental driver online dan sewa kendaraan di Mobis dengan proses cepat, promo code menarik, serta pilihan program yang sesuai untuk pengemudi taksi online di Jabodetabek, Bandung, Surabaya, dan Bali.',
                   version: 1,
                 },
               ],

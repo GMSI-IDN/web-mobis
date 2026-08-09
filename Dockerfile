@@ -24,6 +24,12 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Migrations are NEVER run from a build — a build pointed at the live DATABASE_URL
+# would silently mutate the production database on every push. Use the manual
+# .github/workflows/migrate.yml workflow instead (it takes a verified pg_dump first).
+# .github/scripts/guard-no-mutations.sh fails CI if this default is flipped back.
+ARG RUN_MIGRATIONS_ON_BUILD=false
+ENV RUN_MIGRATIONS_ON_BUILD=${RUN_MIGRATIONS_ON_BUILD}
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
@@ -31,9 +37,16 @@ COPY . .
 # ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+  if [ -f yarn.lock ]; then \
+    if [ "$RUN_MIGRATIONS_ON_BUILD" = "true" ]; then yarn run migrate; fi; \
+    yarn run build; \
+  elif [ -f package-lock.json ]; then \
+    if [ "$RUN_MIGRATIONS_ON_BUILD" = "true" ]; then npm run migrate; fi; \
+    npm run build; \
+  elif [ -f pnpm-lock.yaml ]; then \
+    corepack enable pnpm; \
+    if [ "$RUN_MIGRATIONS_ON_BUILD" = "true" ]; then pnpm run migrate; fi; \
+    pnpm run build; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
@@ -59,6 +72,10 @@ RUN chown nextjs:nodejs .next
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Google service account credentials (see GOOGLE_SERVICE_ACCOUNT_JSON_PATH in .env).
+# Not covered by the standalone output trace since it's read via fs at runtime, not imported.
+COPY --from=builder --chown=nextjs:nodejs /app/private ./private
 
 USER nextjs
 

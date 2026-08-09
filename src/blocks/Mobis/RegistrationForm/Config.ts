@@ -67,7 +67,11 @@ export const RegistrationFormConfig: Block = {
         makeOptionArray('emRel', 'Emergency Relation Options'),
         makeOptionArray('drvExp', 'Driver Experience Options'),
         makeOptionArray('handover', 'Handover Location Options'),
-        makeOptionArray('onlineApp', 'Online App Options'),
+        // CMS-editable "Aplikasi Driver Online" options. Backing table
+        // `pages_blocks_registration_form_opts_online_app` is created by migration
+        // 20260427_072500_fix_registration_form_online_app (already applied). Any DB
+        // that hasn't run it yet must `pnpm migrate` (idempotent, additive-only).
+        makeOptionArray('onlineApp', 'Aplikasi Driver Online Options'),
         makeOptionArray('source', 'Source Info Options'),
       ],
     },

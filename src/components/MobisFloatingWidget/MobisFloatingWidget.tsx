@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { trackRegistrationCTAClick } from '@/utilities/pixelFacebook'
 import './mobis-widget.css'
 
 type Active = 'none' | 'register' | 'status' | 'chat'
@@ -80,16 +79,7 @@ export default function MobisFloatingWidget() {
         <button
           type="button"
           className="mobis-btn mobis-btn--green"
-          onClick={() => {
-            void trackRegistrationCTAClick({
-              ctaText: 'Daftar Sekarang',
-              ctaLink: '#mobis-floating-register',
-              section: 'Floating Widget',
-              placement: 'floating-register-button',
-              targetType: 'modal',
-            })
-            open('register')
-          }}
+          onClick={() => open('register')}
           aria-label="Daftar Sekarang"
         >
           Daftar Sekarang
@@ -228,17 +218,7 @@ function Modal({
 ======================= */
 function RegisterForm() {
   return (
-    <form
-      onSubmit={() => {
-        void trackRegistrationCTAClick({
-          ctaText: 'Daftar Sekarang',
-          ctaLink: '#mobis-floating-register-submit',
-          section: 'Floating Widget',
-          placement: 'floating-register-submit',
-          targetType: 'submit',
-        })
-      }}
-    >
+    <form>
       <label className="form-label">Nama</label>
       <input className="form-control mb-3" placeholder="Masukkan nama Anda" required />
 
@@ -253,12 +233,21 @@ function RegisterForm() {
 }
 
 function StatusForm() {
+  const [nik, setNik] = useState('')
+  const isSubmitDisabled = !nik.trim()
+
   return (
     <form>
       <label className="form-label">NIK</label>
-      <input className="form-control mb-3" placeholder="Masukan NIK" required />
+      <input
+        className="form-control mb-3"
+        placeholder="Masukan NIK"
+        required
+        value={nik}
+        onChange={(e) => setNik(e.target.value)}
+      />
 
-      <button className="btn btn-success w-100 py-2" type="submit">
+      <button className="btn btn-success w-100 py-2" type="submit" disabled={isSubmitDisabled}>
         Check Status
       </button>
     </form>

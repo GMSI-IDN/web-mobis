@@ -9,7 +9,12 @@ export const AboutSplitConfig: Block = {
   slug: 'aboutSplit',
   interfaceName: 'AboutSplitBlock',
   fields: [
-    { name: 'title', type: 'text', defaultValue: 'Tentang Rental MOBIS', required: true },
+    {
+      name: 'title',
+      type: 'text',
+      defaultValue: 'Tentang Layanan Rental Driver Online MOBIS',
+      required: true,
+    },
 
     // ✅ tetap pakai nama "description", tapi tipe field jadi richText (Lexical)
     {

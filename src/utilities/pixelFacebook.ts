@@ -5,6 +5,10 @@ let ReactPixel: any = null
 const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID
 let isPixelInitialized = false
 
+type FacebookTrackOptions = {
+  eventID?: string
+}
+
 const loadPixel = async () => {
   if (typeof window === 'undefined') return null
   if (ReactPixel) return ReactPixel
@@ -53,6 +57,7 @@ export const trackFacebookEvent = async (eventName: string, params?: Record<stri
 export const trackFacebookCustomEvent = async (
   eventName: string,
   params?: Record<string, unknown>,
+  options?: FacebookTrackOptions,
 ) => {
   if (typeof window === 'undefined') return
   if (!pixelId) return
@@ -62,7 +67,33 @@ export const trackFacebookCustomEvent = async (
   const pixel = await loadPixel()
   if (!pixel) return
 
+  if (options?.eventID && typeof pixel.fbq === 'function') {
+    pixel.fbq('trackCustom', eventName, params || {}, { eventID: options.eventID })
+    return
+  }
+
   pixel.trackCustom(eventName, params || {})
+}
+
+export const trackFacebookEventWithDedup = async (
+  eventName: string,
+  params?: Record<string, unknown>,
+  options?: FacebookTrackOptions,
+) => {
+  if (typeof window === 'undefined') return
+  if (!pixelId) return
+
+  await initFacebookPixel()
+
+  const pixel = await loadPixel()
+  if (!pixel) return
+
+  if (options?.eventID && typeof pixel.fbq === 'function') {
+    pixel.fbq('track', eventName, params || {}, { eventID: options.eventID })
+    return
+  }
+
+  pixel.track(eventName, params || {})
 }
 
 export type RegistrationCTATracking = {
@@ -76,7 +107,7 @@ export type RegistrationCTATracking = {
 export const trackRegistrationCTAClick = async ({
   ctaText,
   ctaLink,
-  section = 'General CTA',
+  section = 'General',
   placement,
   targetType,
 }: {
@@ -88,7 +119,7 @@ export const trackRegistrationCTAClick = async ({
 }) => {
   const payload = {
     content_name: ctaText,
-    content_category: 'Registration CTA',
+    content_category: 'Record user location view',
     section,
     placement: placement || section,
     target: ctaLink,
@@ -96,7 +127,7 @@ export const trackRegistrationCTAClick = async ({
     page_path: typeof window !== 'undefined' ? window.location.pathname : '',
   }
 
-  await trackFacebookEvent('Lead', payload)
+  // await trackFacebookEvent('Lead', payload)
   await trackFacebookCustomEvent('ClickRegistrationCTA', {
     button_text: ctaText,
     section,

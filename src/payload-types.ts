@@ -232,8 +232,31 @@ export interface Page {
       }
     | {
         title?: string | null;
+        description?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
         areas: {
           label: string;
+          /**
+           * Centang untuk menampilkan label "Partner Mobis" di atas gambar card.
+           */
+          isPartner?: boolean | null;
+          /**
+           * Deskripsi singkat layanan di kota ini — tampil langsung di halaman dan dibaca Google (maks. 160 karakter disarankan).
+           */
+          description?: string | null;
           PoolImage?: (number | null) | Media;
           pools?:
             | {
@@ -260,6 +283,7 @@ export interface Page {
     | RegistrationFormBlock
     | FooterSimpleBlock
     | ProgramDualBlock
+    | FaqAccordionBlock
   )[];
   meta?: {
     title?: string | null;
@@ -871,6 +895,7 @@ export interface AboutSplitBlock {
  */
 export interface UnitsAvailableBlock {
   title: string;
+  description?: string | null;
   units: {
     name: string;
     image?: (number | null) | Media;
@@ -1089,6 +1114,21 @@ export interface ProgramDualBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'programDual';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqAccordionBlock".
+ */
+export interface FaqAccordionBlock {
+  title: string;
+  items: {
+    question: string;
+    answer: string;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faqAccordion';
 }
 /**
  * Data user yang sudah mendaftar melalui form pendaftaran Mobis.
@@ -1549,10 +1589,13 @@ export interface PagesSelect<T extends boolean = true> {
           | T
           | {
               title?: T;
+              description?: T;
               areas?:
                 | T
                 | {
                     label?: T;
+                    isPartner?: T;
+                    description?: T;
                     PoolImage?: T;
                     pools?:
                       | T
@@ -1575,6 +1618,7 @@ export interface PagesSelect<T extends boolean = true> {
         registrationForm?: T | RegistrationFormBlockSelect<T>;
         footerSimple?: T | FooterSimpleBlockSelect<T>;
         programDual?: T | ProgramDualBlockSelect<T>;
+        faqAccordion?: T | FaqAccordionBlockSelect<T>;
       };
   meta?:
     | T
@@ -1691,6 +1735,7 @@ export interface AboutSplitBlockSelect<T extends boolean = true> {
  */
 export interface UnitsAvailableBlockSelect<T extends boolean = true> {
   title?: T;
+  description?: T;
   units?:
     | T
     | {
@@ -1914,6 +1959,22 @@ export interface ProgramDualBlockSelect<T extends boolean = true> {
         centerCards?: T;
         headerTop?: T;
         bodyTopPadding?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqAccordionBlock_select".
+ */
+export interface FaqAccordionBlockSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
       };
   id?: T;
   blockName?: T;

@@ -5,6 +5,7 @@ export const UnitsAvailableConfig: Block = {
   interfaceName: 'UnitsAvailableBlock',
   fields: [
     { name: 'title', type: 'text', defaultValue: 'UNIT YANG TERSEDIA', required: true },
+    { name: 'description', type: 'textarea', required: false },
     {
       name: 'units',
       type: 'array',

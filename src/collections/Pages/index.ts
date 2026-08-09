@@ -11,6 +11,10 @@ import { hero } from '@/heros/config'
 import { slugField } from 'payload'
 import { populatePublishedAt } from '../../hooks/populatePublishedAt'
 import { generatePreviewPath } from '../../utilities/generatePreviewPath'
+import {
+  ensurePageVersionIntegrity,
+  stripReservedPageFields,
+} from './hooks/ensurePageVersionIntegrity'
 import { revalidateDelete, revalidatePage } from './hooks/revalidatePage'
 
 import { BannerCarouselBlock } from '@/blocks/Mobis/BannerCarousel'
@@ -24,6 +28,7 @@ import { TestimonialsConfig } from '@/blocks/Mobis/Testimonials'
 import { RegistrationFormConfig } from '@/blocks/Mobis/RegistrationForm'
 import { FooterSimpleConfig } from '@/blocks/Mobis/FooterSimple'
 import { ProgramDualConfig } from '@/blocks/Mobis/ProgramDual'
+import { FaqAccordionConfig } from '@/blocks/Mobis/FaqAccordion'
 
 import {
   MetaDescriptionField,
@@ -101,6 +106,7 @@ export const Pages: CollectionConfig<'pages'> = {
                 RegistrationFormConfig,
                 FooterSimpleConfig,
                 ProgramDualConfig,
+                FaqAccordionConfig,
               ],
               required: true,
               admin: {
@@ -149,6 +155,8 @@ export const Pages: CollectionConfig<'pages'> = {
     slugField(),
   ],
   hooks: {
+    beforeOperation: [ensurePageVersionIntegrity],
+    beforeValidate: [stripReservedPageFields],
     afterChange: [revalidatePage],
     beforeChange: [populatePublishedAt],
     afterDelete: [revalidateDelete],
@@ -160,6 +168,7 @@ export const Pages: CollectionConfig<'pages'> = {
       },
       schedulePublish: true,
     },
-    maxPerDoc: 50,
+    // Keep above current row count to avoid hitting version-cap edge cases during saves.
+    maxPerDoc: 200,
   },
 }

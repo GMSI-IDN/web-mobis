@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { trackFacebookEvent, trackFacebookCustomEvent } from '@/utilities/pixelFacebook'
+import { trackCustomEvent, trackEventWithDedup } from '@/utilities/pixelTracking'
 
 type Option = { label: string; value: string }
 
@@ -39,6 +39,7 @@ type FormValues = {
   emergencyPhone: string
   emergencyRelation: string
   driverApps: string
+  driverAppsOther: string
   activeAccountSelf: string
   driverExperience: string
   handoverLocation: string
@@ -62,6 +63,15 @@ function normalizeOptions(input?: Option[]): Option[] {
 
 function onlyDigits(value: string) {
   return String(value || '').replace(/\D/g, '')
+}
+
+// Mirrors the backend check in src/lib/security/sanitize.ts
+// (containsSuspiciousMarkup) — instant feedback for the same rule the
+// server enforces, not a separate security boundary.
+const SUSPICIOUS_INPUT_PATTERN =
+  /[<>]|javascript:|data:text\/html|(?:https?|ftp):\/\/|www\.[a-z0-9-]/i
+function hasSuspiciousMarkup(value: string) {
+  return SUSPICIOUS_INPUT_PATTERN.test(value)
 }
 
 function normalizeValue(value: string) {
@@ -90,33 +100,41 @@ function getBirthDateRange(minAge: number, maxAge: number) {
   }
 }
 
-const handleBannerCTATrack = ({
-  ctaText,
-  ctaLink,
-  targetType,
-}: {
-  ctaText: string
-  ctaLink: string
-  targetType: string
-}) => {
-  const payload = {
-    content_name: ctaText,
-    content_category: 'Banner CTA',
-    section: 'Banner Carousel',
-    target: ctaLink,
-    target_type: targetType,
-    page_path: window.location.pathname,
-  }
-
-  trackFacebookEvent('Leads', payload)
-
-  trackFacebookCustomEvent('ClickBannerCarouselCTA', {
-    button_text: ctaText,
-    section: 'Banner Carousel',
-    target: ctaLink,
-    target_type: targetType,
+const trackRegistrationSubmitClick = ({ buttonText }: { buttonText: string }) => {
+  trackCustomEvent('ClickRegistrationSubmit', {
+    button_text: buttonText + '-submit',
+    section: 'Registration Form',
+    target: '/api/registration',
+    target_type: 'submit',
     page_path: window.location.pathname,
   })
+}
+
+const trackRegistrationSuccess = ({
+  buttonText,
+  eventId,
+}: {
+  buttonText: string
+  eventId?: string
+}) => {
+  const basePayload = {
+    button_text: buttonText + '-success',
+    section: 'Registration Form',
+    target: '/api/registration',
+    target_type: 'submit',
+    page_path: window.location.pathname,
+    value: 120000, // contoh nilai konversi, bisa disesuaikan dengan kebutuhan
+    currency: 'IDR',
+  }
+
+  trackCustomEvent('RegistrationSuccess', basePayload)
+  trackEventWithDedup('CompleteRegistration', basePayload, { eventID: eventId })
+}
+
+function createMetaEventId() {
+  if (typeof window === 'undefined') return ''
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID()
+  return `evt_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
 }
 
 function SelectField({
@@ -178,6 +196,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     emergencyPhone: '',
     emergencyRelation: '',
     driverApps: '',
+    driverAppsOther: '',
     activeAccountSelf: '',
     driverExperience: '',
     handoverLocation: '',
@@ -194,6 +213,14 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   const [serverFieldErrors, setServerFieldErrors] = useState<
     Partial<Record<keyof FormValues, string>>
   >({})
+
+  // Bot defenses: `honeypot` is a field real users never see or fill; bots
+  // that auto-fill every input tend to fill it. `formRenderedAtRef` lets the
+  // backend reject submissions that arrive faster than a human could
+  // plausibly fill this form. Neither is part of FormValues since they're
+  // anti-bot metadata, not registration data.
+  const [honeypot, setHoneypot] = useState('')
+  const formRenderedAtRef = useRef(Date.now())
 
   const timersRef = useRef<Partial<Record<keyof FormValues, ReturnType<typeof setTimeout>>>>({})
   const uid = useId().replace(/:/g, '')
@@ -303,6 +330,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
   const birthDateRange = useMemo(() => getBirthDateRange(18, 62), [])
   const isNoDriverAccount = normalizeValue(values.driverApps) === 'tidak_ada_akun'
+  const isOtherApp = normalizeValue(values.driverApps) === 'lainnya'
+  const ktpFieldError =
+    touched.ktpNumber && (errors.ktpNumber || serverFieldErrors.ktpNumber)
+      ? errors.ktpNumber || serverFieldErrors.ktpNumber
+      : ''
 
   const sourceDetailConfig = useMemo(() => {
     const key = normalizeValue(values.sourceInfo)
@@ -353,6 +385,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     allValues: FormValues,
   ): string {
     const noDriverAccount = normalizeValue(allValues.driverApps) === 'tidak_ada_akun'
+    const otherApp = normalizeValue(allValues.driverApps) === 'lainnya'
     const sourceKey = normalizeValue(allValues.sourceInfo)
     const needSourceDetail = [
       'instagram',
@@ -361,6 +394,10 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
       'refferal',
       'dari_karyawan',
     ].includes(sourceKey)
+
+    if (typeof value === 'string' && hasSuspiciousMarkup(value)) {
+      return 'Format teks tidak diterima.'
+    }
 
     switch (name) {
       case 'name':
@@ -442,6 +479,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
       case 'driverApps':
         if (!String(value).trim()) return 'Aplikasi driver online wajib dipilih.'
+        return ''
+
+      case 'driverAppsOther':
+        if (!otherApp) return ''
+        if (!String(value).trim()) return 'Sebutkan aplikasi driver online yang digunakan.'
         return ''
 
       case 'activeAccountSelf':
@@ -527,6 +569,14 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
           driverExperience: '',
         }
       }
+
+      const otherApp = normalizeValue(String(nextValue)) === 'lainnya'
+      if (!otherApp) {
+        nextValues = {
+          ...nextValues,
+          driverAppsOther: '',
+        }
+      }
     }
 
     if (field === 'sourceInfo') {
@@ -557,11 +607,13 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         ...prev,
         activeAccountSelf: '',
         driverExperience: '',
+        driverAppsOther: '',
       }))
       setTouched((prev) => ({
         ...prev,
         activeAccountSelf: false,
         driverExperience: false,
+        driverAppsOther: false,
       }))
     }
 
@@ -589,6 +641,10 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
+    trackRegistrationSubmitClick({
+      buttonText: submitLabel ?? 'Kirim',
+    })
+
     const nextErrors = validateForm(values)
     setErrors(nextErrors)
 
@@ -605,12 +661,21 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     setServerFieldErrors({})
 
     try {
+      const metaEventId = createMetaEventId()
       const payload = {
         ...values,
         phone: onlyDigits(values.phone),
         ktpNumber: onlyDigits(values.ktpNumber),
         emergencyPhone: onlyDigits(values.emergencyPhone),
+        // When "Lainnya" is chosen, store the free-text app name so it reads
+        // cleanly in the admin (the raw driverAppsOther is still kept in ...values
+        // and preserved in the backend rawPayload backup).
+        driverApps: isOtherApp ? values.driverAppsOther.trim() || 'Lainnya' : values.driverApps,
         agree: values.agree ? '1' : '0',
+        metaEventId,
+        metaSourcePath: window.location.pathname,
+        website: honeypot,
+        formRenderedAt: formRenderedAtRef.current,
       }
 
       const res = await fetch('/api/registration', {
@@ -694,10 +759,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
       setErrors({})
       setTouched({})
 
-      handleBannerCTATrack({
-        ctaText: submitLabel ?? 'Kirim',
-        ctaLink: '/api/registration',
-        targetType: 'submit',
+      trackRegistrationSuccess({
+        buttonText: submitLabel ?? 'Kirim',
+        eventId: metaEventId || undefined,
       })
     } catch (error) {
       const message =
@@ -720,6 +784,25 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
             <h2 className="h6 fw-bold text-center mb-3">{title ?? 'Form Pendaftaran'}</h2>
 
             <form onSubmit={onSubmit} className="reg-form" noValidate>
+              {/* Honeypot: hidden from real users, bots that auto-fill every
+                  input tend to fill it. A filled value marks the submission
+                  as a bot on the backend. */}
+              <div
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}
+              >
+                <label htmlFor={`website-${uid}`}>Website</label>
+                <input
+                  id={`website-${uid}`}
+                  name="website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                />
+              </div>
+
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
                   <label className="form-label reg-label mb-0">Nama</label>
@@ -729,6 +812,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                     name="name"
                     className={`form-control form-control-sm ${touched.name && errors.name ? 'is-invalid' : ''}`}
                     placeholder="Ketik nama"
+                    maxLength={100}
                     value={values.name}
                     onChange={(e) => setField('name', e.target.value)}
                   />
@@ -749,6 +833,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                         name="birthPlace"
                         className={`form-control form-control-sm ${touched.birthPlace && errors.birthPlace ? 'is-invalid' : ''}`}
                         placeholder="Tempat"
+                        maxLength={100}
                         value={values.birthPlace}
                         onChange={(e) => setField('birthPlace', e.target.value)}
                       />
@@ -785,6 +870,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                     className={`form-control form-control-sm ${touched.phone && errors.phone ? 'is-invalid' : ''}`}
                     placeholder="Ketik nomor handphone"
                     inputMode="tel"
+                    maxLength={20}
                     value={values.phone}
                     onChange={(e) => setField('phone', e.target.value)}
                   />
@@ -801,15 +887,15 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 <div className={fieldCol}>
                   <input
                     name="ktpNumber"
-                    className={`form-control form-control-sm ${touched.ktpNumber && errors.ktpNumber ? 'is-invalid' : ''}`}
+                    className={`form-control form-control-sm ${ktpFieldError ? 'is-invalid' : ''}`}
                     placeholder="Ketik nomor KTP"
                     inputMode="numeric"
                     maxLength={16}
                     value={values.ktpNumber}
                     onChange={(e) => setField('ktpNumber', e.target.value)}
                   />
-                  {touched.ktpNumber && errors.ktpNumber ? (
-                    <div className="invalid-feedback d-block">{errors.ktpNumber}</div>
+                  {ktpFieldError ? (
+                    <div className="invalid-feedback d-block">{ktpFieldError}</div>
                   ) : null}
                 </div>
               </div>
@@ -825,6 +911,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                         name="simNumber"
                         className={`form-control form-control-sm ${touched.simNumber && errors.simNumber ? 'is-invalid' : ''}`}
                         placeholder="Nomor SIM"
+                        maxLength={50}
                         value={values.simNumber}
                         onChange={(e) => setField('simNumber', e.target.value)}
                       />
@@ -906,6 +993,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                     className={`form-control form-control-sm ${touched.currentAddress && errors.currentAddress ? 'is-invalid' : ''}`}
                     placeholder="Ketik alamat saat ini"
                     rows={3}
+                    maxLength={300}
                     value={values.currentAddress}
                     onChange={(e) => setField('currentAddress', e.target.value)}
                   />
@@ -945,6 +1033,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                         name="emergencyName"
                         className={`form-control form-control-sm ${touched.emergencyName && errors.emergencyName ? 'is-invalid' : ''}`}
                         placeholder="Ketik nama"
+                        maxLength={100}
                         value={values.emergencyName}
                         onChange={(e) => setField('emergencyName', e.target.value)}
                       />
@@ -959,6 +1048,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                         className={`form-control form-control-sm ${touched.emergencyPhone && errors.emergencyPhone ? 'is-invalid' : ''}`}
                         placeholder="Ketik nomor HP"
                         inputMode="tel"
+                        maxLength={20}
                         value={values.emergencyPhone}
                         onChange={(e) => setField('emergencyPhone', e.target.value)}
                       />
@@ -1002,6 +1092,28 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                   ) : null}
                 </div>
               </div>
+
+              {isOtherApp ? (
+                <div className="row g-2 align-items-md-center mb-2">
+                  <div className={labelCol}>
+                    <label className="form-label reg-label mb-0">Aplikasi lainnya</label>
+                  </div>
+                  <div className={fieldCol}>
+                    <input
+                      type="text"
+                      name="driverAppsOther"
+                      className={`form-control form-control-sm ${touched.driverAppsOther && errors.driverAppsOther ? 'is-invalid' : ''}`}
+                      placeholder="Sebutkan aplikasi driver online yang digunakan"
+                      maxLength={150}
+                      value={values.driverAppsOther}
+                      onChange={(e) => setField('driverAppsOther', e.target.value)}
+                    />
+                    {touched.driverAppsOther && errors.driverAppsOther ? (
+                      <div className="invalid-feedback d-block">{errors.driverAppsOther}</div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
 
               {!isNoDriverAccount ? (
                 <>
@@ -1079,7 +1191,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 <div className={fieldCol}>
                   <SelectField
                     name="handoverLocation"
-                    placeholder="Pilih preferensi"
+                    placeholder="Pilih Lokasi"
                     options={HANDOVER_OPTS}
                     value={values.handoverLocation}
                     onChange={(value) => setField('handoverLocation', value)}
@@ -1120,6 +1232,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                       name="sourceDetail"
                       className={`form-control form-control-sm ${touched.sourceDetail && errors.sourceDetail ? 'is-invalid' : ''}`}
                       placeholder={sourceDetailConfig.placeholder}
+                      maxLength={150}
                       value={values.sourceDetail}
                       onChange={(e) => setField('sourceDetail', e.target.value)}
                     />
@@ -1141,6 +1254,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                       serverFieldErrors.promoCode ? 'is-invalid' : ''
                     }`}
                     placeholder="Masukkan promo code yang dimiliki"
+                    maxLength={50}
                     value={values.promoCode}
                     onChange={(e) => setField('promoCode', e.target.value)}
                   />

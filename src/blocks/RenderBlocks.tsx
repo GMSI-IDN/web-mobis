@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react'
+import dynamic from 'next/dynamic'
 
 import type { Page } from '@/payload-types'
 
@@ -9,17 +10,47 @@ import { FormBlock } from '@/blocks/Form/Component'
 import { MediaBlock } from '@/blocks/MediaBlock/Component'
 
 // New Block Imports Here
-import { BannerCarouselBlockComponent } from '@/blocks/Mobis/BannerCarousel'
-import { AreaChipsBlockComponent } from '@/blocks/Mobis/AreaChips'
-import { AboutSplit } from '@/blocks/Mobis/About'
-import { UnitsAvailable } from '@/blocks/Mobis/UnitsAvailable'
-import { ProgramCard } from '@/blocks/Mobis/ProgramCard'
-import { Requirements } from '@/blocks/Mobis/Requirements'
-import { RegistrationFlow } from '@/blocks/Mobis/RegistrationFlow'
-import { Testimonials } from '@/blocks/Mobis/Testimonials'
-import { RegistrationForm } from '@/blocks/Mobis/RegistrationForm'
-import { FooterSimple } from '@/blocks/Mobis/FooterSimple'
-import { ProgramDual } from '@/blocks/Mobis/ProgramDual'
+// All Mobis blocks are 'use client' components, several of them large
+// (RegistrationForm alone is 1300+ lines). Code-splitting them with
+// next/dynamic means a page only ships the JS for the blocks it actually
+// uses, instead of every page's bundle including all 12 regardless of which
+// ones are rendered.
+const BannerCarouselBlockComponent = dynamic(() =>
+  import('@/blocks/Mobis/BannerCarousel/Component').then((mod) => mod.default),
+)
+const AreaChipsBlockComponent = dynamic(() =>
+  import('@/blocks/Mobis/AreaChips/Component').then((mod) => mod.default),
+)
+const AboutSplit = dynamic(() =>
+  import('@/blocks/Mobis/About/Component').then((mod) => mod.AboutSplit),
+)
+const UnitsAvailable = dynamic(() =>
+  import('@/blocks/Mobis/UnitsAvailable/Component').then((mod) => mod.UnitsAvailable),
+)
+const ProgramCard = dynamic(() =>
+  import('@/blocks/Mobis/ProgramCard/Component').then((mod) => mod.ProgramCard),
+)
+const Requirements = dynamic(() =>
+  import('@/blocks/Mobis/Requirements/Component').then((mod) => mod.Requirements),
+)
+const RegistrationFlow = dynamic(() =>
+  import('@/blocks/Mobis/RegistrationFlow/Component').then((mod) => mod.RegistrationFlow),
+)
+const Testimonials = dynamic(() =>
+  import('@/blocks/Mobis/Testimonials/Component').then((mod) => mod.Testimonials),
+)
+const RegistrationForm = dynamic(() =>
+  import('@/blocks/Mobis/RegistrationForm/Component').then((mod) => mod.RegistrationForm),
+)
+const FooterSimple = dynamic(() =>
+  import('@/blocks/Mobis/FooterSimple/Component').then((mod) => mod.FooterSimple),
+)
+const ProgramDual = dynamic(() =>
+  import('@/blocks/Mobis/ProgramDual/Component').then((mod) => mod.ProgramDual),
+)
+const FaqAccordion = dynamic(() =>
+  import('@/blocks/Mobis/FaqAccordion/Component').then((mod) => mod.FaqAccordion),
+)
 
 const blockComponents = {
   archive: ArchiveBlock,
@@ -40,6 +71,7 @@ const blockComponents = {
   registrationForm: RegistrationForm,
   footerSimple: FooterSimple,
   programDual: ProgramDual,
+  faqAccordion: FaqAccordion,
 } as const
 
 type BlockTypeKey = keyof typeof blockComponents
@@ -62,31 +94,8 @@ export const RenderBlocks: React.FC<{
           const Block = blockComponents[blockType as BlockTypeKey]
           if (!Block) return null
 
-          // spacing per block
-          const wrapperClass =
-            blockType === 'bannerCarousel'
-              ? 'my-0'
-              : blockType === 'areaChips'
-                ? 'my-0'
-                : blockType === 'aboutSplit'
-                  ? 'my-0'
-                  : blockType === 'unitsAvailable'
-                    ? 'my-0'
-                    : blockType === 'programCard'
-                      ? 'my-0'
-                      : blockType === 'requirements'
-                        ? 'my-0'
-                        : blockType === 'registrationFlow'
-                          ? 'my-0'
-                          : blockType === 'testimonials'
-                            ? 'my-0'
-                            : blockType === 'registrationForm'
-                              ? 'my-0'
-                              : blockType === 'footerSimple'
-                                ? 'my-0'
-                                : blockType === 'programDual'
-                                  ? 'my-0'
-                                  : 'my-4 my-md-5'
+          const standardBlocks = new Set(['archive', 'content', 'cta', 'formBlock', 'mediaBlock'])
+          const wrapperClass = standardBlocks.has(blockType) ? 'my-4 my-md-5' : 'my-0'
 
           return (
             <div className={wrapperClass} key={index}>

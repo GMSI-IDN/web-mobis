@@ -12,6 +12,10 @@ type Customer = {
   createdAt?: string | null
 }
 
+type CountResponse = {
+  totalDocs: number
+}
+
 type CustomersResponse = {
   docs: Customer[]
   hasNextPage: boolean
@@ -22,26 +26,41 @@ type CustomersResponse = {
 }
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const
+const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000
 
 async function api<T>(url: string): Promise<T> {
   const response = await fetch(url, {
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   })
-
   const data = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(data?.message || `Request failed: ${response.status}`)
   return data as T
 }
 
+function toJakarta(date: Date): Date {
+  return new Date(date.getTime() + JAKARTA_OFFSET_MS)
+}
+
+function startOfJakartaDay(date: Date): Date {
+  const j = toJakarta(date)
+  return new Date(Date.UTC(j.getUTCFullYear(), j.getUTCMonth(), j.getUTCDate()) - JAKARTA_OFFSET_MS)
+}
+
+function startOfJakartaMonth(date: Date): Date {
+  const j = toJakarta(date)
+  return new Date(Date.UTC(j.getUTCFullYear(), j.getUTCMonth(), 1) - JAKARTA_OFFSET_MS)
+}
+
+function startOfPrevJakartaMonth(date: Date): Date {
+  const j = toJakarta(date)
+  return new Date(Date.UTC(j.getUTCFullYear(), j.getUTCMonth() - 1, 1) - JAKARTA_OFFSET_MS)
+}
+
 function formatDateTime(value?: string | null) {
   if (!value) return '-'
-
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '-'
-
   return new Intl.DateTimeFormat('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -53,15 +72,31 @@ function displayText(value?: string | null) {
   return value?.trim() || '-'
 }
 
+function formatPct(value: number): string {
+  return value.toFixed(1) + '%'
+}
+
+function growthLabel(current: number, previous: number): { text: string; positive: boolean } | null {
+  if (previous === 0) return null
+  const pct = ((current - previous) / previous) * 100
+  const sign = pct >= 0 ? '+' : ''
+  return { text: `${sign}${pct.toFixed(1)}% vs bln lalu`, positive: pct >= 0 }
+}
+
 function getVisiblePages(page: number, totalPages: number) {
-  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1)
-
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
   if (page <= 3) return [1, 2, 3, 4, 5, '...', totalPages] as const
-  if (page >= totalPages - 2) {
+  if (page >= totalPages - 2)
     return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages] as const
-  }
-
   return [1, '...', page - 1, page, page + 1, '...', totalPages] as const
+}
+
+type Stats = {
+  total: number
+  today: number
+  thisMonth: number
+  prevMonth: number
+  promo: number
 }
 
 export default function RecentRegistrationsPanel() {
@@ -72,7 +107,7 @@ export default function RecentRegistrationsPanel() {
   const [rows, setRows] = useState<Customer[]>([])
   const [totalDocs, setTotalDocs] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
-  const [promoCount, setPromoCount] = useState(0)
+  const [stats, setStats] = useState<Stats | null>(null)
 
   useEffect(() => {
     setPage(1)
@@ -85,13 +120,27 @@ export default function RecentRegistrationsPanel() {
       setLoading(true)
       setError('')
 
+      const now = new Date()
+      const todayStart = startOfJakartaDay(now).toISOString()
+      const monthStart = startOfJakartaMonth(now).toISOString()
+      const prevMonthStart = startOfPrevJakartaMonth(now).toISOString()
+
       try {
-        const [customers, promo] = await Promise.all([
+        const [customers, promo, today, thisMonth, prevMonth] = await Promise.all([
           api<CustomersResponse>(
             `/api/customers?limit=${pageSize}&page=${page}&sort=-createdAt&depth=0`,
           ),
-          api<CustomersResponse>(
+          api<CountResponse>(
             '/api/customers?limit=1&page=1&depth=0&where[promoApplied][equals]=true',
+          ),
+          api<CountResponse>(
+            `/api/customers?limit=1&page=1&depth=0&where[createdAt][greater_than_equal]=${todayStart}`,
+          ),
+          api<CountResponse>(
+            `/api/customers?limit=1&page=1&depth=0&where[createdAt][greater_than_equal]=${monthStart}`,
+          ),
+          api<CountResponse>(
+            `/api/customers?limit=1&page=1&depth=0&where[createdAt][greater_than_equal]=${prevMonthStart}&where[createdAt][less_than]=${monthStart}`,
           ),
         ])
 
@@ -100,9 +149,15 @@ export default function RecentRegistrationsPanel() {
         setRows(customers.docs || [])
         setTotalDocs(customers.totalDocs || 0)
         setTotalPages(Math.max(1, customers.totalPages || 1))
-        setPromoCount(promo.totalDocs || 0)
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? 'Gagal memuat data pendaftar.')
+        setStats({
+          total: customers.totalDocs || 0,
+          today: today.totalDocs || 0,
+          thisMonth: thisMonth.totalDocs || 0,
+          prevMonth: prevMonth.totalDocs || 0,
+          promo: promo.totalDocs || 0,
+        })
+      } catch (e: unknown) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Gagal memuat data pendaftar.')
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -123,6 +178,10 @@ export default function RecentRegistrationsPanel() {
   const rangeStart = totalDocs === 0 ? 0 : (page - 1) * pageSize + 1
   const rangeEnd = totalDocs === 0 ? 0 : Math.min(page * pageSize, totalDocs)
 
+  const promoRate =
+    stats && stats.total > 0 ? formatPct((stats.promo / stats.total) * 100) : '0%'
+  const growth = stats ? growthLabel(stats.thisMonth, stats.prevMonth) : null
+
   return (
     <section className="mobis-admin-dashboard__panel">
       <div className="mobis-admin-dashboard__panel-head">
@@ -130,8 +189,12 @@ export default function RecentRegistrationsPanel() {
           <p className="mobis-admin-dashboard__eyebrow">Pendaftaran Driver</p>
           <h4 className="mobis-admin-dashboard__title">Pendaftar Terbaru</h4>
           <p className="mobis-admin-dashboard__description">
-            Dashboard ini menampilkan data user yang sudah mendaftar melalui form utama di website
-            Mobis.
+            Data user yang mendaftar melalui form utama website Mobis. Termasuk entri test — untuk
+            analitik bersih lihat halaman{' '}
+            <a href="/admin/reports" rel="noreferrer">
+              Laporan
+            </a>
+            .
           </p>
         </div>
 
@@ -149,12 +212,43 @@ export default function RecentRegistrationsPanel() {
 
       <div className="mobis-admin-dashboard__stats">
         <div className="mobis-admin-dashboard__stat">
-          <span>Total Pendaftar</span>
-          <strong>{totalDocs}</strong>
+          <span>Total Semua Waktu</span>
+          <strong>{stats ? stats.total.toLocaleString('id-ID') : '—'}</strong>
         </div>
+
+        <div className="mobis-admin-dashboard__stat">
+          <span>Bulan Ini</span>
+          <strong>{stats ? stats.thisMonth.toLocaleString('id-ID') : '—'}</strong>
+          {growth ? (
+            <em
+              className={
+                growth.positive
+                  ? 'mobis-admin-dashboard__stat-growth--up'
+                  : 'mobis-admin-dashboard__stat-growth--down'
+              }
+            >
+              {growth.text}
+            </em>
+          ) : null}
+        </div>
+
+        <div className="mobis-admin-dashboard__stat">
+          <span>Hari Ini</span>
+          <strong>{stats ? stats.today.toLocaleString('id-ID') : '—'}</strong>
+        </div>
+
         <div className="mobis-admin-dashboard__stat">
           <span>Promo Terpakai</span>
-          <strong>{promoCount}</strong>
+          <strong>
+            {stats ? (
+              <>
+                {stats.promo.toLocaleString('id-ID')}
+                <small> ({promoRate})</small>
+              </>
+            ) : (
+              '—'
+            )}
+          </strong>
         </div>
       </div>
 

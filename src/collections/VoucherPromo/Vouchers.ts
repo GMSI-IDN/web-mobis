@@ -1,4 +1,19 @@
 import type { CollectionConfig } from 'payload'
+import { containsSuspiciousMarkup } from '@/lib/security/sanitize'
+
+// Runs on every create/update through Payload's collection API (Local API,
+// REST, and the admin-panel form all go through this), so it's the backend
+// half of the layered validation for these fields — mirrors the checks
+// already enforced on the public registration/assistant forms.
+function validatePlainText(maxLen: number) {
+  return (value: unknown) => {
+    if (value === undefined || value === null || value === '') return true
+    const str = String(value)
+    if (str.length > maxLen) return 'Format teks tidak diterima.'
+    if (containsSuspiciousMarkup(str)) return 'Format teks tidak diterima.'
+    return true
+  }
+}
 
 export const Vouchers: CollectionConfig = {
   slug: 'vouchers',
@@ -37,8 +52,9 @@ export const Vouchers: CollectionConfig = {
       unique: true,
       index: true,
       admin: { description: 'Uppercase tanpa spasi. Contoh: MOBIS10' },
+      validate: validatePlainText(50),
     },
-    { name: 'description', type: 'textarea' },
+    { name: 'description', type: 'textarea', validate: validatePlainText(500) },
 
     { name: 'enabled', type: 'checkbox', defaultValue: true, index: true },
 

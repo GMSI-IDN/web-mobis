@@ -21,6 +21,15 @@ function normalizeUpper(v: string) {
     .toUpperCase()
 }
 
+// Mirrors the backend check in src/lib/security/sanitize.ts
+// (containsSuspiciousMarkup) — instant feedback for the same rule the
+// Payload collection's field `validate` enforces server-side.
+const SUSPICIOUS_INPUT_PATTERN =
+  /[<>]|javascript:|data:text\/html|(?:https?|ftp):\/\/|www\.[a-z0-9-]/i
+function hasSuspiciousMarkup(value: string) {
+  return SUSPICIOUS_INPUT_PATTERN.test(value)
+}
+
 export default function CategoryForm({
   onSuccess,
   loadingGlobal,
@@ -38,6 +47,7 @@ export default function CategoryForm({
 
     const nm = normalizeUpper(name)
     if (!nm) return setErr('Nama kategori wajib diisi.')
+    if (nm.length > 100 || hasSuspiciousMarkup(nm)) return setErr('Format teks tidak diterima.')
 
     setLoading(true)
     try {
@@ -69,6 +79,7 @@ export default function CategoryForm({
             placeholder="FACEBOOK / INSTAGRAM"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            maxLength={100}
             disabled={disabled}
           />
           <button className="btn btn-success" disabled={disabled}>

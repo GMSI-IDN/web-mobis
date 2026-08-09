@@ -19,6 +19,20 @@ interface Props {
   scroll?: boolean
 }
 
+function isSafeNavigationUrl(value: string) {
+  const raw = String(value || '').trim()
+  if (!raw) return false
+  if (raw.startsWith('/')) return true
+  if (raw.startsWith('#')) return true
+
+  try {
+    const parsed = new URL(raw)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function useClickableCard<T extends HTMLElement>({
   external = false,
   newTab = false,
@@ -55,7 +69,7 @@ function useClickableCard<T extends HTMLElement>({
 
   const handleMouseUp = useCallback(
     (e: MouseEvent) => {
-      if (link.current?.href) {
+      if (link.current?.href && isSafeNavigationUrl(link.current.href)) {
         const timeNow = +new Date()
         const difference = timeNow - timeDown.current
 

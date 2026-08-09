@@ -1,0 +1,58 @@
+name: CI
+
+# Quality gate. Deliberately has NO `secrets:` block anywhere in this file — this
+# job is structurally incapable of reaching the live database, which is the first
+# line of the zero-mutation guarantee.
+#
+# `npm run build` is intentionally NOT run here: it needs PAYLOAD_SECRET +
+# DATABASE_URL and would connect to the live DB from a GitHub IP. The only build
+# that ever happens is the one on the deploy server.
+
+on:
+  pull_request:
+    branches: [staging, production]
+  # Pushes to `staging` reach this gate through deploy.yml's `ci` job, so `staging`
+  # is deliberately absent here — listing it would run the whole gate twice per push.
+  push:
+    branches: [production]
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Typecheck & Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # 6144 because eslint/tsc across this codebase exhausts the default heap.
+      NODE_OPTIONS: --no-deprecation --max-old-space-size=6144
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches node:20-alpine in the server's web.dockerfile.
+          node-version: '20'
+          cache: npm
+
+      # .npmrc already sets legacy-peer-deps=true.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Zero-mutation policy guard
+        run: bash .github/scripts/guard-no-mutations.sh
+
+      # src/payload-types.ts and src/app/(payload)/admin/importMap.js are committed,
+      # so this runs on a clean clone with no database and no secrets.
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Lint
+        run: npx eslint "src/**/*.{ts,tsx,js,jsx,mjs,cjs}" "*.{js,mjs,cjs}"

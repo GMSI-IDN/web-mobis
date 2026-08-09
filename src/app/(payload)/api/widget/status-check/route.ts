@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server'
+import { getClientIp } from '@/lib/http/getClientIp'
+import { checkRateLimit } from '@/lib/security/rateLimit'
 
 export const runtime = 'nodejs' // penting: FormData + fetch ke WP stabil di node runtime
+
+// Tight limit: this endpoint is a found/not-found oracle keyed on NIK/phone —
+// without a low per-IP cap it can be used to enumerate which NIK/phone values
+// are registered.
+const STATUS_CHECK_RATE_LIMIT = { limit: 10, windowMs: 10 * 60 * 1000 }
 
 type Step = {
   title: string
@@ -19,7 +26,6 @@ type Out = {
   success: boolean
   message?: string
   steps?: Step[]
-  raw?: any
   error?: string
 }
 
@@ -100,6 +106,15 @@ function mapWpMessage(raw: any): { success: boolean; message: string } {
 
 export async function POST(req: Request) {
   try {
+    const clientIp = getClientIp(req) ?? 'unknown'
+    const rate = checkRateLimit(`status-check:${clientIp}`, STATUS_CHECK_RATE_LIMIT)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Terlalu banyak permintaan. Silakan coba lagi sebentar lagi.' } satisfies Out,
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(rate.retryAfterMs / 1000)) } },
+      )
+    }
+
     if (!WP_AJAX_URL) {
       const out: Out = { success: false, error: 'MOBIS_WP_AJAX_URL belum diset di .env' }
       return NextResponse.json(out, { status: 500 })
@@ -172,7 +187,8 @@ export async function POST(req: Request) {
       success: m.success,
       message: m.message,
       steps,
-      raw, // keep raw untuk debug (bisa kamu hapus di prod)
+      // NOTE: raw upstream response intentionally NOT forwarded to the client —
+      // it exposes internal WordPress AJAX structure/fields. Kept server-side only.
     }
 
     // kalau WP response http error, tetap forward sebagai 200 agar UI bisa tampilkan message

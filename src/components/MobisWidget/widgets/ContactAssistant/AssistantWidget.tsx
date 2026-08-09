@@ -10,6 +10,15 @@ import { inter } from '@/app/(frontend)/fonts'
 import { sanitizeHtml } from '../../shared/sanitize'
 import type { ChatMsg, ChatResponse } from './types'
 
+// Mirrors the backend check in src/lib/security/sanitize.ts
+// (containsSuspiciousMarkup) — instant feedback for the same rule the
+// server enforces, not a separate security boundary.
+const SUSPICIOUS_INPUT_PATTERN =
+  /[<>]|javascript:|data:text\/html|(?:https?|ftp):\/\/|www\.[a-z0-9-]/i
+function hasSuspiciousMarkup(value: string) {
+  return SUSPICIOUS_INPUT_PATTERN.test(value)
+}
+
 export default function AssistantWidget({
   title,
   brandText,
@@ -45,6 +54,7 @@ export default function AssistantWidget({
 
   const [rating, setRating] = useState(0)
   const [review, setReview] = useState('')
+  const [reviewError, setReviewError] = useState('')
   const [ratingLoading, setRatingLoading] = useState(false)
 
   function validateName(value: string) {
@@ -52,6 +62,7 @@ export default function AssistantWidget({
 
     if (!trimmed) return 'Nama wajib diisi.'
     if (trimmed.length < 2) return 'Nama minimal 2 karakter.'
+    if (hasSuspiciousMarkup(trimmed)) return 'Format teks tidak diterima.'
 
     return ''
   }
@@ -89,6 +100,7 @@ export default function AssistantWidget({
     setInput('')
     setRating(0)
     setReview('')
+    setReviewError('')
     setNameError('')
     setPhoneError('')
 
@@ -136,6 +148,16 @@ export default function AssistantWidget({
     const text = input.trim()
     if (!text) return
 
+    if (hasSuspiciousMarkup(text)) {
+      setInput('')
+      setMessages((prev) => [
+        ...prev,
+        { id: uid(), role: 'user', text },
+        { id: uid(), role: 'bot', text: 'Maaf, pesan tidak dapat dikirim. Silakan coba tulis ulang.' },
+      ])
+      return
+    }
+
     setInput('')
     setMessages((prev) => [...prev, { id: uid(), role: 'user', text }])
 
@@ -173,6 +195,13 @@ export default function AssistantWidget({
 
   async function submitRating() {
     if (rating <= 0) return
+
+    if (hasSuspiciousMarkup(review.trim())) {
+      setReviewError('Format teks tidak diterima.')
+      return
+    }
+    setReviewError('')
+
     setRatingLoading(true)
 
     try {
@@ -229,6 +258,7 @@ export default function AssistantWidget({
                 <input
                   className={`form-control ${nameError ? 'is-invalid' : ''}`}
                   value={name}
+                  maxLength={100}
                   onChange={(e) => {
                     const value = e.target.value
                     setName(value)
@@ -251,6 +281,7 @@ export default function AssistantWidget({
                 <input
                   className={`form-control ${phoneError ? 'is-invalid' : ''}`}
                   value={phone}
+                  maxLength={20}
                   onChange={(e) => {
                     const value = clampPhone(e.target.value)
                     setPhone(value)
@@ -330,6 +361,7 @@ export default function AssistantWidget({
                 <input
                   className="form-control"
                   value={input}
+                  maxLength={2000}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type a message..."
                   onKeyDown={(e) => {
@@ -400,12 +432,21 @@ export default function AssistantWidget({
                 </div>
 
                 <textarea
-                  className="form-control mb-3"
+                  className={`form-control mb-1 ${reviewError ? 'is-invalid' : ''}`}
                   placeholder="Berikan ulasan Anda (opsional)"
                   rows={3}
+                  maxLength={1000}
                   value={review}
-                  onChange={(e) => setReview(e.target.value)}
+                  onChange={(e) => {
+                    setReview(e.target.value)
+                    if (reviewError) setReviewError('')
+                  }}
                 />
+                {reviewError ? (
+                  <div className="text-danger small mb-3 text-start">{reviewError}</div>
+                ) : (
+                  <div className="mb-3" />
+                )}
 
                 <button
                   className="btn btn-success px-5"

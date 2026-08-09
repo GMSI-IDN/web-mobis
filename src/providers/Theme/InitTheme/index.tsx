@@ -1,50 +1,13 @@
 import Script from 'next/script'
 import React from 'react'
 
-import { defaultTheme, themeLocalStorageKey } from '../ThemeSelector/types'
-
+// Served from public/theme-init.js instead of an inline script so the site's
+// CSP script-src can stay 'self'-only (no 'unsafe-inline'). The values baked
+// into that file (default theme 'light', localStorage key 'payload-theme')
+// must be kept in sync with '../ThemeSelector/types' if those ever change.
 export const InitTheme: React.FC = () => {
   return (
     // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document
-    <Script
-      dangerouslySetInnerHTML={{
-        __html: `
-  (function () {
-    function getImplicitPreference() {
-      var mediaQuery = '(prefers-color-scheme: dark)'
-      var mql = window.matchMedia(mediaQuery)
-      var hasImplicitPreference = typeof mql.matches === 'boolean'
-
-      if (hasImplicitPreference) {
-        return mql.matches ? 'dark' : 'light'
-      }
-
-      return null
-    }
-
-    function themeIsValid(theme) {
-      return theme === 'light' || theme === 'dark'
-    }
-
-    var themeToSet = '${defaultTheme}'
-    var preference = window.localStorage.getItem('${themeLocalStorageKey}')
-
-    if (themeIsValid(preference)) {
-      themeToSet = preference
-    } else {
-      var implicitPreference = getImplicitPreference()
-
-      if (implicitPreference) {
-        themeToSet = implicitPreference
-      }
-    }
-
-    document.documentElement.setAttribute('data-theme', themeToSet)
-  })();
-  `,
-      }}
-      id="theme-script"
-      strategy="beforeInteractive"
-    />
+    <Script src="/theme-init.js" id="theme-script" strategy="beforeInteractive" />
   )
 }

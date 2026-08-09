@@ -10,6 +10,19 @@ interface Props {
   url: string
 }
 
+function isSafeRedirectTarget(target: string) {
+  const value = String(target || '').trim()
+  if (!value) return false
+  if (value.startsWith('/')) return true
+
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 /* This component helps us with SSR based dynamic redirects */
 export const PayloadRedirects: React.FC<Props> = async ({ disableNotFound, url }) => {
   const redirects = await getCachedRedirects()()
@@ -17,7 +30,7 @@ export const PayloadRedirects: React.FC<Props> = async ({ disableNotFound, url }
   const redirectItem = redirects.find((redirect) => redirect.from === url)
 
   if (redirectItem) {
-    if (redirectItem.to?.url) {
+    if (redirectItem.to?.url && isSafeRedirectTarget(redirectItem.to.url)) {
       redirect(redirectItem.to.url)
     }
 
@@ -39,7 +52,7 @@ export const PayloadRedirects: React.FC<Props> = async ({ disableNotFound, url }
       }`
     }
 
-    if (redirectUrl) redirect(redirectUrl)
+    if (redirectUrl && isSafeRedirectTarget(redirectUrl)) redirect(redirectUrl)
   }
 
   if (disableNotFound) return null

@@ -2,11 +2,18 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
+import { incrementVoucherUsed } from '@/lib/vouchers/incrementVoucherUsed'
+import { checkRateLimit } from '@/lib/security/rateLimit'
+import { assertNoSuspiciousMarkup } from '@/lib/security/sanitize'
+
+const VOUCHER_APPLY_RATE_LIMIT = { limit: 30, windowMs: 60 * 1000 }
+
 function normalizeCode(v: unknown) {
   return String(v ?? '')
     .trim()
     .toUpperCase()
     .replace(/\s+/g, '')
+    .slice(0, 50)
 }
 
 function toNumberId(v: unknown): number | null {
@@ -23,8 +30,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
   }
 
+  const rate = checkRateLimit(`voucher-apply:${user.id}`, VOUCHER_APPLY_RATE_LIMIT)
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { ok: false, message: 'Terlalu banyak percobaan. Silakan coba lagi sebentar lagi.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rate.retryAfterMs / 1000)) } },
+    )
+  }
+
   const body = await req.json().catch(() => ({}) as any)
   const code = normalizeCode(body?.code)
+
+  try {
+    assertNoSuspiciousMarkup(code, 'code')
+  } catch (err: any) {
+    return NextResponse.json({ ok: false, message: err?.message }, { status: 400 })
+  }
 
   // ✅ FIX: customerId harus numeric sesuai type Payload kamu
   const customerIdNum = toNumberId(body?.customerId)
@@ -99,7 +120,20 @@ export async function POST(req: Request) {
     )
   }
 
-  // 5) buat redemption log
+  // 5) reserve the slot first (atomic guard against quota overflow under
+  //    concurrent applies) BEFORE writing the redemption log, so a lost race
+  //    never leaves an APPLIED redemption without a matching increment.
+  const increment = await incrementVoucherUsed(payload, Number(voucherIdAny))
+
+  if (!increment.ok) {
+    const message =
+      increment.reason === 'quota_exhausted'
+        ? 'Kuota voucher habis'
+        : 'Voucher tidak ditemukan'
+    return NextResponse.json({ ok: false, message }, { status: 400 })
+  }
+
+  // 6) buat redemption log
   // customer harus number sesuai type: number | Customer | undefined
   await payload.create({
     collection: 'voucher_redemptions',
@@ -111,13 +145,6 @@ export async function POST(req: Request) {
     },
   })
 
-  // 6) increment used
-  await payload.update({
-    collection: 'vouchers',
-    id: voucherIdAny,
-    data: { used: used + 1 },
-  })
-
   return NextResponse.json({
     ok: true,
     message: 'Voucher berhasil di-apply',
@@ -125,7 +152,7 @@ export async function POST(req: Request) {
       voucherId: voucherIdStr,
       code: voucher.code,
       quota,
-      used: used + 1,
+      used: increment.used,
       customerId: customerIdNum,
     },
   })

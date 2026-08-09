@@ -11,7 +11,10 @@ export type SheetsAppendOptions = {
 
 function loadServiceAccount() {
   const relPath = getEnv('GOOGLE_SERVICE_ACCOUNT_JSON_PATH')
-  const absPath = path.join(process.cwd(), relPath)
+  // path.resolve (unlike path.join) respects a leading "/" as an absolute path,
+  // so this works whether GOOGLE_SERVICE_ACCOUNT_JSON_PATH is relative (local dev)
+  // or absolute (production, where the file is bind-mounted at a fixed container path).
+  const absPath = path.resolve(process.cwd(), relPath)
 
   if (!fs.existsSync(absPath)) {
     throw new Error(`Google service account file not found: ${absPath}`)

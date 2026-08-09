@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { RichText } from '@payloadcms/richtext-lexical/react'
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 
 type Media = {
   url?: string
@@ -14,12 +16,19 @@ type Pool = {
 
 type Area = {
   label?: string
+  isPartner?: boolean
+  description?: string
   PoolImage?: Media | string | null
   pools?: Pool[]
 }
 
+function toAreaId(label: string): string {
+  return 'rental-mobil-' + label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+}
+
 type Props = {
   title?: string
+  description?: SerializedEditorState | null
   areas?: Area[]
 }
 
@@ -29,7 +38,7 @@ function getMediaUrl(poolImage: Area['PoolImage']): string | null {
   return poolImage.url ?? null
 }
 
-export default function AreaChipsBlockComponent({ title, areas }: Props) {
+export default function AreaChipsBlockComponent({ title, description, areas }: Props) {
   const modalElRef = useRef<HTMLDivElement | null>(null)
   const bsModalRef = useRef<any>(null)
 
@@ -92,6 +101,7 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
     <section className="area-section">
       <div className="container py-4 text-center">
         {title ? <h2 className="area-title">{title}</h2> : null}
+        {description && typeof description === 'object' ? <div className="area-section-description"><RichText data={description} /></div> : null}
 
         <div className="row g-3 g-lg-4 justify-content-center">
           {(areas ?? []).map((a, i) => {
@@ -100,8 +110,10 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
               (typeof a?.PoolImage === 'string' ? '' : a?.PoolImage?.alt) ||
               (a?.label ? `Lokasi pool Mobis ${a.label}` : 'Lokasi pool Mobis')
 
+            const areaId = a?.label ? toAreaId(a.label) : undefined
+
             return (
-              <div className="col-12 col-md-4" key={i}>
+              <div className="col-12 col-md-4" key={i} id={areaId}>
                 {/* ✅ Card jadi button supaya tidak pindah halaman */}
                 <button
                   type="button"
@@ -109,6 +121,9 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
                   onClick={() => openModalForArea(i)}
                 >
                   <div className="area-thumb">
+                    {a?.isPartner && (
+                      <span className="area-partner-badge">Partner Mobis</span>
+                    )}
                     {imgUrl ? (
                       <img src={imgUrl} alt={alt} loading="lazy" decoding="async" fetchPriority="low" />
                     ) : (
@@ -135,6 +150,19 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
                     </div>
                   </div>
                 </button>
+
+                {/* ✅ Konten visible untuk SEO — dibaca Google */}
+                {a?.pools && a.pools.length > 0 && (
+                  <ul className="area-pools-seo" aria-label={`Pool point ${a?.label ?? ''}`}>
+                    {a.pools.map((p) => (
+                      <li key={p.name}>
+                        <a href={p.mapUrl ?? '#'} target="_blank" rel="noopener noreferrer">
+                          {p.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )
           })}
@@ -144,23 +172,30 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
       {/* ✅ MODAL */}
       <div
         ref={modalElRef}
-        className="modal fade"
+        className="modal fade area-pools-modal"
         tabIndex={-1}
         aria-hidden="true"
         aria-labelledby="areaPoolsModalLabel"
       >
         <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content rounded-4 shadow">
-            <div className="modal-header border-0 pb-0">
-              <h5 id="areaPoolsModalLabel" className="modal-title w-100 text-center fw-bold">
+          <div className="modal-content rounded-4 shadow area-modal-content">
+            <div className="modal-header border-0 area-modal-header">
+              <h5 id="areaPoolsModalLabel" className="modal-title area-modal-title">
                 {activeArea?.label ? `${String(activeArea.label).toUpperCase()}` : 'POOL'}
               </h5>
-              {/* <button type="button" className="btn-close" onClick={closeModal} aria-label="Close" /> */}
+              <button
+                type="button"
+                className="area-modal-close-btn"
+                onClick={closeModal}
+                aria-label="Tutup modal area"
+              >
+                X
+              </button>
             </div>
 
-            <div className="modal-body pt-2">
+            <div className="modal-body area-modal-body">
               {activeArea?.pools?.length ? (
-                <div className="list-group list-group-flush">
+                <div className="list-group list-group-flush area-pools-list">
                   {activeArea.pools.map((p, idx) => {
                     const name = p?.name?.trim() || '-'
                     const mapUrl = p?.mapUrl?.trim() || '#'
@@ -182,17 +217,6 @@ export default function AreaChipsBlockComponent({ title, areas }: Props) {
               ) : (
                 <div className="text-center text-muted py-3">Lokasi belum diisi.</div>
               )}
-            </div>
-
-            <div className="modal-footer border-0 pt-0">
-              <button
-                type="button"
-                className="btn area-modal-close-btn"
-                onClick={closeModal}
-                aria-label="Tutup modal area"
-              >
-                X
-              </button>
             </div>
           </div>
         </div>

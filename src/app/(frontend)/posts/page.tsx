@@ -5,10 +5,15 @@ import { PageRange } from '@/components/PageRange'
 import { Pagination } from '@/components/Pagination'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
+import { notFound } from 'next/navigation'
 import React from 'react'
 import PageClient from './page.client'
 
-export const dynamic = 'force-static'
+// Doesn't call draftMode()/cookies()/headers(), so ISR works normally here:
+// the page is cached and re-served until this window elapses. Posts publish
+// hooks (revalidatePost) only revalidate the individual post's own path, not
+// this listing, so a time-based revalidate is what keeps new posts showing
+// up (matches the /posts/page/[pageNumber] route's window).
 export const revalidate = 600
 
 export default async function Page() {
@@ -26,6 +31,8 @@ export default async function Page() {
       meta: true,
     },
   })
+
+  if (posts.totalDocs === 0) notFound()
 
   return (
     <div className="pt-24 pb-24">

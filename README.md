@@ -1,303 +1,451 @@
-# Payload Website Template
+# Mobis Revamp: Website dan API
 
-This is the official [Payload Website Template](https://github.com/payloadcms/payload/blob/main/templates/website). Use it to power websites, blogs, or portfolios from small to enterprise. This repo includes a fully-working backend, enterprise-grade admin panel, and a beautifully designed, production-ready website.
+Dokumentasi ini fokus ke kebutuhan proyek **Website Mobis** dan **API Mobis**.
 
-This template is right for you if you are working on:
+## Ringkasan
 
-- A personal or enterprise-grade website, blog, or portfolio
-- A content publishing platform with a fully featured publication workflow
-- Exploring the capabilities of Payload
+- Frontend website: Next.js App Router
+- CMS/Admin: Payload CMS di path `/admin`
+- API utama: tersedia di prefix `/api`
+- Database: PostgreSQL (via `@payloadcms/db-postgres`)
 
-Core features:
+## Struktur Fitur
 
-- [Pre-configured Payload Config](#how-it-works)
-- [Authentication](#users-authentication)
-- [Access Control](#access-control)
-- [Layout Builder](#layout-builder)
-- [Draft Preview](#draft-preview)
-- [Live Preview](#live-preview)
-- [On-demand Revalidation](#on-demand-revalidation)
-- [SEO](#seo)
-- [Search](#search)
-- [Redirects](#redirects)
-- [Jobs and Scheduled Publishing](#jobs-and-scheduled-publish)
-- [Website](#website)
+### Website
 
-## Quick Start
+- `/` dan `/<slug>`: halaman dinamis dari collection `pages`
+- `/posts`: daftar artikel
+- `/posts/page/<pageNumber>`: pagination artikel
+- `/posts/<slug>`: detail artikel
+- `not-found`: halaman 404 frontend kustom
+- Sitemap:
+  - `/pages-sitemap.xml`
+  - `/posts-sitemap.xml`
 
-To spin up this example locally, follow these steps:
+### Admin
 
-### Clone
+- `/admin`: dashboard Payload
+- `/admin/reports`: laporan statistik custom (tren, jam, summary, riwayat)
 
-If you have not done so already, you need to have standalone copy of this repo on your machine. If you've already cloned this repo, skip to [Development](#development).
+## Menjalankan Proyek
 
-Use the `create-payload-app` CLI to clone this template directly to your machine:
+### Prasyarat
 
-```bash
-pnpx create-payload-app my-project -t website
-```
+- Node.js `^18.20.2 || >=20.9.0`
+- pnpm `^9 || ^10`
+- PostgreSQL
 
 ### Development
 
-1. First [clone the repo](#clone) if you have not done so already
-1. `cd my-project && cp .env.example .env` to copy the example environment variables
-1. `pnpm install && pnpm dev` to install dependencies and start the dev server
-1. open `http://localhost:3000` to open the app in your browser
-
-That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
-
-## How it works
-
-The Payload config is tailored specifically to the needs of most websites. It is pre-configured in the following ways:
-
-### Collections
-
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
-
-- #### Users (Authentication)
-
-  Users are auth-enabled collections that have access to the admin panel and unpublished content. See [Access Control](#access-control) for more details.
-
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/main/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
-
-- #### Posts
-
-  Posts are used to generate blog posts, news articles, or any other type of content that is published over time. All posts are layout builder enabled so you can generate unique layouts for each post using layout-building blocks, see [Layout Builder](#layout-builder) for more details. Posts are also draft-enabled so you can preview them before publishing them to your website, see [Draft Preview](#draft-preview) for more details.
-
-- #### Pages
-
-  All pages are layout builder enabled so you can generate unique layouts for each page using layout-building blocks, see [Layout Builder](#layout-builder) for more details. Pages are also draft-enabled so you can preview them before publishing them to your website, see [Draft Preview](#draft-preview) for more details.
-
-- #### Media
-
-  This is the uploads enabled collection used by pages, posts, and projects to contain media like images, videos, downloads, and other assets. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
-
-- #### Categories
-
-  A taxonomy used to group posts together. Categories can be nested inside of one another, for example "News > Technology". See the official [Payload Nested Docs Plugin](https://payloadcms.com/docs/plugins/nested-docs) for more details.
-
-### Globals
-
-See the [Globals](https://payloadcms.com/docs/configuration/globals) docs for details on how to extend this functionality.
-
-- `Header`
-
-  The data required by the header on your front-end like nav links.
-
-- `Footer`
-
-  Same as above but for the footer of your site.
-
-## Access control
-
-Basic access control is setup to limit access to various content based based on publishing status.
-
-- `users`: Users can access the admin panel and create or edit content.
-- `posts`: Everyone can access published posts, but only users can create, update, or delete them.
-- `pages`: Everyone can access published pages, but only users can create, update, or delete them.
-
-For more details on how to extend this functionality, see the [Payload Access Control](https://payloadcms.com/docs/access-control/overview#access-control) docs.
-
-## Layout Builder
-
-Create unique page layouts for any type of content using a powerful layout builder. This template comes pre-configured with the following layout building blocks:
-
-- Hero
-- Content
-- Media
-- Call To Action
-- Archive
-
-Each block is fully designed and built into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Lexical editor
-
-A deep editorial experience that allows complete freedom to focus just on writing content without breaking out of the flow with support for Payload blocks, media, links and other features provided out of the box. See [Lexical](https://payloadcms.com/docs/rich-text/overview) docs.
-
-## Draft Preview
-
-All posts and pages are draft-enabled so you can preview them before publishing them to your website. To do this, these collections use [Versions](https://payloadcms.com/docs/configuration/collections#versions) with `drafts` set to `true`. This means that when you create a new post, project, or page, it will be saved as a draft and will not be visible on your website until you publish it. This also means that you can preview your draft before publishing it to your website. To do this, we automatically format a custom URL which redirects to your front-end to securely fetch the draft version of your content.
-
-Since the front-end of this template is statically generated, this also means that pages, posts, and projects will need to be regenerated as changes are made to published documents. To do this, we use an `afterChange` hook to regenerate the front-end when a document has changed and its `_status` is `published`.
-
-For more details on how to extend this functionality, see the official [Draft Preview Example](https://github.com/payloadcms/payload/tree/examples/draft-preview).
-
-## Live preview
-
-In addition to draft previews you can also enable live preview to view your end resulting page as you're editing content with full support for SSR rendering. See [Live preview docs](https://payloadcms.com/docs/live-preview/overview) for more details.
-
-## On-demand Revalidation
-
-We've added hooks to collections and globals so that all of your pages, posts, footer, or header changes will automatically be updated in the frontend via on-demand revalidation supported by Nextjs.
-
-> Note: if an image has been changed, for example it's been cropped, you will need to republish the page it's used on in order to be able to revalidate the Nextjs image cache.
-
-## SEO
-
-This template comes pre-configured with the official [Payload SEO Plugin](https://payloadcms.com/docs/plugins/seo) for complete SEO control from the admin panel. All SEO data is fully integrated into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Search
-
-This template also pre-configured with the official [Payload Search Plugin](https://payloadcms.com/docs/plugins/search) to showcase how SSR search features can easily be implemented into Next.js with Payload. See [Website](#website) for more details.
-
-## Redirects
-
-If you are migrating an existing site or moving content to a new URL, you can use the `redirects` collection to create a proper redirect from old URLs to new ones. This will ensure that proper request status codes are returned to search engines and that your users are not left with a broken link. This template comes pre-configured with the official [Payload Redirects Plugin](https://payloadcms.com/docs/plugins/redirects) for complete redirect control from the admin panel. All redirects are fully integrated into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Jobs and Scheduled Publish
-
-We have configured [Scheduled Publish](https://payloadcms.com/docs/versions/drafts#scheduled-publish) which uses the [jobs queue](https://payloadcms.com/docs/jobs-queue/jobs) in order to publish or unpublish your content on a scheduled time. The tasks are run on a cron schedule and can also be run as a separate instance if needed.
-
-> Note: When deployed on Vercel, depending on the plan tier, you may be limited to daily cron only.
-
-## Website
-
-This template includes a beautifully designed, production-ready front-end built with the [Next.js App Router](https://nextjs.org), served right alongside your Payload app in a instance. This makes it so that you can deploy both your backend and website where you need it.
-
-Core features:
-
-- [Next.js App Router](https://nextjs.org)
-- [TypeScript](https://www.typescriptlang.org)
-- [React Hook Form](https://react-hook-form.com)
-- [Payload Admin Bar](https://github.com/payloadcms/payload/tree/main/packages/admin-bar)
-- [TailwindCSS styling](https://tailwindcss.com/)
-- [shadcn/ui components](https://ui.shadcn.com/)
-- User Accounts and Authentication
-- Fully featured blog
-- Publication workflow
-- Dark mode
-- Pre-made layout building blocks
-- SEO
-- Search
-- Redirects
-- Live preview
-
-### Cache
-
-Although Next.js includes a robust set of caching strategies out of the box, Payload Cloud proxies and caches all files through Cloudflare using the [Official Cloud Plugin](https://www.npmjs.com/package/@payloadcms/payload-cloud). This means that Next.js caching is not needed and is disabled by default. If you are hosting your app outside of Payload Cloud, you can easily reenable the Next.js caching mechanisms by removing the `no-store` directive from all fetch requests in `./src/app/_api` and then removing all instances of `export const dynamic = 'force-dynamic'` from pages files, such as `./src/app/(pages)/[slug]/page.tsx`. For more details, see the official [Next.js Caching Docs](https://nextjs.org/docs/app/building-your-application/caching).
-
-## Development
-
-To spin up this example locally, follow the [Quick Start](#quick-start). Then [Seed](#seed) the database with a few pages, posts, and projects.
-
-### Working with Postgres
-
-Postgres and other SQL-based databases follow a strict schema for managing your data. In comparison to our MongoDB adapter, this means that there's a few extra steps to working with Postgres.
-
-Note that often times when making big schema changes you can run the risk of losing data if you're not manually migrating it.
-
-#### Local development
-
-Ideally we recommend running a local copy of your database so that schema updates are as fast as possible. By default the Postgres adapter has `push: true` for development environments. This will let you add, modify and remove fields and collections without needing to run any data migrations.
-
-If your database is pointed to production you will want to set `push: false` otherwise you will risk losing data or having your migrations out of sync.
-
-#### Migrations
-
-[Migrations](https://payloadcms.com/docs/database/migrations) are essentially SQL code versions that keeps track of your schema. When deploy with Postgres you will need to make sure you create and then run your migrations.
-
-Locally create a migration
+```bash
+cp .env.example .env
+pnpm install
+pnpm dev
+```
+
+### Build Production — Manual
+
+> Deploy ke staging/production sekarang lewat CI/CD, lihat [Deployment (CI/CD)](#deployment-cicd) di bawah. Langkah manual ini untuk troubleshooting atau build lokal.
 
 ```bash
-pnpm payload migrate:create
+pnpm build
+pnpm start
 ```
 
-This creates the migration files you will need to push alongside with your new configuration.
-
-On the server after building and before running `pnpm start` you will want to run your migrations
+Jika container belum punya kredensial Google service account (lihat [Isu yang diketahui](#isu-yang-diketahui)):
 
 ```bash
-pnpm payload migrate
+docker ps --format '{{.Names}}\t{{.Image}}'          # cari nama container-nya
+docker exec <nama-container> mkdir -p /app/private/secrets
+docker cp ./private/secrets/credentials.json <nama-container>:/app/private/secrets/credentials.json
+docker exec <nama-container> ls -la /app/private/secrets/credentials.json   # verifikasi
 ```
 
-This command will check for any migrations that have not yet been run and try to run them and it will keep a record of migrations that have been run in the database.
+### Migrasi Schema
 
-### Docker
+Perubahan schema Payload (blok baru, field baru, tabel/kolom baru) **tidak** diterapkan otomatis — `PAYLOAD_DB_PUSH=false` dan pipeline CI/CD sengaja tidak pernah menjalankan migrasi. Kalau schema berubah tapi migrasi belum dijalankan, halaman admin seperti `Pages` bisa blank.
 
-Alternatively, you can use [Docker](https://www.docker.com) to spin up this template locally. To do so, follow these steps:
+Di server (staging/production), jalankan lewat **Actions → DB Migrate (MANUAL)**. Jangan `pnpm migrate` langsung ke DB live — workflow itu mengambil `pg_dump` terverifikasi lebih dulu.
 
-1. Follow [steps 1 and 2 from above](#development), the docker-compose file will automatically use the `.env` file in your project root
-1. Next run `docker-compose up`
-1. Follow [steps 4 and 5 from above](#development) to login and create your first admin user
-
-That's it! The Docker instance will help you get up and running quickly while also standardizing the development environment across your teams.
-
-### Seed
-
-To seed the database with a few pages, posts, and projects you can click the 'seed database' link from the admin panel.
-
-The seed script will also create a demo user for demonstration purposes only:
-
-- Demo Author
-  - Email: `demo-author@payloadcms.com`
-  - Password: `password`
-
-> NOTICE: seeding the database is destructive because it drops your current database to populate a fresh one from the seed template. Only run this command if you are starting a new project or can afford to lose your current data.
-
-## Production
-
-To run Payload in production, you need to build and start the Admin panel. To do so, follow these steps:
-
-1. Invoke the `next build` script by running `pnpm build` or `npm run build` in your project root. This creates a `.next` directory with a production-ready admin bundle.
-1. Finally run `pnpm start` or `npm run start` to run Node in production and serve Payload from the `.build` directory.
-1. When you're ready to go live, see Deployment below for more details.
-
-### Deploying to Vercel
-
-This template can also be deployed to Vercel for free. You can get started by choosing the Vercel DB adapter during the setup of the template or by manually installing and configuring it:
+Untuk development lokal:
 
 ```bash
-pnpm add @payloadcms/db-vercel-postgres
+pnpm migrate:status
+pnpm migrate
+pnpm generate:importmap
+pnpm build
 ```
 
-```ts
-// payload.config.ts
-import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
+Catatan:
 
-export default buildConfig({
-  // ...
-  db: vercelPostgresAdapter({
-    pool: {
-      connectionString: process.env.POSTGRES_URL || '',
-    },
-  }),
-  // ...
+- Jangan membuat tabel/kolom Payload manual di DB. Gunakan migration Payload agar tabel `live` dan `versions` (`_pages_v_*`) ikut sinkron.
+- Hindari memakai DB yang sama untuk local dan staging. Jika terpaksa, pastikan `PAYLOAD_DB_PUSH=false` supaya local tidak mengubah schema staging otomatis.
+- `src/migrations/20260525_area_chips_description_to_richtext.ts` melakukan `DROP COLUMN` lalu re-add di `up()`. Kalau `migrate:status` menunjukkannya **pending** pada DB yang kolomnya sudah berisi data — berhenti, tulis migrasi manual.
+
+## Deployment (CI/CD)
+
+Push ke branch `staging` atau `production` memicu deploy otomatis via GitHub Actions. Panduan setup lengkap: **[docs/CICD-SETUP.md](docs/CICD-SETUP.md)**.
+
+```text
+push (staging | production)
+   ↓
+ci.yml — guard + tsc --noEmit + eslint     (tanpa secrets, tidak bisa menyentuh DB)
+   ↓ gagal → berhenti, server tidak pernah dihubungi
+_deploy.yml — ssh ke server
+   ↓
+git reset --hard → compose build → compose up -d → health check
+      │                                   │
+      gagal: container lama               gagal: rollback otomatis
+      tetap melayani                      ke image :previous
 ```
 
-We also support Vercel's blob storage:
+Prinsip yang dijaga: **pipeline tidak mengubah data pada server maupun database yang sudah berjalan.**
+
+- Tidak pernah menjalankan migrasi (dipisah ke workflow manual `migrate.yml`)
+- Tidak pernah menyentuh volume upload — hanya di-assert ada sebelum & sesudah
+- Build memakai role Postgres **read-only**, jadi terbukti tidak bisa menulis
+- `.github/scripts/guard-no-mutations.sh` memblokir merge bila ada `down -v`, `volume rm`, `git clean`, `migrate` di jalur deploy, atau `PAYLOAD_DB_PUSH=true` masuk repo
+
+Staging dan production berada di **server berbeda dengan path berbeda**. Semua nilai spesifik-server tinggal di GitHub Environment (Variables + Secrets), bukan di kode — logika deploy-nya sendiri tidak diduplikasi sama sekali.
+
+### Di mana variabel ditaruh
+
+| Lokasi | Kapan dipakai | Isinya |
+|---|---|---|
+| **GitHub → Environments → *Secrets*** | Saat workflow jalan | 5 kredensial SSH: `SSH_HOST`, `SSH_USER`, `SSH_PORT`, `SSH_PASSWORD`, `SSH_KNOWN_HOSTS` |
+| **GitHub → Environments → *Variables*** | Saat workflow jalan | Konfigurasi host: `APP_DIR`, `COMPOSE_SERVICE`, `CONTAINER_NAME`, `APP_PORT`, `UPLOADS_VOLUME`, `EXTERNAL_HEALTH_URL` (opsional: `HEALTH_PATH`) |
+| **Server: `<APP_DIR>/build.env`** (`chmod 600`) | Hanya saat `docker compose build` | `PAYLOAD_SECRET`, `DATABASE_URL` (versi read-only), semua `NEXT_PUBLIC_*`, `PAYLOAD_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITE_URL` |
+| **Server: `docker-compose.yml` blok `environment:`** | Saat container jalan | Seluruh variabel runtime |
+| **Server: `src/private/secrets/credentials.json`** | Runtime, dibaca via `fs` | Service account Google — file, bukan env var |
+
+Tidak ada satu pun path, nama container, atau port yang ditulis di dalam workflow. Menambah atau memindahkan server = ubah Variables di Settings → Environments, tanpa menyentuh kode.
+
+Kredensial database, Payload, dan Google **tidak pernah masuk ke GitHub**. Karena build terjadi di server, semuanya cukup ada di sana.
+
+### Konfigurasi tiap Environment
+
+**Settings → Environments**, buat `staging` dan `production`. Nama variable identik di keduanya, hanya nilainya berbeda:
+
+| Variable | `staging` | `production` |
+|---|---|---|
+| `APP_DIR` | `/home/gmsindonesia/ComapnyProfile/mobis.co.id` | `/home/<user>/ComapnyProfile-production/mobis.co.id` |
+| `COMPOSE_SERVICE` | `mobis-stg` | *cek di server* |
+| `CONTAINER_NAME` | `stg-mobis` | *cek di server* |
+| `APP_PORT` | `7884` | *cek di server* |
+| `UPLOADS_VOLUME` | `mobiscoid_mobis_stg_payload_uploads` | *cek di server* |
+| `EXTERNAL_HEALTH_URL` | `https://stg-mobis.global-mobility-service.co.id/api/widget/status-check` | `https://<domain-prod>/api/widget/status-check` |
+
+Ambil nilai yang belum diketahui langsung dari servernya:
 
 ```bash
-pnpm add @payloadcms/storage-vercel-blob
+cd <APP_DIR>
+grep -A1 '^services:' docker-compose.yml      # -> COMPOSE_SERVICE
+docker ps --format '{{.Names}}\t{{.Ports}}'   # -> CONTAINER_NAME + APP_PORT
+docker volume ls | grep -i upload             # -> UPLOADS_VOLUME
 ```
 
-```ts
-// payload.config.ts
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+Kalau ada variable wajib yang kosong, workflow berhenti di step pertama dan menyebut variable mana yang belum diisi — **sebelum** menyambung ke server mana pun.
 
-export default buildConfig({
-  // ...
-  plugins: [
-    vercelBlobStorage({
-      collections: {
-        [Media.slug]: true,
-      },
-      token: process.env.BLOB_READ_WRITE_TOKEN || '',
-    }),
-  ],
-  // ...
+### Mendapatkan nilai Secrets
+
+`SSH_HOST`, `SSH_USER`, dan `SSH_PORT` sebaiknya tidak ditebak — tanyakan ke SSH client sendiri, karena alias di `~/.ssh/config` bisa menyembunyikan host dan port sebenarnya:
+
+```bash
+ssh -G <alias-server> | grep -E '^hostname |^port |^user '
 ```
 
-There is also a simplified [one click deploy](https://github.com/payloadcms/payload/tree/templates/with-vercel-postgres) to Vercel should you need it.
+Kalau `hostname` yang keluar masih berupa alias (bukan IP), pastikan alias itu bisa di-resolve dari luar. Alias yang hanya ada di file `hosts` lokal **tidak akan dikenali GitHub** — pakai IP-nya.
 
-### Self-hosting
+`SSH_KNOWN_HOSTS` adalah sidik jari server, dipakai `StrictHostKeyChecking=yes` untuk memastikan GitHub menyambung ke server yang benar. Ambil dengan host dan port persis dari perintah di atas, lalu salin **seluruh output apa adanya**:
 
-Before deploying your app, you need to:
+```bash
+ssh-keyscan -p <port> <host>
+```
 
-1. Ensure your app builds and serves in production. See [Production](#production) for more details.
-2. You can then deploy Payload as you would any other Node.js or Next.js application either directly on a VPS, DigitalOcean's Apps Platform, via Coolify or more. More guides coming soon.
+Alternatif yang lebih aman — ambil dari kunci yang sudah Anda percayai sejak pertama kali SSH ke sana (tetap berfungsi walau entrinya ter-*hash*):
 
-You can also deploy your app manually, check out the [deployment documentation](https://payloadcms.com/docs/production/deployment) for full details.
+```bash
+ssh-keygen -F <host>
+```
 
-## Questions
+Uji dulu sebelum mengisi GitHub. Kalau ini berhasil, workflow juga akan berhasil:
 
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+```bash
+ssh -o StrictHostKeyChecking=yes -p <port> <user>@<host> "echo CONNECT-OK; docker ps --format '{{.Names}}'"
+```
+
+Detail lengkap termasuk contoh output dan penyebab kegagalan umum: [docs/CICD-SETUP.md](docs/CICD-SETUP.md) bagian 7.
+
+Tiga penyebab `Host key verification failed`:
+
+- **`SSH_HOST` tidak sama persis dengan yang di-keyscan.** IP dan hostname dianggap dua host berbeda walau menunjuk mesin yang sama.
+- **Port non-standar mengubah format barisnya** jadi `[host]:port ssh-ed25519 ...` dengan kurung siku. `ssh-keyscan -p <port>` menghasilkannya otomatis — jangan mengetik manual.
+- **Host key server berubah** karena server dibangun ulang atau OpenSSH di-reinstall. Perbaikannya jalankan ulang `ssh-keyscan` dan perbarui secret-nya.
+
+### File `build.env` di server
+
+File **baru** yang harus dibuat manual di `APP_DIR`, sejajar dengan `docker-compose.yml`. Ini **bukan** `src/.env` — keduanya beda fungsi dan tidak bisa saling menggantikan:
+
+| File | Lokasi | Dipakai saat |
+|---|---|---|
+| `src/.env` | dalam checkout git | Runtime/lokal. **Tidak terbaca `docker build`** karena `.dockerignore` mengecualikannya |
+| `build.env` | `<APP_DIR>/build.env` | Di-*source* skrip deploy agar `${VAR}` di `build.args` terisi |
+
+Tanpa file ini, deploy berhenti di preflight dengan `FATAL: <APP_DIR>/build.env missing` — sebelum menyentuh container yang sedang berjalan.
+
+Contoh isi untuk staging:
+
+```sh
+# ~/ComapnyProfile/mobis.co.id/build.env   (chmod 600)
+
+PAYLOAD_SECRET=26411200edc4609f5f02f3a7
+
+# Pakai role read-only (usr_mobis_build), bukan kredensial runtime.
+# Build jadi terbukti tidak bisa menulis ke database live.
+DATABASE_URL=postgres://usr_mobis_build:<password>@38.47.91.76:5435/mobis_revamp_2
+
+# Wajib saat build: next.config.js menghitung images.remotePatterns dari sini,
+# dan semua NEXT_PUBLIC_* di-inline ke bundle client. Runtime sudah terlambat.
+NEXT_PUBLIC_SERVER_URL=https://stg-mobis.global-mobility-service.co.id
+PAYLOAD_PUBLIC_SERVER_URL=https://stg-mobis.global-mobility-service.co.id
+NEXT_PUBLIC_SITE_URL=https://stg-mobis.global-mobility-service.co.id
+NEXT_PUBLIC_PAYLOAD_API_BASE=
+NEXT_PUBLIC_FACEBOOK_PIXEL_ID=999031544681604
+NEXT_PUBLIC_TIKTOK_PIXEL_ID=
+```
+
+Isinya **hanya** yang dibutuhkan saat build — bukan seluruh variabel aplikasi. Sisanya (Google Sheets, Meta CAPI, Assistant, Reports, dll.) tetap di blok `environment:` `docker-compose.yml` karena hanya dipakai saat runtime.
+
+Uji dulu sebelum push, jauh lebih cepat daripada menunggu siklus Actions:
+
+```bash
+cd <APP_DIR>
+set -a; . ./build.env; set +a
+docker compose build <COMPOSE_SERVICE>
+```
+
+> ⚠️ `build.env` production harus dibuat sendiri dengan nilainya sendiri. Menyalin dari staging berarti domain staging ter-*inline* ke bundle client production — dan itu tidak terlihat sampai ada pengguna yang membukanya.
+
+Dua hal yang mudah terlewat:
+
+- **`UPLOADS_VOLUME` jangan ditebak.** Namanya dibentuk Docker Compose dari nama folder `APP_DIR` (`mobis.co.id` → `mobiscoid`) + nama volume di compose. Salah nilai = pipeline menolak deploy, karena volume di-assert ada sebelum jalan.
+- **Folder terakhir kedua server bernama sama** (`mobis.co.id`), jadi project name Compose-nya juga sama. Aman selama keduanya di host berbeda — tapi kalau suatu saat dijalankan di host yang sama, nama container dan volume akan bertabrakan.
+
+Dua hal yang sering tertukar:
+
+- **`build.env` harus file terpisah.** `docker compose` menginterpolasi `${VAR}` di `build.args` dari *process environment*, bukan dari blok `environment:` milik service — jadi nilai di `environment:` tidak akan pernah sampai ke proses build.
+- **Beberapa variabel wajib ada saat build, bukan cukup saat runtime.** `PAYLOAD_SECRET` + `DATABASE_URL` karena `next build` mem-prerender `/posts` yang memanggil `getPayload()`; semua `NEXT_PUBLIC_*` karena di-*inline* ke bundle client; `PAYLOAD_PUBLIC_SERVER_URL` dkk karena `next.config.js` menghitung `images.remotePatterns` saat build.
+
+## Isu yang diketahui
+
+- **Kredensial Google tidak ada di image runtime.** Dockerfile server tidak menyalin `private/`, sementara `src/services/googleSheets/client.ts:13` me-resolve `path.join(process.cwd(), GOOGLE_SERVICE_ACCOUNT_JSON_PATH)` = `/app/private/secrets/credentials.json`. Integrasi Google Sheets akan melempar `Credential file not found`. Saat ini tertutupi oleh `REGISTRATION_BYPASS_GOOGLE_SHEETS=true`. Perbaikan ada di [docs/CICD-SETUP.md](docs/CICD-SETUP.md) bagian 3.
+- **`GOOGLE_SHEETS_SPREADSHEET_ID_MALANG` dibaca via `getEnv()`** (melempar error kalau kosong) di `src/services/googleSheets/appendLead.ts:35`, tapi tidak ada di `.env.example`. Pendaftaran wilayah Malang akan 500.
+- **File media hilang di volume upload staging** — DB punya baris `media` yang menunjuk file yang tidak ada di `mobiscoid_mobis_stg_payload_uploads`. Pesan `File ... is missing on the disk` sengaja diturunkan dari ERROR ke `debug` (lihat `logger` di `src/payload.config.ts`) supaya tidak membanjiri log; set `PAYLOAD_LOG_LEVEL=debug` untuk memunculkannya lagi. Gambarnya tetap rusak sampai filenya dipulihkan. Petunjuk: pola nama `-300x138.webp` adalah konvensi thumbnail WordPress, jadi file aslinya kemungkinan ada di server WordPress lama (lihat `MOBIS_WP_AJAX_URL`).
+- **Test bawaan masih boilerplate Payload.** `tests/e2e/frontend.e2e.spec.ts` meng-assert judul "Payload Website Template", dan script `test` di `package.json` hardcode `pnpm` padahal lockfile-nya npm. Karena itu test tidak dipakai sebagai gate CI.
+
+## Environment Variables Penting
+
+Daftar di bawah adalah **nama** variabelnya. Untuk **di mana** masing-masing ditaruh saat deploy (GitHub vs `build.env` vs blok `environment:` compose), lihat [Di mana variabel ditaruh](#di-mana-variabel-ditaruh).
+
+### Core
+
+- `DATABASE_URL`
+- `PAYLOAD_DB_PUSH` (default `false`, aktifkan `true` hanya jika memang ingin auto push schema)
+- `PAYLOAD_ENABLE_CUSTOM_ADMIN` (default `true`, set `false` untuk pakai admin default saat troubleshooting panel blank)
+- `PAYLOAD_SECRET`
+- `CRON_SECRET`
+
+### URL / CORS
+
+- `NEXT_PUBLIC_SERVER_URL`
+- `PAYLOAD_PUBLIC_SERVER_URL`
+- `PAYLOAD_LOCAL_SERVER_URL`
+- `NEXT_PUBLIC_SITE_URL`
+
+### Google Sheets (registrasi)
+
+- `GOOGLE_SHEETS_SPREADSHEET_ID_JABODETABEK`
+- `GOOGLE_SHEETS_SPREADSHEET_ID_BANDUNG`
+- `GOOGLE_SHEETS_SPREADSHEET_ID_BALI`
+- `GOOGLE_SHEETS_SPREADSHEET_ID_SURABAYA`
+- `GOOGLE_SHEETS_SPREADSHEET_ID_MALANG`
+- `GOOGLE_SHEETS_SPREADSHEET_ID_DEFAULT`
+- `GOOGLE_SHEETS_SHEET_NAME`
+- `GOOGLE_SERVICE_ACCOUNT_JSON_PATH`
+
+### Assistant / Status Widget
+
+- `MOBIS_ASSISTANT_API_BASE`
+- `MOBIS_ASSISTANT_API_RATING` (opsional)
+- `MOBIS_WP_AJAX_NONCE` (opsional)
+
+### Open API Reports (eksternal)
+
+- `REPORTS_OPEN_API_WHITELIST` (JSON array domain + token)
+
+Contoh:
+
+```json
+[
+  {
+    "domain": "https://app-partner.example.com",
+    "tokens": ["token-app-1", "token-app-2"]
+  },
+  {
+    "domain": "https://bi-partner.example.com",
+    "token": "token-bi-1"
+  }
+]
+```
+
+## API Mobis
+
+Semua endpoint di bawah tersedia di prefix `/api`.
+
+### 1) POST `/api/registration`
+
+Endpoint pendaftaran driver dari website.
+
+Alur utama:
+
+1. Validasi payload (`name`, `phone`, `ktpNumber` wajib, KTP 16 digit)
+2. Cek cooldown KTP (3 bulan)
+3. Validasi promo code (jika diisi)
+4. Simpan ke Google Sheets + kirim ke external lead API
+5. Simpan ke collection `customers`
+6. Increment `vouchers.used` jika promo valid
+
+Contoh body minimal:
+
+```json
+{
+  "name": "Budi",
+  "phone": "081234567890",
+  "ktpNumber": "1234567890123456"
+}
+```
+
+Contoh field opsional:
+
+- `birthPlace`, `birthDate`, `simNumber`, `simType`
+- `domicile`, `simValidUntil`, `currentAddress`, `houseOwnership`
+- `emergencyName`, `emergencyPhone`, `emergencyRelation`
+- `driverApps`, `activeAccountSelf`, `driverExperience`
+- `handoverLocation`, `sourceInfo`, `sourceDetail`
+- `promoCode`
+
+Status umum:
+
+- `200`: sukses
+- `400`: validasi gagal / promo invalid / cooldown KTP
+- `500`: server error
+
+---
+
+### 2) POST `/api/voucher/apply`
+
+Apply voucher ke customer (butuh auth admin Payload via headers/cookie).
+
+Body:
+
+```json
+{
+  "code": "PROMO10",
+  "customerId": 123
+}
+```
+
+Perilaku:
+
+- Cek voucher aktif, periode, kuota
+- Cegah double redeem customer yang sama
+- Buat record `voucher_redemptions`
+- Update `vouchers.used`
+
+---
+
+### 3) POST `/api/assistant`
+
+Proxy ke assistant API eksternal (`MOBIS_ASSISTANT_API_BASE`).
+
+- Forward body JSON
+- Forward header `Authorization` jika ada
+- Jika upstream tidak tersedia, mengembalikan stub response
+
+---
+
+### 4) POST `/api/assistant/rating`
+
+Proxy submit rating chatbot.
+
+- Endpoint upstream default: `${MOBIS_ASSISTANT_API_BASE}/rating`
+- Bisa override lewat `MOBIS_ASSISTANT_API_RATING`
+- Jika upstream kosong, endpoint balas sukses stub
+
+---
+
+### 5) POST `/api/widget/status-check`
+
+Cek status pendaftaran via WordPress AJAX.
+
+Body:
+
+```json
+{
+  "area": "DKI Jakarta",
+  "inputType": "nik",
+  "value": "1234567890123456"
+}
+```
+
+Keterangan:
+
+- `inputType`: `nik` atau `phone`
+- Endpoint akan map response WordPress ke format `steps` untuk UI widget
+- `GET /api/widget/status-check` tersedia sebagai health check sederhana
+
+---
+
+### 6) GET `/api/open/reports`
+
+Open API read-only statistik pendaftar untuk konsumsi sistem eksternal.
+
+Auth:
+
+- `x-api-key: <TOKEN>` atau `Authorization: Bearer <TOKEN>`
+- Domain harus match whitelist
+- Browser: domain diambil dari header `Origin`
+- Server-to-server: kirim `x-client-domain`
+
+Query params:
+
+- `start`: ISO datetime (default 30 hari ke belakang)
+- `end`: ISO datetime (default sekarang)
+- `trend`: `day | week | month` (default `day`)
+- `regionPeriod`: `day | week | month | year` (default `month`)
+- `top`: `3..10` (default `3`)
+- `maxPages`: limit batch internal (default `30`)
+
+Contoh:
+
+```bash
+curl --location 'https://your-domain.com/api/open/reports?trend=week&regionPeriod=month&top=5' \
+  --header 'x-api-key: token-app-1' \
+  --header 'x-client-domain: https://app-partner.example.com'
+```
+
+Response berisi:
+
+- `summary` (total, promo, growth, average/day)
+- `trend.buckets`
+- `topHours.buckets`
+- `region.summary` (total data periode wilayah, jumlah wilayah unik, start/end periode)
+  - `usesRangeFallback=true` artinya periode aktif kosong, sehingga API otomatis pakai data seluruh rentang `start..end`
+- `region.pie.buckets` (label, jumlah, persentase)
+- `region.rank.buckets` (order, label, jumlah, persentase)
+- `region.line` (granularity, labels, series, maxCount) untuk komparasi diagram garis per wilayah
+
+## Catatan Operasional
+
+- API laporan dan dashboard statistik membaca data dari collection `customers` yang sudah ada.
+- Implementasi saat ini tidak menambah tabel, kolom, atau database baru untuk fitur laporan.
