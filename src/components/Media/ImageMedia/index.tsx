@@ -90,6 +90,13 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
 
   const fetchPriority = priority || loading === 'eager' ? 'high' : 'auto'
 
+  // TEMP: next/image's built-in optimizer rejects every remotePatterns entry on the
+  // current production build (Turbopack images-manifest.json regex bug — confirmed
+  // even `localhost` fails to match). Bypass the optimizer for absolute/remote URLs
+  // (CMS media from admin.rentalmobis.com) until the Next.js version is upgraded/
+  // patched. Local relative srcs (e.g. `/media/...`) are unaffected and stay optimized.
+  const unoptimized = typeof src === 'string' && /^https?:\/\//i.test(src)
+
   return (
     <picture className={cn(pictureClassName)}>
       <NextImage
@@ -106,6 +113,7 @@ export const ImageMedia: React.FC<MediaProps> = (props) => {
         loading={loading}
         sizes={sizes}
         src={src}
+        unoptimized={unoptimized}
         width={!fill ? width : undefined}
       />
     </picture>
