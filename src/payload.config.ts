@@ -1,7 +1,7 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import sharp from 'sharp'
 import path from 'path'
-import { buildConfig, PayloadRequest } from 'payload'
+import { buildConfig, defaultLoggerOptions, PayloadRequest } from 'payload'
 import { fileURLToPath } from 'url'
 
 import { Categories } from './collections/Categories'
@@ -103,6 +103,35 @@ export default buildConfig({
   plugins,
 
   secret: process.env.PAYLOAD_SECRET,
+
+  // Payload logs a hard ERROR for every request to a media file that is missing
+  // from disk (payload/uploads/endpoints/getFile.ts). It returns a 500 rather than
+  // throwing, so it is noise rather than a fault — but it fires once per request
+  // per image, which buries genuine errors in the log.
+  //
+  // Downgrade only that message to debug (hidden at the default `info` level,
+  // visible again with PAYLOAD_LOG_LEVEL=debug). Everything else is untouched.
+  logger: {
+    options: {
+      name: 'payload',
+      level: process.env.PAYLOAD_LOG_LEVEL || 'info',
+      hooks: {
+        logMethod(args, method, level) {
+          const [first] = args
+
+          // 50 = error. The level guard is also what stops this hook recursing
+          // when we re-emit the same message at debug below.
+          if (level >= 50 && typeof first === 'string' && first.includes('is missing on the disk')) {
+            this.debug(...args)
+            return
+          }
+
+          return method.apply(this, args)
+        },
+      },
+    },
+    destination: defaultLoggerOptions,
+  },
 
   sharp,
 

@@ -182,6 +182,50 @@ Tiga penyebab `Host key verification failed`:
 - **Port non-standar mengubah format barisnya** jadi `[host]:port ssh-ed25519 ...` dengan kurung siku. `ssh-keyscan -p <port>` menghasilkannya otomatis — jangan mengetik manual.
 - **Host key server berubah** karena server dibangun ulang atau OpenSSH di-reinstall. Perbaikannya jalankan ulang `ssh-keyscan` dan perbarui secret-nya.
 
+### File `build.env` di server
+
+File **baru** yang harus dibuat manual di `APP_DIR`, sejajar dengan `docker-compose.yml`. Ini **bukan** `src/.env` — keduanya beda fungsi dan tidak bisa saling menggantikan:
+
+| File | Lokasi | Dipakai saat |
+|---|---|---|
+| `src/.env` | dalam checkout git | Runtime/lokal. **Tidak terbaca `docker build`** karena `.dockerignore` mengecualikannya |
+| `build.env` | `<APP_DIR>/build.env` | Di-*source* skrip deploy agar `${VAR}` di `build.args` terisi |
+
+Tanpa file ini, deploy berhenti di preflight dengan `FATAL: <APP_DIR>/build.env missing` — sebelum menyentuh container yang sedang berjalan.
+
+Contoh isi untuk staging:
+
+```sh
+# ~/ComapnyProfile/mobis.co.id/build.env   (chmod 600)
+
+PAYLOAD_SECRET=26411200edc4609f5f02f3a7
+
+# Pakai role read-only (usr_mobis_build), bukan kredensial runtime.
+# Build jadi terbukti tidak bisa menulis ke database live.
+DATABASE_URL=postgres://usr_mobis_build:<password>@38.47.91.76:5435/mobis_revamp_2
+
+# Wajib saat build: next.config.js menghitung images.remotePatterns dari sini,
+# dan semua NEXT_PUBLIC_* di-inline ke bundle client. Runtime sudah terlambat.
+NEXT_PUBLIC_SERVER_URL=https://stg-mobis.global-mobility-service.co.id
+PAYLOAD_PUBLIC_SERVER_URL=https://stg-mobis.global-mobility-service.co.id
+NEXT_PUBLIC_SITE_URL=https://stg-mobis.global-mobility-service.co.id
+NEXT_PUBLIC_PAYLOAD_API_BASE=
+NEXT_PUBLIC_FACEBOOK_PIXEL_ID=999031544681604
+NEXT_PUBLIC_TIKTOK_PIXEL_ID=
+```
+
+Isinya **hanya** yang dibutuhkan saat build — bukan seluruh variabel aplikasi. Sisanya (Google Sheets, Meta CAPI, Assistant, Reports, dll.) tetap di blok `environment:` `docker-compose.yml` karena hanya dipakai saat runtime.
+
+Uji dulu sebelum push, jauh lebih cepat daripada menunggu siklus Actions:
+
+```bash
+cd <APP_DIR>
+set -a; . ./build.env; set +a
+docker compose build <COMPOSE_SERVICE>
+```
+
+> ⚠️ `build.env` production harus dibuat sendiri dengan nilainya sendiri. Menyalin dari staging berarti domain staging ter-*inline* ke bundle client production — dan itu tidak terlihat sampai ada pengguna yang membukanya.
+
 Dua hal yang mudah terlewat:
 
 - **`UPLOADS_VOLUME` jangan ditebak.** Namanya dibentuk Docker Compose dari nama folder `APP_DIR` (`mobis.co.id` → `mobiscoid`) + nama volume di compose. Salah nilai = pipeline menolak deploy, karena volume di-assert ada sebelum jalan.
@@ -196,7 +240,7 @@ Dua hal yang sering tertukar:
 
 - **Kredensial Google tidak ada di image runtime.** Dockerfile server tidak menyalin `private/`, sementara `src/services/googleSheets/client.ts:13` me-resolve `path.join(process.cwd(), GOOGLE_SERVICE_ACCOUNT_JSON_PATH)` = `/app/private/secrets/credentials.json`. Integrasi Google Sheets akan melempar `Credential file not found`. Saat ini tertutupi oleh `REGISTRATION_BYPASS_GOOGLE_SHEETS=true`. Perbaikan ada di [docs/CICD-SETUP.md](docs/CICD-SETUP.md) bagian 3.
 - **`GOOGLE_SHEETS_SPREADSHEET_ID_MALANG` dibaca via `getEnv()`** (melempar error kalau kosong) di `src/services/googleSheets/appendLead.ts:35`, tapi tidak ada di `.env.example`. Pendaftaran wilayah Malang akan 500.
-- **File media hilang di volume upload staging** — DB punya baris `media` yang menunjuk file yang tidak ada di `mobiscoid_mobis_stg_payload_uploads`. Sumber file aslinya belum ditemukan.
+- **File media hilang di volume upload staging** — DB punya baris `media` yang menunjuk file yang tidak ada di `mobiscoid_mobis_stg_payload_uploads`. Pesan `File ... is missing on the disk` sengaja diturunkan dari ERROR ke `debug` (lihat `logger` di `src/payload.config.ts`) supaya tidak membanjiri log; set `PAYLOAD_LOG_LEVEL=debug` untuk memunculkannya lagi. Gambarnya tetap rusak sampai filenya dipulihkan. Petunjuk: pola nama `-300x138.webp` adalah konvensi thumbnail WordPress, jadi file aslinya kemungkinan ada di server WordPress lama (lihat `MOBIS_WP_AJAX_URL`).
 - **Test bawaan masih boilerplate Payload.** `tests/e2e/frontend.e2e.spec.ts` meng-assert judul "Payload Website Template", dan script `test` di `package.json` hardcode `pnpm` padahal lockfile-nya npm. Karena itu test tidak dipakai sebagai gate CI.
 
 ## Environment Variables Penting
