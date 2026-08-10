@@ -1,16 +1,21 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import Script from 'next/script'
 import { trackFacebookPageView } from '@/utilities/pixelFacebook'
 
-const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID
-
-export default function PixelFacebook() {
+export default function PixelFacebook({ pixelId }: { pixelId?: string }) {
   const pathname = usePathname()
+  const isFirstLoad = useRef(true)
 
   useEffect(() => {
+    // Skip tracking on initial load because the inline script handles it
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false
+      return
+    }
+
     // Only track page view on route changes (pathname change) after the script is loaded
     if (typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
       trackFacebookPageView()

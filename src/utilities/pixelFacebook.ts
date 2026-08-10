@@ -1,7 +1,5 @@
 'use client'
 
-const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID
-
 type FacebookTrackOptions = {
   eventID?: string
 }
@@ -13,7 +11,6 @@ export const initFacebookPixel = async () => {
 
 export const trackFacebookPageView = async () => {
   if (typeof window === 'undefined') return
-  if (!pixelId) return
   if (typeof (window as any).fbq === 'function') {
     (window as any).fbq('track', 'PageView')
   }
@@ -21,7 +18,6 @@ export const trackFacebookPageView = async () => {
 
 export const trackFacebookEvent = async (eventName: string, params?: Record<string, unknown>) => {
   if (typeof window === 'undefined') return
-  if (!pixelId) return
   if (typeof (window as any).fbq === 'function') {
     (window as any).fbq('track', eventName, params || {})
   }
@@ -33,7 +29,6 @@ export const trackFacebookCustomEvent = async (
   options?: FacebookTrackOptions,
 ) => {
   if (typeof window === 'undefined') return
-  if (!pixelId) return
 
   if (typeof (window as any).fbq === 'function') {
     if (options?.eventID) {
@@ -50,7 +45,6 @@ export const trackFacebookEventWithDedup = async (
   options?: FacebookTrackOptions,
 ) => {
   if (typeof window === 'undefined') return
-  if (!pixelId) return
 
   if (typeof (window as any).fbq === 'function') {
     if (options?.eventID) {
