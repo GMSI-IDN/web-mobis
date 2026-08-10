@@ -28,10 +28,10 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         <BootstrapClient />
 
         <Suspense fallback={null}>
-          <PixelFacebook />
+          <PixelFacebook pixelId={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || process.env.FACEBOOK_PIXEL_ID} />
         </Suspense>
         <Suspense fallback={null}>
-          <PixelTiktok />
+          <PixelTiktok pixelId={process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || process.env.TIKTOK_PIXEL_ID} />
         </Suspense>
 
         <Header />
