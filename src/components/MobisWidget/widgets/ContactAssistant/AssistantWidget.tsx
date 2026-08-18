@@ -189,7 +189,7 @@ export default function AssistantWidget({
         res?.answer || 'Mohon maaf, asisten sedang sibuk. Silakan coba kembali.',
       )
     } catch {
-      replaceLoading(loadingId, 'Gagal mengirim pesan. Silakan coba lagi.')
+      replaceLoading(loadingId, 'Mobis assitent saat ini sedang tidak tersedia, silahkan coba beberapa saat lagi.')
     }
   }
 
