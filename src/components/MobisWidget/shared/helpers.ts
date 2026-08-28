@@ -8,10 +8,11 @@ export function uid() {
   return crypto.randomUUID()
 }
 export function isThankYouMessage(message: string) {
-  return [/ter[i]?ma\s*kasih/i, /makasih/i, /thanks/i, /thank\s*you/i, /thx/i].some((p) =>
-    p.test(message),
-  )
+  const clean = message.toLowerCase().replace(/[^a-z]/g, '')
+  return clean.includes('makasih') || clean.includes('thanks') || clean.includes('terimakasih')
 }
 export function isNoMessage(message: string) {
-  return [/tidak/i, /enggak/i, /nggak/i, /sudah/i, /udah/i, /no/i].some((p) => p.test(message))
+  // Hanya memotong jika pesan SANGAT pendek dan memang bermaksud menutup percakapan
+  const clean = message.toLowerCase().trim().replace(/[^a-z]/g, '')
+  return ['tidak', 'enggak', 'nggak', 'ga', 'gak', 'sudah', 'udah', 'no', 'cukup'].includes(clean)
 }
