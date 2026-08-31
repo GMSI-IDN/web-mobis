@@ -62,7 +62,7 @@ export async function Footer() {
         ) : null} */}
 
         <div className="mb-2">
-          <img src="./api/media/file/new-white-2.png" alt="MOBIS" className="footer-mobis__logo" />
+          <img src="/media/new-white-2.png" alt="MOBIS" className="footer-mobis__logo" />
         </div>
 
         {/* Social icons */}
