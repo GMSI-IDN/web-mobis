@@ -26,7 +26,7 @@ export default function FloatingButtons({
   }
 
   return (
-    <div className="d-flex flex-column gap-3 mobis-widget-float">
+    <div className="d-flex flex-column align-items-end gap-3 mobis-widget-float">
       {/* {showRegister && (
         <button
           type="button"
