@@ -899,6 +899,10 @@ export interface UnitsAvailableBlock {
   units: {
     name: string;
     image?: (number | null) | Media;
+    /**
+     * Centang jika unit ini adalah unit baru untuk menampilkan badge "UNIT BARU" di pojok kiri atas.
+     */
+    isNew?: boolean | null;
     id?: string | null;
   }[];
   id?: string | null;
@@ -1741,6 +1745,7 @@ export interface UnitsAvailableBlockSelect<T extends boolean = true> {
     | {
         name?: T;
         image?: T;
+        isNew?: T;
         id?: T;
       };
   id?: T;

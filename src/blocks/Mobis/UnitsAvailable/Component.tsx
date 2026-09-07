@@ -2,10 +2,16 @@
 
 import React from 'react'
 
+type Unit = {
+  name: string
+  image?: any
+  isNew?: boolean | null
+}
+
 type Props = {
   title?: string
   description?: string | null
-  units?: { name: string; image?: any }[]
+  units?: Unit[]
 }
 
 function resolveUnitAlt(unitName?: string, image?: { alt?: string; filename?: string }) {
@@ -42,6 +48,13 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
             return (
               <div key={idx} className="col-10 col-sm-6 col-lg-4">
                 <div className="unit-card bg_gradient_avaliabel_programs shadow-sm">
+                  {u.isNew && (
+                    <div className="unit-card__ribbon-wrapper">
+                      <div className="unit-card__ribbon">
+                        <span className="unit-card__ribbon-text">UNIT BARU</span>
+                      </div>
+                    </div>
+                  )}
                   <div className="unit-card__media">
                     {imageUrl ? (
                       <img src={imageUrl} alt={imageAlt} className="unit-card__img" />

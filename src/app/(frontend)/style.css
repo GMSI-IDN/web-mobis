@@ -279,9 +279,62 @@ body {
 
 /* wrapper card */
 .unit-card {
+  position: relative;
   border-radius: 22px;
   padding: 16px;
   margin: 2.5rem 1rem;
+}
+
+/* ribbon 3D folded 'UNIT BARU' pojok kiri atas */
+.unit-card__ribbon-wrapper {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 90px;
+  height: 90px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.unit-card__ribbon-wrapper::before,
+.unit-card__ribbon-wrapper::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  border: 3px solid #92400e;
+  border-top-color: transparent;
+  border-left-color: transparent;
+}
+
+.unit-card__ribbon-wrapper::before {
+  top: 0;
+  right: 0;
+}
+
+.unit-card__ribbon-wrapper::after {
+  bottom: 0;
+  left: 0;
+}
+
+.unit-card__ribbon {
+  position: absolute;
+  display: block;
+  width: 130px;
+  padding: 5px 0;
+  background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -2px rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-size: 0.70rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+  left: -28px;
+  top: 20px;
+  transform: rotate(-45deg);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  z-index: 2;
 }
 
 /* area gambar: ini yang boleh overflow hidden */

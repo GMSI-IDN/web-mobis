@@ -43,8 +43,8 @@ export const getServerSideURL = (): string => {
   }
 
   return (
-    normalizeAbsoluteURL(process.env.PAYLOAD_LOCAL_SERVER_URL) ||
     normalizeAbsoluteURL(process.env.NEXT_PUBLIC_SERVER_URL) ||
+    normalizeAbsoluteURL(process.env.PAYLOAD_LOCAL_SERVER_URL) ||
     'http://localhost:3000'
   )
 }
