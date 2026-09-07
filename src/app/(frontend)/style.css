@@ -281,8 +281,9 @@ body {
 .unit-card {
   position: relative;
   border-radius: 22px;
-  padding: 16px;
-  margin: 2.5rem 1rem;
+  padding: 16px 16px 20px;
+  margin: 0 auto;
+  max-width: 520px;
 }
 
 /* ribbon 3D folded 'UNIT BARU' pojok kiri atas */
@@ -337,46 +338,52 @@ body {
   z-index: 2;
 }
 
-/* area gambar: ini yang boleh overflow hidden */
+/* area gambar: tidak boleh memotong atap atau ban mobil */
 .unit-card__media {
   border-radius: 18px;
-  overflow: hidden;
   background: transparent;
   height: 17rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 10px 16px 22px;
+  position: relative;
 }
 
-/* gambar mobil */
+/* gambar mobil: proporsional dan tidak terpotong */
 .unit-card__img {
-  width: 87%;
+  max-width: 92%;
+  max-height: 100%;
+  width: auto;
   height: auto;
   object-fit: contain;
   display: block;
-  transform: translateY(6px);
   filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.25));
 }
 
-/* footer area untuk badge */
+/* footer area untuk badge: posisi presisi di tepi bawah tanpa merusak flow baris */
 .unit-card__footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
-  margin-top: -14px; /* badge naik menempel ke card */
-  padding-bottom: 6px;
+  transform: translateY(50%);
+  z-index: 5;
 }
 
 /* badge pill putih */
 .unit-card__badge {
   background: #fff;
   color: #16a34a;
-  margin-bottom: -2.5rem;
   font-weight: 800;
-  padding: 8px 18px;
+  padding: 8px 22px;
   border-radius: 999px;
   border: 1px solid rgba(22, 163, 74, 0.2);
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
-  line-height: 1;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 /* ===== ProgramDual (sticker title) ===== */

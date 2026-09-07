@@ -39,13 +39,13 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
 
   return (
     <section id="unit_mobil" className="bg-success-subtle">
-      <div className="container py-4">
+      <div className="container py-4 pb-5">
         <div className="text-center mb-3">
           <h2 className="small fw-bold text-success mb-0">{title}</h2>
           {description && <p className="units-description">{description}</p>}
         </div>
 
-        <div className="row g-3 justify-content-center">
+        <div className="row g-4 gy-5 justify-content-center">
           {(units ?? []).map((u, idx) => {
             const imageUrl = u.image?.url
             const imageAlt = resolveUnitAlt(u.name, u.image)
