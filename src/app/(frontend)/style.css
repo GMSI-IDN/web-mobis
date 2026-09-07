@@ -283,7 +283,7 @@ body {
   border-radius: 22px;
   padding: 16px 16px 20px;
   margin: 0 auto;
-  max-width: 520px;
+  max-width: 550px;
 }
 
 /* ribbon 3D folded 'UNIT BARU' pojok kiri atas */
@@ -338,23 +338,23 @@ body {
   z-index: 2;
 }
 
-/* area gambar: tidak boleh memotong atap atau ban mobil */
+/* area gambar: lebih tinggi agar mobil tampak besar dan tidak terpotong */
 .unit-card__media {
   border-radius: 18px;
   background: transparent;
-  height: 17rem;
+  height: 21rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 16px 22px;
+  padding: 8px 12px 24px;
   position: relative;
 }
 
-/* gambar mobil: proporsional dan tidak terpotong */
+/* gambar mobil: besar, dominan, dan tetap proporsional */
 .unit-card__img {
-  max-width: 92%;
-  max-height: 100%;
-  width: auto;
+  width: 96%;
+  max-width: 98%;
+  max-height: 95%;
   height: auto;
   object-fit: contain;
   display: block;
