@@ -33,6 +33,10 @@ function resolveUnitAlt(unitName?: string, image?: { alt?: string; filename?: st
 }
 
 export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) => {
+  const totalUnits = units?.length ?? 0
+  const isEvenFromFour = totalUnits >= 4 && totalUnits % 2 === 0
+  const colClass = isEvenFromFour ? 'col-10 col-sm-6 col-lg-6' : 'col-10 col-sm-6 col-lg-4'
+
   return (
     <section id="unit_mobil" className="bg-success-subtle">
       <div className="container py-4">
@@ -46,7 +50,7 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
             const imageUrl = u.image?.url
             const imageAlt = resolveUnitAlt(u.name, u.image)
             return (
-              <div key={idx} className="col-10 col-sm-6 col-lg-4">
+              <div key={idx} className={colClass}>
                 <div className="unit-card bg_gradient_avaliabel_programs shadow-sm">
                   {u.isNew && (
                     <div className="unit-card__ribbon-wrapper">
