@@ -1,7 +1,6 @@
 import { createHmac } from 'crypto'
 
-const SECRET =
-  process.env.MOBIS_ASSISTANT_SECRET
+const SECRET = process.env.MOBIS_ASSISTANT_SECRET || ''
 
 /**
  * Signs a JSON payload with HMAC-SHA256 for the Mobis Assistant webhook.
@@ -20,6 +19,12 @@ export function signAssistantPayload(bodyObject: unknown): {
     'X-Signature': string
   }
 } {
+  if (!SECRET) {
+    throw new Error(
+      'MOBIS_ASSISTANT_SECRET is not configured. Set it in your environment variables.',
+    )
+  }
+
   const timestamp = Date.now().toString()
   const rawBody = JSON.stringify(bodyObject)
   const signature = createHmac('sha256', SECRET)
