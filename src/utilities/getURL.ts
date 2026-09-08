@@ -96,6 +96,10 @@ export const getCMSURL = (): string => {
  */
 export const getAllowedOrigins = (): string[] => {
   const origins = [
+    'https://rentalmobis.com',
+    'https://www.rentalmobis.com',
+    'https://admin.rentalmobis.com',
+    'http://localhost:3000',
     process.env.PAYLOAD_LOCAL_SERVER_URL,
     process.env.NEXT_PUBLIC_SERVER_URL,
     process.env.NEXT_PUBLIC_SITE_URL,

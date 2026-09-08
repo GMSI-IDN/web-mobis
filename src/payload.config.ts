@@ -97,6 +97,7 @@ export default buildConfig({
   ],
 
   cors: getAllowedOrigins(),
+  csrf: getAllowedOrigins(),
 
   globals: [Header, Footer, MobisWidgetsGlobal],
 
