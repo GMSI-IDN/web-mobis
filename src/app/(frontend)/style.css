@@ -462,22 +462,22 @@ body {
 
 .requirements-card {
   background: #e9f8e6;
-  border-radius: 18px;
+  border-radius: 20px;
   border: 0;
-  max-width: 68rem;
+  max-width: 76rem;
   width: 100%;
   margin: 0 auto;
 }
 
 .requirements-card__body {
-  padding: 24px 28px 16px 28px;
+  padding: 32px 36px 24px 36px;
 }
 
 .requirements-heading {
   font-weight: 700;
-  font-size: 20px;
+  font-size: 21px;
   color: #1E5610;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 }
 
 /* ✅ custom numbering: 1. 2. 3. */
@@ -486,23 +486,23 @@ body {
   margin: 0;
   padding: 0;
   counter-reset: req;        /* reset counter */
-  font-size: 12px;
+  font-size: 14px;
   color: #1f5f2c;
-  line-height: 1.45;
+  line-height: 1.55;
 }
 
 .requirements-list__item {
   counter-increment: req;
   display: flex;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   font-size: 17px;
   font-weight: 400;
 }
 
 .requirements-list__item::before {
   content: counter(req) ".";
-  font-weight: 300;
-  min-width: 18px; /* supaya angka rata kiri */
+  font-weight: 400;
+  min-width: 24px; /* supaya angka rata kiri dan berjarak pas ke teks */
   color: #1f5f2c;
 }
 
@@ -513,9 +513,10 @@ body {
 
 .requirements-note {
   padding-right: 0;
-  font-size: 17px;
+  font-size: 16px;
   color: #2D8217;
   opacity: 0.85;
+  margin-top: 6px;
 }
 
 .m-carusel-testimoni{
@@ -527,7 +528,7 @@ body {
 }
 
 .p-reqruitments {
-  padding: 0.5rem 1.75rem;
+  padding: 0.5rem 2.5rem;
 }
 
 .area-section {

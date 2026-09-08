@@ -12,9 +12,9 @@ type Props = {
 export const Requirements: React.FC<Props> = ({ title, left, right, note }) => {
   return (
     <section className="requirements-section">
-      <div className="container py-4">
+      <div className="container py-4 py-lg-5">
         {title ? (
-          <div className="text-center mb-3">
+          <div className="text-center mb-4 pb-2">
             <h2 className="h6 fw-bold requirements-title mb-0">{title}</h2>
           </div>
         ) : null}
