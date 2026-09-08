@@ -52,7 +52,9 @@ Payload JSON mentah yang diterima oleh node **Webhook** di n8n:
 | `username` | `string` | Tidak | Nama pengguna yang diinput pada form pembuka chat. |
 | `phoneNumber` | `string` | Tidak | Nomor telepon pengguna (angka murni tanpa spasi atau tanda hubung). |
 
-#### Header Tambahan (Pesan ke-2 dan seterusnya):
+#### Header Tambahan (Next.js -> n8n):
+* `X-Timestamp`: Unix timestamp (millisecond) saat request dibuat.
+* `X-Signature`: HMAC-SHA256 hex signature yang dihitung dari `${X-Timestamp}.${rawBody}` menggunakan secret key `MOBIS_ASSISTANT_SECRET`.
 * `Authorization: <token>`: Dikirimkan otomatis oleh web jika pada pesan sebelumnya n8n menyertakan properti `token`. Digunakan oleh n8n untuk mengidentifikasi session ID memori percakapan.
 
 ---
@@ -64,7 +66,8 @@ Node terakhir di n8n (**Respond to Webhook**) **wajib** mengembalikan JSON denga
 ```json
 {
   "answer": "Halo Pak Ahmad Fauzi! Untuk program sewa mobil mingguan MOBIS, syaratnya sangat mudah:\n\n1. KTP & KK Asli\n2. SIM A aktif\n3. Akun driver online aktif (Grab / Gojek / Maxim / Indrive)\n4. Membayar deposit sewa\n\nUntuk operasional tersedia di area Jabodetabek, Bandung, Surabaya, dan Bali. Ada tipe mobil tertentu yang sedang Bapak cari?",
-  "token": "sess_ahmad_882910"
+  "token": "sess_ahmad_882910",
+  "conversationEnded": false
 }
 ```
 
@@ -74,6 +77,7 @@ Node terakhir di n8n (**Respond to Webhook**) **wajib** mengembalikan JSON denga
 | :--- | :--- | :--- | :--- |
 | `answer` | `string` | **Ya** | Teks jawaban AI yang langsung dicetak ke dalam bubble obrolan pengguna. Mendukung baris baru (`\n`). |
 | `token` | `string` | Opsional | ID thread/session percakapan dari memory n8n. Jika disertakan, web akan menyimpannya dan mengirimkannya kembali pada percakapan lanjutan. |
+| `conversationEnded` | `boolean` | Opsional | Jika `true`, web frontend akan otomatis menampilkan popup modal **Rating Bintang** setelah bubble chat bot selesai ditampilkan. |
 
 ---
 
@@ -102,6 +106,11 @@ Node terakhir di n8n (**Respond to Webhook**) **wajib** mengembalikan JSON denga
 | `username` | `string` | Tidak | Nama pengguna. |
 | `phoneNumber` | `string` | Tidak | Nomor telepon pengguna. |
 
+#### Header Tambahan (Next.js -> n8n):
+* `X-Timestamp`: Unix timestamp (millisecond) saat request rating dikirim.
+* `X-Signature`: HMAC-SHA256 hex signature dari `${X-Timestamp}.${rawBody}`.
+* `Authorization: <token>`: Disertakan jika sesi pengguna memiliki token.
+
 ### B. Format Output Rating (n8n -> Customer)
 
 Cukup kembalikan status HTTP `200` dengan JSON sukses sederhana:
@@ -116,23 +125,45 @@ Cukup kembalikan status HTTP `200` dengan JSON sukses sederhana:
 
 ## 3. Panduan Setup Node di n8n
 
-1. **Node Webhook**:
-   - **HTTP Method:** `POST`
-   - **Path:** Sesuaikan dengan path webhook Anda (misal: `chat-mobis`)
-   - **Response Mode:** `Using 'Respond to Webhook' Node`
+### A. Konfigurasi Node Webhook:
+1. **HTTP Method:** `POST`
+2. **Path:** Sesuaikan dengan path webhook Anda (misal: `chatbox_lp_rentalmobis`)
+3. **Response Mode:** `Using 'Respond to Webhook' Node`
 
-2. **Akses Data Input di n8n**:
-   - Teks Pesan: `{{ $json.body.query }}`
-   - Nama: `{{ $json.body.username }}`
-   - No. HP: `{{ $json.body.phoneNumber }}`
-   - Session Token: `{{ $json.headers.authorization }}`
+### B. Cara Verifikasi HMAC-SHA256 di n8n (Opsional - Node "Code"):
+Jika ingin memvalidasi integritas request dari Next.js di n8n:
+```javascript
+const crypto = require('crypto');
+const secret = '80e94a2823db5b066f5de2f4c0af72c0d2fe5a75181cd2860d2fc8a0221e4dde';
 
-3. **Node "Respond to Webhook"**:
-   - **Respond With:** `JSON`
-   - **Response Body:**
-     ```json
-     {
-       "answer": "={{ $json.output }}",
-       "token": "={{ $json.sessionId || $json.token }}"
-     }
-     ```
+const timestamp = $json.headers['x-timestamp'];
+const signature = $json.headers['x-signature'];
+const rawBody = JSON.stringify($json.body);
+
+const expected = crypto.createHmac('sha256', secret)
+  .update(`${timestamp}.${rawBody}`)
+  .digest('hex');
+
+if (signature !== expected) {
+  throw new Error('Invalid HMAC Signature');
+}
+return $input.all();
+```
+
+### C. Akses Data Input di n8n:
+- Teks Pesan: `{{ $json.body.query }}`
+- Nama: `{{ $json.body.username }}`
+- No. HP: `{{ $json.body.phoneNumber }}`
+- Session Token: `{{ $json.headers.authorization }}`
+
+### D. Node "Respond to Webhook":
+- **Respond With:** `JSON`
+- **Response Body:**
+  ```json
+  {
+    "answer": "={{ $json.output }}",
+    "token": "={{ $json.sessionId || $json.token }}",
+    "conversationEnded": "={{ $json.isFinished || false }}"
+  }
+  ```
+

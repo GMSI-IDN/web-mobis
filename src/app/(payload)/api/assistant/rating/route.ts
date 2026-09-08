@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getClientIp } from '@/lib/http/getClientIp'
 import { checkRateLimit } from '@/lib/security/rateLimit'
 import { sanitizeFreeText, assertNoSuspiciousMarkup } from '@/lib/security/sanitize'
+import { signAssistantPayload } from '@/lib/security/assistantSigning'
 
 const UPSTREAM = process.env.MOBIS_ASSISTANT_API_BASE || '' // base chats
 // rating endpoint biasanya: `${base}/rating`
@@ -28,6 +29,14 @@ function validateRatingBody(body: any) {
     assertNoSuspiciousMarkup(username, 'username')
   }
 
+  const token =
+    body?.token && typeof body.token === 'string'
+      ? sanitizeFreeText(body.token, 150)
+      : undefined
+  if (token) {
+    assertNoSuspiciousMarkup(token, 'token')
+  }
+
   return {
     rating,
     review,
@@ -35,6 +44,7 @@ function validateRatingBody(body: any) {
     phoneNumber: body?.phoneNumber
       ? String(body.phoneNumber).replace(/\D/g, '').slice(0, 20)
       : undefined,
+    ...(token ? { token } : {})
   }
 }
 
@@ -67,13 +77,15 @@ export async function POST(req: Request) {
 
     const auth = req.headers.get('authorization') || ''
 
+    const { rawBody: signedBody, headers: signedHeaders } = signAssistantPayload(body)
+
     const upstreamRes = await fetch(UPSTREAM_RATING, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        ...signedHeaders,
         ...(auth ? { Authorization: auth } : {}),
       },
-      body: JSON.stringify(body),
+      body: signedBody,
       cache: 'no-store',
     })
 

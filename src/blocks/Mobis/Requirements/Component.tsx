@@ -21,7 +21,7 @@ export const Requirements: React.FC<Props> = ({ title, left, right, note }) => {
 
         <div className="requirements-card shadow-sm">
           <div className="requirements-card__body">
-            <div className="row g-4">
+            <div className="row g-4 g-lg-5">
               <div className="col-12 col-md-6 p-reqruitments">
                 {left?.heading ? <h3 className="requirements-heading">{left.heading}</h3> : null}
 

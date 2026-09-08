@@ -464,12 +464,13 @@ body {
   background: #e9f8e6;
   border-radius: 18px;
   border: 0;
-  max-width: 55rem;
+  max-width: 68rem;
+  width: 100%;
   margin: 0 auto;
 }
 
 .requirements-card__body {
-  padding: 18px 18px 12px 18px;
+  padding: 24px 28px 16px 28px;
 }
 
 .requirements-heading {
@@ -525,8 +526,8 @@ body {
   margin: 2.5rem 0rem;
 }
 
-.p-reqruitments{
-  padding: .5rem 2.5rem;;
+.p-reqruitments {
+  padding: 0.5rem 1.75rem;
 }
 
 .area-section {
