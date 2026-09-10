@@ -17,6 +17,7 @@ export type RegistrationPayload = {
   driverApps?: string
   activeAccountSelf?: string
   driverExperience?: string
+  carUnit?: string
   handoverLocation?: string
   sourceInfo?: string
   sourceDetail?: string

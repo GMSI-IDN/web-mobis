@@ -1159,6 +1159,7 @@ export interface Customer {
   driverApps?: string | null;
   activeAccountSelf?: string | null;
   driverExperience?: string | null;
+  carUnit?: string | null;
   handoverLocation?: string | null;
   sourceInfo?: string | null;
   promoCode?: string | null;
@@ -2174,6 +2175,7 @@ export interface CustomersSelect<T extends boolean = true> {
   driverApps?: T;
   activeAccountSelf?: T;
   driverExperience?: T;
+  carUnit?: T;
   handoverLocation?: T;
   sourceInfo?: T;
   promoCode?: T;

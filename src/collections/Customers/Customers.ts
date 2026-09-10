@@ -7,11 +7,12 @@ export const Customers: CollectionConfig = {
       beforeList: ['@/components/Customers/BeforeList'],
     },
     description: 'Data user yang sudah mendaftar melalui form pendaftaran Mobis.',
-    listSearchableFields: ['name', 'phone', 'ktpNumber', 'domicile', 'promoCode'],
+    listSearchableFields: ['name', 'phone', 'ktpNumber', 'domicile', 'promoCode', 'carUnit'],
     useAsTitle: 'name',
     defaultColumns: [
       'name',
       'phone',
+      'carUnit',
       'ktpNumber',
       'domicile',
       'promoCode',
@@ -53,6 +54,8 @@ export const Customers: CollectionConfig = {
     { name: 'driverApps', type: 'text' },
     { name: 'activeAccountSelf', type: 'text' },
     { name: 'driverExperience', type: 'text' },
+
+    { name: 'carUnit', type: 'text', label: 'Jenis Mobil' },
 
     { name: 'handoverLocation', type: 'text' },
     { name: 'sourceInfo', type: 'text' },

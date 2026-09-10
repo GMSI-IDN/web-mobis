@@ -18,6 +18,7 @@ type Props = {
     handover?: Option[]
     onlineApp?: Option[]
     source?: Option[]
+    carUnit?: Option[]
   }
 }
 
@@ -42,6 +43,7 @@ type FormValues = {
   driverAppsOther: string
   activeAccountSelf: string
   driverExperience: string
+  carUnit: string
   handoverLocation: string
   sourceInfo: string
   sourceDetail: string
@@ -79,6 +81,21 @@ function normalizeValue(value: string) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, '_')
+}
+
+export function isJabodetabekHandover(handoverLocation?: string): boolean {
+  if (!handoverLocation) return false
+  const loc = handoverLocation.toLowerCase().trim()
+  return (
+    loc.includes('kranggan') ||
+    loc.includes('karawaci') ||
+    loc.includes('bubulak')
+  )
+}
+
+export function is2026CarUnit(option: Option): boolean {
+  const text = `${option.value} ${option.label}`.toLowerCase()
+  return text.includes('2026')
 }
 
 function formatDateInput(date: Date) {
@@ -145,7 +162,10 @@ function SelectField({
   className,
   value,
   onChange,
+  onFocus,
+  onClick,
   isInvalid,
+  disabled,
 }: {
   name: string
   required?: boolean
@@ -154,7 +174,10 @@ function SelectField({
   className?: string
   value: string
   onChange: (value: string) => void
+  onFocus?: () => void
+  onClick?: () => void
   isInvalid?: boolean
+  disabled?: boolean
 }) {
   return (
     <select
@@ -163,6 +186,9 @@ function SelectField({
       required={required}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onFocus={onFocus}
+      onClick={onClick}
+      disabled={disabled}
     >
       <option value="" disabled>
         {placeholder}
@@ -199,6 +225,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     driverAppsOther: '',
     activeAccountSelf: '',
     driverExperience: '',
+    carUnit: '',
     handoverLocation: '',
     sourceInfo: '',
     sourceDetail: '',
@@ -268,6 +295,12 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         { label: '> 1 tahun', value: 'gt1th' },
       ],
       handover: [{ label: 'Pool MOBIS', value: 'pool' }],
+      carUnit: [
+        { label: 'Toyota Avanza 2026', value: 'toyota_avanza_2026' },
+        { label: 'Toyota Calya 2026', value: 'toyota_calya_2026' },
+        { label: 'Daihatsu Sigra', value: 'daihatsu_sigra' },
+        { label: 'Toyota Calya', value: 'toyota_calya' },
+      ],
       onlineApp: [
         { label: 'Gojek', value: 'gojek' },
         { label: 'Grab', value: 'grab' },
@@ -316,6 +349,19 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
   const HANDOVER_OPTS = (() => {
     const v = normalizeOptions(opts?.handover)
     return v.length ? v : defaults.handover
+  })()
+
+  const ALL_CAR_UNIT_OPTS = (() => {
+    const v = normalizeOptions(opts?.carUnit)
+    return v.length ? v : defaults.carUnit
+  })()
+
+  const CAR_UNIT_OPTS = (() => {
+    const isJabodetabek = isJabodetabekHandover(values.handoverLocation)
+    if (isJabodetabek) {
+      return ALL_CAR_UNIT_OPTS
+    }
+    return ALL_CAR_UNIT_OPTS.filter((opt) => !is2026CarUnit(opt))
   })()
 
   const ONLINE_APP_OPTS = (() => {
@@ -496,6 +542,21 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         if (!String(value).trim()) return 'Lama bekerja wajib dipilih.'
         return ''
 
+      case 'carUnit':
+        if (!allValues.handoverLocation) {
+          return 'Pilih lokasi serah terima unit terlebih dahulu.'
+        }
+        if (!String(value).trim()) return 'Pilihan jenis mobil wajib dipilih.'
+        if (!isJabodetabekHandover(allValues.handoverLocation)) {
+          const isSelected2026 = ALL_CAR_UNIT_OPTS.some(
+            (opt) => (opt.value === value || opt.label === value) && is2026CarUnit(opt),
+          )
+          if (isSelected2026) {
+            return 'Unit 2026 hanya tersedia untuk lokasi serah terima Jabodetabek (Kranggan, Karawaci, Bubulak).'
+          }
+        }
+        return ''
+
       case 'handoverLocation':
         if (!String(value).trim()) return 'Lokasi serah terima wajib dipilih.'
         return ''
@@ -594,6 +655,26 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
           ...nextValues,
           sourceDetail: '',
         }
+      }
+    }
+
+    if (field === 'handoverLocation') {
+      const isJabodetabek = isJabodetabekHandover(String(nextValue))
+      if (!isJabodetabek) {
+        const isSelected2026 = ALL_CAR_UNIT_OPTS.some(
+          (opt) =>
+            (opt.value === nextValues.carUnit || opt.label === nextValues.carUnit) &&
+            is2026CarUnit(opt),
+        )
+        if (isSelected2026) {
+          nextValues = {
+            ...nextValues,
+            carUnit: '',
+          }
+        }
+      }
+      if (errors.carUnit?.includes('lokasi')) {
+        setErrors((prev) => ({ ...prev, carUnit: '' }))
       }
     }
 
@@ -722,6 +803,10 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
         if (typeof apiErrors.emergencyPhone === 'string') {
           nextServerFieldErrors.emergencyPhone = apiErrors.emergencyPhone
+        }
+
+        if (typeof apiErrors.carUnit === 'string') {
+          nextServerFieldErrors.carUnit = apiErrors.carUnit
         }
 
         if (!nextServerFieldErrors.promoCode && values.promoCode.trim()) {
@@ -1199,6 +1284,53 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                   />
                   {touched.handoverLocation && errors.handoverLocation ? (
                     <div className="invalid-feedback d-block">{errors.handoverLocation}</div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="row g-2 align-items-md-center mb-2">
+                <div className={labelCol}>
+                  <label className="form-label reg-label mb-0">Jenis Mobil</label>
+                </div>
+                <div className={fieldCol}>
+                  <div
+                    onClick={() => {
+                      if (!values.handoverLocation) {
+                        setTouched((prev) => ({
+                          ...prev,
+                          handoverLocation: true,
+                          carUnit: true,
+                        }))
+                        setErrors((prev) => ({
+                          ...prev,
+                          handoverLocation:
+                            'Silakan pilih lokasi serah terima unit terlebih dahulu.',
+                          carUnit: 'Pilih lokasi serah terima unit terlebih dahulu.',
+                        }))
+                      }
+                    }}
+                    style={{ cursor: !values.handoverLocation ? 'not-allowed' : 'default' }}
+                  >
+                    <SelectField
+                      name="carUnit"
+                      placeholder={
+                        values.handoverLocation
+                          ? 'Pilih jenis mobil'
+                          : 'Pilih lokasi serah terima terlebih dahulu'
+                      }
+                      options={values.handoverLocation ? CAR_UNIT_OPTS : []}
+                      disabled={!values.handoverLocation}
+                      value={values.carUnit}
+                      onChange={(value) => setField('carUnit', value)}
+                      isInvalid={
+                        !!((touched.carUnit && errors.carUnit) || serverFieldErrors.carUnit)
+                      }
+                    />
+                  </div>
+                  {(touched.carUnit && errors.carUnit) || serverFieldErrors.carUnit ? (
+                    <div className="invalid-feedback d-block">
+                      {serverFieldErrors.carUnit || errors.carUnit}
+                    </div>
                   ) : null}
                 </div>
               </div>

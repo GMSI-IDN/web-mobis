@@ -448,6 +448,8 @@ export async function POST(req: Request) {
       activeAccountSelf: reg.activeAccountSelf ?? '',
       driverExperience: reg.driverExperience ?? '',
 
+      carUnit: reg.carUnit ?? '',
+
       handoverLocation: reg.handoverLocation ?? '',
       sourceInfo: reg.sourceInfo ?? '',
 

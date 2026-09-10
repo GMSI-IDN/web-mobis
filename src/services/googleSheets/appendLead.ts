@@ -27,21 +27,29 @@ function resolveSpreadsheetId(handoverLocation?: string): string {
 
   const validBandung = ['bandung']
 
+  const defaultId =
+    process.env.GOOGLE_SHEETS_SPREADSHEET_ID_DEFAULT ||
+    process.env.GOOGLE_SHEETS_SPREADSHEET_ID_JABODETABEK ||
+    ''
+
   if (validJabodetabek.includes(key)) {
-    return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_JABODETABEK')
-  } else if (validSurabaya.includes(key)) {
-    return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_SURABAYA')
-  } else if (validMalang.includes(key)) {
-    return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_MALANG')
-  } else if (validBali.includes(key)) {
-    return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_BALI')
+    return process.env.GOOGLE_SHEETS_SPREADSHEET_ID_JABODETABEK || defaultId
   } else if (validBandung.includes(key)) {
-    return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_BANDUNG')
+    return process.env.GOOGLE_SHEETS_SPREADSHEET_ID_BANDUNG || defaultId
+  } else if (validSurabaya.includes(key)) {
+    return process.env.GOOGLE_SHEETS_SPREADSHEET_ID_SURABAYA || defaultId
+  } else if (validMalang.includes(key)) {
+    return process.env.GOOGLE_SHEETS_SPREADSHEET_ID_MALANG || defaultId
+  } else if (validBali.includes(key)) {
+    return process.env.GOOGLE_SHEETS_SPREADSHEET_ID_BALI || defaultId
   } else {
     console.warn(
       `Domicile "${handoverLocation}" does not match any specific area, using default spreadsheet ID`,
     )
-    return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID_DEFAULT')
+    if (!defaultId) {
+      throw new Error('Missing default Google Sheets spreadsheet ID env')
+    }
+    return defaultId
   }
 }
 
@@ -192,6 +200,17 @@ function buildSheetSourceSummary(payload: RegistrationPayload): string {
   return parts.join(' | ')
 }
 
+function mapCarUnitLabel(carUnit?: string): string {
+  if (!carUnit) return ''
+  const mapping: Record<string, string> = {
+    toyota_avanza_2026: 'Toyota Avanza 2026',
+    toyota_calya_2026: 'Toyota Calya 2026',
+    daihatsu_sigra: 'Daihatsu Sigra',
+    toyota_calya: 'Toyota Calya',
+  }
+  return mapping[carUnit.trim().toLowerCase()] || carUnit.trim()
+}
+
 function buildRow(payload: RegistrationPayload): (string | null)[] {
   const now = new Date()
   const ageDisplay = calculateAge(payload.birthDate)
@@ -242,7 +261,7 @@ function buildRow(payload: RegistrationPayload): (string | null)[] {
     // buildSheetSourceSummary(payload),
     'Website Mobis',
     '',
-    '',
+    esc(mapCarUnitLabel(payload.carUnit)),
     datePart,
     timePart,
     buildWhatsappHyperlink(payload.emergencyPhone),
@@ -282,6 +301,7 @@ function buildExternalApiPayload(payload: RegistrationPayload) {
     personal_online_driver_app: mappedPersonalDriverApp,
     online_driver_duration: mappedDriverDuration,
     pool_preference: payload.handoverLocation ?? '',
+    car_preference: mapCarUnitLabel(payload.carUnit),
     information_source: payload.sourceInfo ?? '',
     detail_information_source: mappedSourceDetail,
     promo_code: payload.promoCode ?? '',
@@ -306,6 +326,7 @@ function buildExternalApiPayload(payload: RegistrationPayload) {
     lead_personal_online_driver_app: mappedPersonalDriverApp,
     lead_online_driver_duration: mappedDriverDuration,
     lead_pool_preference: payload.handoverLocation ?? '',
+    lead_car_preference: mapCarUnitLabel(payload.carUnit),
     lead_information_source: payload.sourceInfo ?? '',
     lead_detail_information_source: mappedSourceDetail,
     lead_promo_code: payload.promoCode ?? '',
@@ -395,7 +416,7 @@ export async function appendLeadToSheet(payload: RegistrationPayload) {
     try {
       sheetResponse = await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: `${sheetName}!A:Z`,
+        range: `${sheetName}!A:AA`,
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         requestBody: {
