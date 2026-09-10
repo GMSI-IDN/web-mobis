@@ -45,11 +45,18 @@ const FRONTEND_CSP = [
   // allowlist can't cover it without per-request middleware. Without this,
   // React's Flight client sees those chunks blocked and throws "Connection
   // closed" mid-stream, so hydration never completes and the page renders blank.
-  `script-src 'self' 'unsafe-inline' https://connect.facebook.net https://analytics.tiktok.com`,
+  // [10-09-2026] Whitelist script source untuk Meta Pixel (connect.facebook.net) & TikTok Analytics
+  `script-src 'self' 'unsafe-inline' https://connect.facebook.net https://*.facebook.net https://analytics.tiktok.com https://*.tiktok.com`,
   `style-src 'self' 'unsafe-inline'`,
-  `img-src 'self' data: blob: ${ADMIN_HOST} https://www.facebook.com https://analytics.tiktok.com`,
+  // [10-09-2026] Whitelist image/beacon tracking untuk Meta & TikTok
+  `img-src 'self' data: blob: ${ADMIN_HOST} https://www.facebook.com https://*.facebook.com https://analytics.tiktok.com https://*.tiktok.com`,
   `font-src 'self' data:`,
-  `connect-src 'self' https://www.facebook.com https://analytics.tiktok.com`,
+  // [10-09-2026] Whitelist endpoint jaringan (fetch/xhr/beacon):
+  // - https://*.facebook.com & https://*.facebook.net : Endpoint API Meta/Facebook
+  // - https://*.on.aws : Endpoint Meta Conversions API Gateway (CAPIG) di AWS ECS (e.g. fh-*.ecs.*.on.aws)
+  // - https://*.run.app : Endpoint Meta Conversions API Gateway (CAPIG) di GCP Cloud Run (e.g. *.run.app)
+  // - https://analytics.tiktok.com & https://*.tiktok.com : Endpoint API TikTok Analytics
+  `connect-src 'self' https://*.facebook.com https://*.facebook.net https://*.on.aws https://*.run.app https://analytics.tiktok.com https://*.tiktok.com`,
   `frame-src 'none'`,
   `frame-ancestors 'self' ${FRONTEND_HOST} ${ADMIN_HOST}`,
   `object-src 'none'`,
