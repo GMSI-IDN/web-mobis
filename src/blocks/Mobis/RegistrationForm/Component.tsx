@@ -273,7 +273,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         { label: 'Surabaya', value: 'surabaya' },
         { label: 'Sidoarjo', value: 'sidoarjo' },
         { label: 'Gresik', value: 'gresik' },
-        { label: 'Bali', value: 'bali' },
+        // { label: 'Bali', value: 'bali' }, // [10-09-2026] Dinonaktifkan sementara
       ],
       house: [
         { label: 'Milik sendiri', value: 'milikSendiri' },
@@ -328,7 +328,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
   const DOMICILE_OPTS = (() => {
     const v = normalizeOptions(opts?.dom)
-    return v.length ? v : defaults.dom
+    const base = v.length ? v : defaults.dom
+    // [10-09-2026] Opsi Bali dinonaktifkan sementara dari dropdown domisili
+    return base.filter((o) => !o.value.toLowerCase().includes('bali') && !o.label.toLowerCase().includes('bali'))
   })()
 
   const HOUSE_OPTS = (() => {
@@ -348,7 +350,14 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
   const HANDOVER_OPTS = (() => {
     const v = normalizeOptions(opts?.handover)
-    return v.length ? v : defaults.handover
+    const base = v.length ? v : defaults.handover
+    // [10-09-2026] Opsi Bali dinonaktifkan sementara (di-comment / exclude dari pilihan aktif)
+    // Opsi asli di database CMS tetap aman dan tidak dihapus
+    return base.filter(
+      (opt) =>
+        !opt.value.toLowerCase().includes('bali') &&
+        !opt.label.toLowerCase().includes('bali'),
+    )
   })()
 
   const ALL_CAR_UNIT_OPTS = (() => {
