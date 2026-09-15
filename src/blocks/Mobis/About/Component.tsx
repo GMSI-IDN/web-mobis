@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import Image from 'next/image'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import { getMediaUrl } from '@/utilities/getMediaUrl'
@@ -39,15 +38,16 @@ export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
           </div>
 
           <div className="col-6 overflow-hidden">
-            <div className="card border-0 shadow-sm overflow-hidden about-rounded position-relative" style={{ minHeight: 250 }}>
+            <div className="card border-0 shadow-sm overflow-hidden about-rounded">
               {imageUrl ? (
-                <Image
+                <img
                   src={imageUrl}
                   alt={normalizedTitle ?? 'Tentang MOBIS'}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 600px"
-                  quality={75}
+                  className="w-100"
+                  width="600"
+                  height="400"
                   loading="lazy"
+                  decoding="async"
                   style={{ objectFit: 'cover' }}
                 />
               ) : (

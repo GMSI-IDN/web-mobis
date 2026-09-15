@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useId, useEffect } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import ScrollButton from '@/components/ui/ScrollButton'
 import { trackCustomEvent } from '@/utilities/pixelTracking'
@@ -151,16 +150,18 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                 <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
                   <div className="banner-slide-fullbleed position-relative">
                     {desktopMedia ? (
-                      <Image
-                        src={desktopMedia.src}
-                        alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
-                        fill
-                        priority={isFirstSlide}
-                        quality={80}
-                        sizes="(max-width: 768px) 100vw, 1920px"
-                        className="banner-img-fullbleed"
-                        style={{ objectFit: 'cover', objectPosition: 'top' }}
-                      />
+                      <picture>
+                        <img
+                          src={desktopMedia.src}
+                          alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
+                          className="banner-img-fullbleed"
+                          width={desktopMedia.width}
+                          height={desktopMedia.height}
+                          loading={isFirstSlide ? 'eager' : 'lazy'}
+                          fetchPriority={isFirstSlide ? 'high' : 'low'}
+                          decoding="async"
+                        />
+                      </picture>
                     ) : null}
 
                     <div className="banner-cta-fullbleed position-absolute start-50 translate-middle-x text-center">
