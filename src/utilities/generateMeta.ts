@@ -4,6 +4,7 @@ import type { Media, Page, Post, Config } from '../payload-types'
 
 import { mergeOpenGraph } from './mergeOpenGraph'
 import { getPublicURL } from './getURL'
+import { getMediaUrl } from './getMediaUrl'
 
 const HOMEPAGE_TITLE = 'Sewa Mobil & Rental Driver Online'
 const HOMEPAGE_DESCRIPTION =
@@ -24,9 +25,9 @@ const getImageURL = (image?: Media | Config['db']['defaultIDType'] | null) => {
   let url = DEFAULT_SOCIAL_IMAGE
 
   if (image && typeof image === 'object' && 'url' in image) {
-    const ogUrl = image.sizes?.og?.url
-
-    url = ogUrl ? publicUrl + ogUrl : publicUrl + image.url
+    const rawUrl = image.sizes?.og?.url || image.url
+    const mediaPath = getMediaUrl(rawUrl)
+    url = mediaPath.startsWith('http') ? mediaPath : `${publicUrl}${mediaPath}`
   }
 
   return url
