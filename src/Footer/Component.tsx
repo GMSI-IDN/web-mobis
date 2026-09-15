@@ -62,7 +62,16 @@ export async function Footer() {
         ) : null} */}
 
         <div className="mb-2">
-          <img src="/media/new-white-2.png" alt="MOBIS" className="footer-mobis__logo" />
+          {/* [10-09-2026] Tambahkan dimensi eksplisit, decoding async, dan lazy loading */}
+          <img
+            src="/media/new-white-2.png"
+            alt="Logo MOBIS Footer"
+            width="120"
+            height="40"
+            loading="lazy"
+            decoding="async"
+            className="footer-mobis__logo"
+          />
         </div>
 
         {/* Social icons */}
@@ -74,7 +83,8 @@ export async function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               className="footer-mobis__icon"
-              aria-label={s?.icon || 'social'}
+              /* [10-09-2026] Tingkatkan deskripsi aria-label untuk pembaca layar */
+              aria-label={`Kunjungi media sosial ${s?.icon || 'MOBIS'}`}
             >
               <i className={iconToBootstrapClass(s?.icon)} />
             </a>

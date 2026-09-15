@@ -27,7 +27,8 @@ export default function PixelFacebook({ pixelId }: { pixelId?: string }) {
   return (
     <Script
       id="fb-pixel"
-      strategy="afterInteractive"
+      // [10-09-2026] Defer load script tracking saat idle agar tidak memblokir render utama (LCP & TBT)
+      strategy="lazyOnload"
       dangerouslySetInnerHTML={{
         __html: `
           !function(f,b,e,v,n,t,s)

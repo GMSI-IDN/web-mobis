@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { FileText, Headset } from 'lucide-react'
 
 export default function FloatingButtons({
   width = 225,
@@ -27,26 +28,16 @@ export default function FloatingButtons({
 
   return (
     <div className="d-flex flex-column align-items-end gap-3 mobis-widget-float">
-      {/* {showRegister && (
-        <button
-          type="button"
-          className="btn btn-success d-flex align-items-center text-white px-4"
-          style={btnStyle}
-          onClick={onRegister}
-        >
-          <i className="bi bi-person-vcard me-2" style={{ fontSize: 22 }} />
-          <span>Daftar Sekarang</span>
-        </button>
-      )} */}
-
       {showStatus && (
         <button
           type="button"
-          className="btn btn-warning d-flex align-items-center text-white px-4"
+          /* [10-09-2026] Perbaiki kontras warna: gunakan text-dark di atas latar kuning warning (WCAG AA >= 4.5:1) */
+          className="btn btn-warning d-flex align-items-center text-dark fw-bold px-4"
+          aria-label="Cek Status Pendaftaran MOBIS"
           style={btnStyle}
           onClick={onStatus}
         >
-          <i className="bi bi-file-earmark-text me-2" style={{ fontSize: 22 }} />
+          <FileText className="me-2" size={22} />
           <span>Status Pendaftaran</span>
         </button>
       )}
@@ -55,13 +46,15 @@ export default function FloatingButtons({
         <button
           type="button"
           className="btn btn-success d-flex align-items-center text-white px-4"
+          aria-label="Hubungi Layanan Bantuan MOBIS"
           style={btnStyle}
           onClick={onAssistant}
         >
-          <i className="bi bi-headset me-2" style={{ fontSize: 22 }} />
+          <Headset className="me-2" size={22} />
           <span>Hubungi Kami</span>
         </button>
       )}
     </div>
   )
 }
+

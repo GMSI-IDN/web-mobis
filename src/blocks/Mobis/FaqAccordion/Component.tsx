@@ -43,7 +43,7 @@ export const FaqAccordion: React.FC<Props> = ({ title, items }) => {
                       onClick={() => setOpenIndex((prev) => (prev === idx ? null : idx))}
                       type="button"
                     >
-                      <h2 className="faq-mobis-question">{question}</h2>
+                      <span className="faq-mobis-question">{question}</span>
                       <span className="faq-mobis-icon" aria-hidden="true">
                         <span className="faq-mobis-symbol" />
                       </span>

@@ -6,6 +6,7 @@ type MediaLike = {
   url?: string
   alt?: string
   filename?: string
+  sizes?: Record<string, { url?: string | null; filename?: string | null } | null | undefined>
 }
 
 type ProgramSide = {
@@ -64,7 +65,11 @@ function ProgramCard({
 }) {
   if (!side) return null
 
-  const headerUrl = side.headerImage?.url
+  // [10-09-2026] Gunakan varian thumbnail/small agar ukuran download hemat
+  const headerUrl =
+    side.headerImage?.sizes?.thumbnail?.url ||
+    side.headerImage?.sizes?.small?.url ||
+    side.headerImage?.url
   const headerAlt = resolveProgramHeaderAlt(side)
 
   return (
@@ -72,7 +77,16 @@ function ProgramCard({
       {/* ✅ Header image floating (z-index tinggi) */}
       <div className="program-card__header">
         {headerUrl ? (
-          <img src={headerUrl} alt={headerAlt} className="img-fluid" />
+          /* [10-09-2026] Tambahkan lazy loading, decoding async, dan dimensi dasar */
+          <img
+            src={headerUrl}
+            alt={headerAlt}
+            className="img-fluid"
+            width="466"
+            height="193"
+            loading="lazy"
+            decoding="async"
+          />
         ) : side.title ? (
           <div className="program-card__header--text text-center">{side.title}</div>
         ) : null}

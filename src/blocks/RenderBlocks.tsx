@@ -14,10 +14,8 @@ import { MediaBlock } from '@/blocks/MediaBlock/Component'
 // (RegistrationForm alone is 1300+ lines). Code-splitting them with
 // next/dynamic means a page only ships the JS for the blocks it actually
 // uses, instead of every page's bundle including all 12 regardless of which
-// ones are rendered.
-const BannerCarouselBlockComponent = dynamic(() =>
-  import('@/blocks/Mobis/BannerCarousel/Component').then((mod) => mod.default),
-)
+import BannerCarouselBlockComponent from '@/blocks/Mobis/BannerCarousel/Component'
+
 const AreaChipsBlockComponent = dynamic(() =>
   import('@/blocks/Mobis/AreaChips/Component').then((mod) => mod.default),
 )
