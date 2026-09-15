@@ -32,10 +32,12 @@ type Props = {
   areas?: Area[]
 }
 
+import { getMediaUrl as formatMediaUrl } from '@/utilities/getMediaUrl'
+
 function getMediaUrl(poolImage: Area['PoolImage']): string | null {
   if (!poolImage) return null
   if (typeof poolImage === 'string') return null // belum populated
-  return poolImage.url ?? null
+  return poolImage.url ? formatMediaUrl(poolImage.url) : null
 }
 
 export default function AreaChipsBlockComponent({ title, description, areas }: Props) {

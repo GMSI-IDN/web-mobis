@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { getMediaUrl } from '@/utilities/getMediaUrl'
 
 type MediaLike = {
   url?: string
@@ -66,10 +67,11 @@ function ProgramCard({
   if (!side) return null
 
   // [10-09-2026] Gunakan varian thumbnail/small agar ukuran download hemat
-  const headerUrl =
+  const rawHeaderUrl =
     side.headerImage?.sizes?.thumbnail?.url ||
     side.headerImage?.sizes?.small?.url ||
     side.headerImage?.url
+  const headerUrl = rawHeaderUrl ? getMediaUrl(rawHeaderUrl) : undefined
   const headerAlt = resolveProgramHeaderAlt(side)
 
   return (

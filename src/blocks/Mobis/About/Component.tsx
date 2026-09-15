@@ -3,6 +3,7 @@
 import React from 'react'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
+import { getMediaUrl } from '@/utilities/getMediaUrl'
 
 type Props = {
   title?: string
@@ -13,7 +14,8 @@ type Props = {
 export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
   // [10-09-2026] Utamakan format WebP dan ukuran responsif untuk efisiensi transfer data (hemat ~280 KiB)
   const rawUrl = image?.sizes?.medium?.url || image?.sizes?.small?.url || image?.url
-  const imageUrl = rawUrl ? rawUrl.replace(/\.png$/i, '.webp') : undefined
+  const cleanUrl = rawUrl ? rawUrl.replace(/\.png$/i, '.webp') : undefined
+  const imageUrl = cleanUrl ? getMediaUrl(cleanUrl) : undefined
   const normalizedTitle =
     title?.trim() === 'Tentang Rental MOBIS' ? 'Tentang Layanan Rental Driver Online MOBIS' : title
 
