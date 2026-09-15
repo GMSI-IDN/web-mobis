@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useId, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import ScrollButton from '@/components/ui/ScrollButton'
 import { trackCustomEvent } from '@/utilities/pixelTracking'
@@ -15,8 +16,6 @@ type Media = {
 
 const DESKTOP_FALLBACK_WIDTH = 1920
 const DESKTOP_FALLBACK_HEIGHT = 640
-const MOBILE_FALLBACK_WIDTH = 768
-const MOBILE_FALLBACK_HEIGHT = 960
 
 function buildBannerMedia(media: Media | undefined, fallbackWidth: number, fallbackHeight: number) {
   const url = media?.url
@@ -142,17 +141,6 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                 DESKTOP_FALLBACK_WIDTH,
                 DESKTOP_FALLBACK_HEIGHT,
               )
-              const mobileMediaObj =
-                s?.backgroundImageMobile ??
-                (s?.backgroundImage?.sizes?.tablet?.url ? s.backgroundImage.sizes.tablet : undefined) ??
-                (s?.backgroundImage?.sizes?.mobile?.url ? s.backgroundImage.sizes.mobile : undefined) ??
-                s?.backgroundImage
-
-              const mobileMedia = buildBannerMedia(
-                mobileMediaObj,
-                MOBILE_FALLBACK_WIDTH,
-                MOBILE_FALLBACK_HEIGHT,
-              )
 
               const ctaText = s?.ctaText ?? 'Daftar Sekarang'
               const rawCtaLink = s?.ctaLink?.trim() || '#registration'
@@ -163,44 +151,16 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                 <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
                   <div className="banner-slide-fullbleed position-relative">
                     {desktopMedia ? (
-                      <>
-                        {isFirstSlide && (
-                          <>
-                            {mobileMedia && (
-                              <link
-                                rel="preload"
-                                as="image"
-                                href={mobileMedia.src}
-                                media="(max-width: 767.98px)"
-                                fetchPriority="high"
-                              />
-                            )}
-                            <link
-                              rel="preload"
-                              as="image"
-                              href={desktopMedia.src}
-                              media="(min-width: 768px)"
-                              fetchPriority="high"
-                            />
-                          </>
-                        )}
-                        <picture>
-                          {mobileMedia && mobileMedia.src !== desktopMedia.src ? (
-                            <source media="(max-width: 767.98px)" srcSet={mobileMedia.src} />
-                          ) : null}
-                          <source media="(min-width: 768px)" srcSet={desktopMedia.src} />
-                          <img
-                            src={desktopMedia.src}
-                            width={desktopMedia.width}
-                            height={desktopMedia.height}
-                            className="banner-img-fullbleed"
-                            alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
-                            loading={isFirstSlide ? 'eager' : 'lazy'}
-                            fetchPriority={isFirstSlide ? 'high' : 'low'}
-                            decoding={isFirstSlide ? 'sync' : 'async'}
-                          />
-                        </picture>
-                      </>
+                      <Image
+                        src={desktopMedia.src}
+                        alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
+                        fill
+                        priority={isFirstSlide}
+                        quality={80}
+                        sizes="(max-width: 768px) 100vw, 1920px"
+                        className="banner-img-fullbleed"
+                        style={{ objectFit: 'cover', objectPosition: 'top' }}
+                      />
                     ) : null}
 
                     <div className="banner-cta-fullbleed position-absolute start-50 translate-middle-x text-center">
