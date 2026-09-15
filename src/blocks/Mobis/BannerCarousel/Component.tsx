@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useId, useEffect } from 'react'
+import React, { useId, useEffect, useState } from 'react'
 import Link from 'next/link'
 import ScrollButton from '@/components/ui/ScrollButton'
 import { trackCustomEvent } from '@/utilities/pixelTracking'
@@ -53,6 +53,10 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
   const carouselId = `carousel-${id}`
 
   const activeSlides = (slides ?? []).filter((s) => s?.isActive !== false)
+
+  // Only render non-first slide images after hydration to reduce initial DOM weight
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     let timer: any
@@ -149,7 +153,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
               return (
                 <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
                   <div className="banner-slide-fullbleed position-relative">
-                    {desktopMedia ? (
+                    {desktopMedia && (isFirstSlide || mounted) ? (
                       <picture>
                         <img
                           src={desktopMedia.src}
