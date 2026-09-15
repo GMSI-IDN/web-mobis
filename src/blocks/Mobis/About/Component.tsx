@@ -12,10 +12,8 @@ type Props = {
 }
 
 export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
-  // [10-09-2026] Utamakan format WebP dan ukuran responsif untuk efisiensi transfer data (hemat ~280 KiB)
-  const rawUrl = image?.sizes?.medium?.url || image?.sizes?.small?.url || image?.url
-  const cleanUrl = rawUrl ? rawUrl.replace(/\.png$/i, '.webp') : undefined
-  const imageUrl = cleanUrl ? getMediaUrl(cleanUrl) : undefined
+  const rawUrl = image?.url || image?.sizes?.medium?.url || image?.sizes?.small?.url
+  const imageUrl = rawUrl ? getMediaUrl(rawUrl) : undefined
   const normalizedTitle =
     title?.trim() === 'Tentang Rental MOBIS' ? 'Tentang Layanan Rental Driver Online MOBIS' : title
 

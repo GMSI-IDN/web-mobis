@@ -68,9 +68,9 @@ function ProgramCard({
 
   // [10-09-2026] Gunakan varian thumbnail/small agar ukuran download hemat
   const rawHeaderUrl =
+    side.headerImage?.url ||
     side.headerImage?.sizes?.thumbnail?.url ||
-    side.headerImage?.sizes?.small?.url ||
-    side.headerImage?.url
+    side.headerImage?.sizes?.small?.url
   const headerUrl = rawHeaderUrl ? getMediaUrl(rawHeaderUrl) : undefined
   const headerAlt = resolveProgramHeaderAlt(side)
 

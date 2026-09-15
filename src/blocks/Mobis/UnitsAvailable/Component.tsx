@@ -48,8 +48,7 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
 
         <div className="row g-4 gy-5 justify-content-center">
           {(units ?? []).map((u, idx) => {
-            // [10-09-2026] Gunakan ukuran responsif (small/thumbnail) agar transfer data ringan untuk mobile
-            const rawImageUrl = u.image?.sizes?.small?.url || u.image?.sizes?.thumbnail?.url || u.image?.url
+            const rawImageUrl = u.image?.url || u.image?.sizes?.small?.url || u.image?.sizes?.thumbnail?.url
             const imageUrl = getMediaUrl(rawImageUrl)
             const imageAlt = resolveUnitAlt(u.name, u.image)
             return (
