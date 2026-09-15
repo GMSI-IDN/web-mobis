@@ -51,48 +51,33 @@ export default function AreaChipsBlockComponent({ title, description, areas }: P
     return (areas ?? [])[activeAreaIndex] ?? null
   }, [activeAreaIndex, areas])
 
-  // Init bootstrap modal sekali
-  useEffect(() => {
-    let mounted = true
+  const openModalForArea = async (index: number) => {
+    setActiveAreaIndex(index)
+    if (!modalElRef.current) return
 
-    ;(async () => {
-      if (!modalElRef.current) return
-      // bootstrap tersedia global atau via import (kita coba import dulu)
-      try {
+    try {
+      if (!bsModalRef.current) {
         const bootstrap = await import('bootstrap')
-        if (!mounted) return
         bsModalRef.current = new bootstrap.Modal(modalElRef.current, {
           backdrop: true,
           keyboard: true,
         })
-      } catch {
-        // fallback jika bootstrap sudah global
-        const w = window as any
-        if (!mounted) return
-        if (w?.bootstrap?.Modal) {
-          bsModalRef.current = new w.bootstrap.Modal(modalElRef.current, {
-            backdrop: true,
-            keyboard: true,
-          })
-        }
       }
-    })()
-
-    return () => {
-      mounted = false
-      try {
-        bsModalRef.current?.dispose?.()
-      } catch {}
-      bsModalRef.current = null
+      setTimeout(() => {
+        bsModalRef.current?.show?.()
+      }, 0)
+    } catch {
+      const w = window as any
+      if (w?.bootstrap?.Modal && !bsModalRef.current) {
+        bsModalRef.current = new w.bootstrap.Modal(modalElRef.current, {
+          backdrop: true,
+          keyboard: true,
+        })
+      }
+      setTimeout(() => {
+        bsModalRef.current?.show?.()
+      }, 0)
     }
-  }, [])
-
-  const openModalForArea = (index: number) => {
-    setActiveAreaIndex(index)
-    // tunggu state ke-render dulu sedikit agar judul/list update
-    setTimeout(() => {
-      bsModalRef.current?.show?.()
-    }, 0)
   }
 
   const closeModal = () => {

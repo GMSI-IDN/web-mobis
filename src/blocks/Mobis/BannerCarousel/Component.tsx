@@ -164,22 +164,44 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                 <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
                   <div className="banner-slide-fullbleed position-relative">
                     {desktopMedia ? (
-                      <picture>
-                        {mobileMedia && mobileMedia.src !== desktopMedia.src ? (
-                          <source media="(max-width: 767.98px)" srcSet={mobileMedia.src} />
-                        ) : null}
-                        <source media="(min-width: 768px)" srcSet={desktopMedia.src} />
-                        <img
-                          src={desktopMedia.src}
-                          width={desktopMedia.width}
-                          height={desktopMedia.height}
-                          className="banner-img-fullbleed"
-                          alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
-                          loading={isFirstSlide ? 'eager' : 'lazy'}
-                          fetchPriority={isFirstSlide ? 'high' : 'auto'}
-                          decoding="async"
-                        />
-                      </picture>
+                      <>
+                        {isFirstSlide && (
+                          <>
+                            {mobileMedia && (
+                              <link
+                                rel="preload"
+                                as="image"
+                                href={mobileMedia.src}
+                                media="(max-width: 767.98px)"
+                                fetchPriority="high"
+                              />
+                            )}
+                            <link
+                              rel="preload"
+                              as="image"
+                              href={desktopMedia.src}
+                              media="(min-width: 768px)"
+                              fetchPriority="high"
+                            />
+                          </>
+                        )}
+                        <picture>
+                          {mobileMedia && mobileMedia.src !== desktopMedia.src ? (
+                            <source media="(max-width: 767.98px)" srcSet={mobileMedia.src} />
+                          ) : null}
+                          <source media="(min-width: 768px)" srcSet={desktopMedia.src} />
+                          <img
+                            src={desktopMedia.src}
+                            width={desktopMedia.width}
+                            height={desktopMedia.height}
+                            className="banner-img-fullbleed"
+                            alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
+                            loading={isFirstSlide ? 'eager' : 'lazy'}
+                            fetchPriority={isFirstSlide ? 'high' : 'low'}
+                            decoding={isFirstSlide ? 'sync' : 'async'}
+                          />
+                        </picture>
+                      </>
                     ) : null}
 
                     <div className="banner-cta-fullbleed position-absolute start-50 translate-middle-x text-center">
