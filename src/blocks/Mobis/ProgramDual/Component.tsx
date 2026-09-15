@@ -53,15 +53,15 @@ function ProgramCard({
   side,
   cardBgClass,
   cardTextClass,
-  headerImgMaxWidth,
-  headerTop,
+  _headerImgMaxWidth,
+  _headerTop,
   bodyTopPadding,
 }: {
   side?: ProgramSide
   cardBgClass: string
   cardTextClass: string
-  headerImgMaxWidth: number
-  headerTop: number
+  _headerImgMaxWidth?: number
+  _headerTop?: number
   bodyTopPadding: number
 }) {
   if (!side) return null
@@ -150,8 +150,8 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
               side={left}
               cardBgClass={cardBgClass}
               cardTextClass={cardTextClass}
-              headerImgMaxWidth={headerImgMaxWidth}
-              headerTop={headerTop}
+              _headerImgMaxWidth={headerImgMaxWidth}
+              _headerTop={headerTop}
               bodyTopPadding={bodyTopPadding}
             />
           </div>
@@ -161,8 +161,8 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
               side={right}
               cardBgClass={cardBgClass}
               cardTextClass={cardTextClass}
-              headerImgMaxWidth={headerImgMaxWidth}
-              headerTop={headerTop}
+              _headerImgMaxWidth={headerImgMaxWidth}
+              _headerTop={headerTop}
               bodyTopPadding={bodyTopPadding}
             />
           </div>

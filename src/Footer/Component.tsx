@@ -45,10 +45,6 @@ function toAbsURL(url?: string) {
  */
 export async function Footer() {
   const data = (await getFooterCached()) as FooterData | null
-
-  const rawLogoUrl = typeof data?.logo === 'object' ? data?.logo?.url : undefined
-  const logoUrl = toAbsURL(rawLogoUrl)
-
   const socials = data?.socials ?? []
 
   return (

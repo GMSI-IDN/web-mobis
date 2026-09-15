@@ -2,7 +2,6 @@
 
 import React, { useId, useEffect } from 'react'
 import Link from 'next/link'
-import { getImageProps } from 'next/image'
 import ScrollButton from '@/components/ui/ScrollButton'
 import { trackCustomEvent } from '@/utilities/pixelTracking'
 import { getMediaUrl } from '@/utilities/getMediaUrl'
