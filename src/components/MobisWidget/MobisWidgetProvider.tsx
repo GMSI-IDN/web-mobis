@@ -9,9 +9,16 @@ import { useMobisWidgetConfig } from './config/useConfig'
 import type { MobisWidgetConfig } from './config/types'
 import { bsModalHide, bsModalShow } from './shared/bootstrapModal'
 
+import dynamic from 'next/dynamic'
+
 import FloatingButtons from './widgets/FloatingButtons/FloatingButtons'
-import StatusModal from './widgets/StatusRegistration/StatusModal'
-import AssistantWidget from './widgets/ContactAssistant/AssistantWidget'
+
+const StatusModal = dynamic(() => import('./widgets/StatusRegistration/StatusModal'), {
+  ssr: false,
+})
+const AssistantWidget = dynamic(() => import('./widgets/ContactAssistant/AssistantWidget'), {
+  ssr: false,
+})
 
 export default function MobisWidgetProvider({
   payloadGlobalUrl,
@@ -43,7 +50,7 @@ export default function MobisWidgetProvider({
   if (!cfg || cfg.enabled === false) return null
 
   return (
-    <section className={`${inter.className} ${inter.variable} mobis-widget-root`}>
+    <div className={`${inter.className} ${inter.variable} mobis-widget-root`} aria-label="Widget Layanan MOBIS">
       <div
         className={`mobis-widget-floating-wrap ${
           hideOnMobileFormSection ? 'is-hidden-mobile' : ''
@@ -84,6 +91,6 @@ export default function MobisWidgetProvider({
         isOpen={assistantOpen}
         onCloseToButtons={() => setAssistantOpen(false)}
       />
-    </section>
+    </div>
   )
 }

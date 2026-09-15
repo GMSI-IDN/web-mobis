@@ -47,7 +47,8 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
 
         <div className="row g-4 gy-5 justify-content-center">
           {(units ?? []).map((u, idx) => {
-            const imageUrl = u.image?.url
+            // [10-09-2026] Gunakan ukuran responsif (small/thumbnail) agar transfer data ringan untuk mobile
+            const imageUrl = u.image?.sizes?.small?.url || u.image?.sizes?.thumbnail?.url || u.image?.url
             const imageAlt = resolveUnitAlt(u.name, u.image)
             return (
               <div key={idx} className={colClass}>
@@ -61,7 +62,16 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
                   )}
                   <div className="unit-card__media">
                     {imageUrl ? (
-                      <img src={imageUrl} alt={imageAlt} className="unit-card__img" />
+                      /* [10-09-2026] Tambahkan lazy loading, decoding async, dan dimensi eksplisit */
+                      <img
+                        src={imageUrl}
+                        alt={imageAlt}
+                        className="unit-card__img"
+                        width="500"
+                        height="500"
+                        loading="lazy"
+                        decoding="async"
+                      />
                     ) : (
                       <div className="p-4 text-muted small">No image</div>
                     )}

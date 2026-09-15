@@ -35,41 +35,36 @@ const FRONTEND_HOST = 'https://rentalmobis.com'
 const ADMIN_HOST = 'https://admin.rentalmobis.com'
 
 // Applies to public/frontend routes only (excludes /admin and /api) so the
-// Payload admin UI — which needs inline styles/scripts for its own editor
-// chrome — is never at risk of being broken by this CSP.
-const FRONTEND_CSP = [
+const isHttpsProduction =
+  process.env.ENABLE_HTTPS_HEADERS === 'true' ||
+  (process.env.NODE_ENV === 'production' &&
+    Boolean(process.env.VERCEL || (process.env.NEXT_PUBLIC_SERVER_URL && process.env.NEXT_PUBLIC_SERVER_URL.startsWith('https://'))))
+
+const FRONTEND_CSP_DIRECTIVES = [
   `default-src 'self'`,
-  // 'unsafe-inline' is required: Next.js's App Router streams RSC payloads via
-  // inline <script>self.__next_f.push(...)</script> tags (one per streamed
-  // chunk), with content that differs on every render — a static hash/nonce
-  // allowlist can't cover it without per-request middleware. Without this,
-  // React's Flight client sees those chunks blocked and throws "Connection
-  // closed" mid-stream, so hydration never completes and the page renders blank.
-  // [10-09-2026] Whitelist script source untuk Meta Pixel (connect.facebook.net) & TikTok Analytics
   `script-src 'self' 'unsafe-inline' https://connect.facebook.net https://*.facebook.net https://analytics.tiktok.com https://*.tiktok.com`,
   `style-src 'self' 'unsafe-inline'`,
-  // [10-09-2026] Whitelist image/beacon tracking untuk Meta & TikTok
   `img-src 'self' data: blob: ${ADMIN_HOST} https://www.facebook.com https://*.facebook.com https://analytics.tiktok.com https://*.tiktok.com`,
   `font-src 'self' data:`,
-  // [10-09-2026] Whitelist endpoint jaringan (fetch/xhr/beacon):
-  // - https://*.facebook.com & https://*.facebook.net : Endpoint API Meta/Facebook
-  // - https://*.on.aws : Endpoint Meta Conversions API Gateway (CAPIG) di AWS ECS (e.g. fh-*.ecs.*.on.aws)
-  // - https://*.run.app : Endpoint Meta Conversions API Gateway (CAPIG) di GCP Cloud Run (e.g. *.run.app)
-  // - https://analytics.tiktok.com & https://*.tiktok.com : Endpoint API TikTok Analytics
   `connect-src 'self' https://*.facebook.com https://*.facebook.net https://*.on.aws https://*.run.app https://analytics.tiktok.com https://*.tiktok.com`,
   `frame-src 'none'`,
   `frame-ancestors 'self' ${FRONTEND_HOST} ${ADMIN_HOST}`,
   `object-src 'none'`,
   `base-uri 'self'`,
   `form-action 'self'`,
-  `upgrade-insecure-requests`,
-].join('; ')
+]
+
+if (isHttpsProduction) {
+  FRONTEND_CSP_DIRECTIVES.push('upgrade-insecure-requests')
+}
+
+const FRONTEND_CSP = FRONTEND_CSP_DIRECTIVES.join('; ')
 
 const SECURITY_HEADERS = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
-  { key: 'Strict-Transport-Security', value: 'max-age=63072000' },
+  ...(isHttpsProduction ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000' }] : []),
 ]
 
 /** @type {import('next').NextConfig} */

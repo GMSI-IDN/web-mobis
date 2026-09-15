@@ -1,5 +1,4 @@
 import './bootstrap-custom.generated.css'
-import 'bootstrap-icons/font/bootstrap-icons.css'
 import './globals.css'
 import './style.css'
 
@@ -35,7 +34,9 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         </Suspense>
 
         <Header />
-        {children}
+        <main id="main-content" className="flex-grow-1">
+          {children}
+        </main>
         <MobisWidgetProvider />
         <Footer />
       </Providers>

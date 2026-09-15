@@ -11,10 +11,10 @@ name: CI
 on:
   pull_request:
     branches: [staging, production]
-  # Pushes to `staging` reach this gate through deploy.yml's `ci` job, so `staging`
-  # is deliberately absent here — listing it would run the whole gate twice per push.
-  push:
-    branches: [production]
+  # Pushes to `staging` and `production` reach this gate through deploy.yml's `ci` job.
+  # Listing them here would run the whole gate twice per push.
+  # push:
+  #   branches: [production]
   workflow_call:
 
 concurrency:
