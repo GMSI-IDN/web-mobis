@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { getMediaUrl } from '@/utilities/getMediaUrl'
 
 type MediaLike = {
   url?: string
@@ -52,24 +53,25 @@ function ProgramCard({
   side,
   cardBgClass,
   cardTextClass,
-  headerImgMaxWidth,
-  headerTop,
+  _headerImgMaxWidth,
+  _headerTop,
   bodyTopPadding,
 }: {
   side?: ProgramSide
   cardBgClass: string
   cardTextClass: string
-  headerImgMaxWidth: number
-  headerTop: number
+  _headerImgMaxWidth?: number
+  _headerTop?: number
   bodyTopPadding: number
 }) {
   if (!side) return null
 
   // [10-09-2026] Gunakan varian thumbnail/small agar ukuran download hemat
-  const headerUrl =
+  const rawHeaderUrl =
+    side.headerImage?.url ||
     side.headerImage?.sizes?.thumbnail?.url ||
-    side.headerImage?.sizes?.small?.url ||
-    side.headerImage?.url
+    side.headerImage?.sizes?.small?.url
+  const headerUrl = rawHeaderUrl ? getMediaUrl(rawHeaderUrl) : undefined
   const headerAlt = resolveProgramHeaderAlt(side)
 
   return (
@@ -148,8 +150,8 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
               side={left}
               cardBgClass={cardBgClass}
               cardTextClass={cardTextClass}
-              headerImgMaxWidth={headerImgMaxWidth}
-              headerTop={headerTop}
+              _headerImgMaxWidth={headerImgMaxWidth}
+              _headerTop={headerTop}
               bodyTopPadding={bodyTopPadding}
             />
           </div>
@@ -159,8 +161,8 @@ export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
               side={right}
               cardBgClass={cardBgClass}
               cardTextClass={cardTextClass}
-              headerImgMaxWidth={headerImgMaxWidth}
-              headerTop={headerTop}
+              _headerImgMaxWidth={headerImgMaxWidth}
+              _headerTop={headerTop}
               bodyTopPadding={bodyTopPadding}
             />
           </div>

@@ -77,6 +77,25 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Media files & API media downloads: long-lived immutable cache
+        source: '/api/media/file/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/media/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/mobis/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
         // Every route: safe headers that don't depend on CSP script/style
         // allowances, so they're fine on /admin and /api too.
         source: '/:path*',

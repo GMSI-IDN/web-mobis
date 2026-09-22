@@ -15,15 +15,37 @@ import { isKnownOptionalRelationError } from '@/utilities/isMissingRelationError
 import { buildFaqStructuredData } from '@/utilities/buildFaqStructuredData'
 import { buildLocalBusinessStructuredData } from '@/utilities/buildLocalBusinessStructuredData'
 import { getPublicURL } from '@/utilities/getURL'
+import { getMediaUrl } from '@/utilities/getMediaUrl'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
-
-export const dynamic = 'force-dynamic'
 
 type Args = {
   params: Promise<{
     slug?: string
   }>
+}
+
+/**
+ * Extract the first active banner image URL from page layout blocks.
+ * Used to inject a `<link rel="preload">` hint so the browser starts
+ * downloading the LCP image immediately when the HTML is received.
+ */
+function getLcpBannerUrl(layout: any[] | null | undefined): string | null {
+  if (!Array.isArray(layout)) return null
+
+  for (const block of layout) {
+    if (block?.blockType !== 'bannerCarousel') continue
+    const slides = block?.slides
+    if (!Array.isArray(slides)) continue
+
+    for (const slide of slides) {
+      if (slide?.isActive === false) continue
+      const url = slide?.backgroundImage?.url
+      if (url) return getMediaUrl(url)
+    }
+  }
+
+  return null
 }
 
 export default async function Page({ params: paramsPromise }: Args) {
@@ -51,8 +73,14 @@ export default async function Page({ params: paramsPromise }: Args) {
   const faqStructuredData = buildFaqStructuredData(layout)
   const localBusinessSchemas = buildLocalBusinessStructuredData(layout, getPublicURL())
 
+  // Preload the LCP banner image so the browser fetches it before CSS/JS parsing
+  const lcpBannerUrl = getLcpBannerUrl(layout)
+
   return (
     <article className="pb-24">
+      {lcpBannerUrl && (
+        <link rel="preload" as="image" href={lcpBannerUrl} fetchPriority="high" />
+      )}
       <PageClient />
       {/* Allows redirects for valid pages too */}
       <PayloadRedirects disableNotFound url={url} />

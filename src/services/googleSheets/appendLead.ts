@@ -205,10 +205,13 @@ function mapCarUnitLabel(carUnit?: string): string {
   const mapping: Record<string, string> = {
     toyota_avanza_2026: 'Toyota Avanza 2026',
     toyota_calya_2026: 'Toyota Calya 2026',
-    daihatsu_sigra: 'Daihatsu Sigra',
-    toyota_calya: 'Toyota Calya',
+    daihatsu_sigra: 'Daihatsu Sigra 2019',
+    toyota_calya: 'Toyota Calya 2019',
+    'daihatsu sigra': 'Daihatsu Sigra 2019',
+    'toyota calya': 'Toyota Calya 2019',
   }
-  return mapping[carUnit.trim().toLowerCase()] || carUnit.trim()
+  const key = carUnit.trim().toLowerCase()
+  return mapping[key] || carUnit.trim()
 }
 
 function buildRow(payload: RegistrationPayload): (string | null)[] {

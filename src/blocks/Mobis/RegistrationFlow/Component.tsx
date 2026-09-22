@@ -2,6 +2,8 @@
 
 import React from 'react'
 
+import { getMediaUrl } from '@/utilities/getMediaUrl'
+ 
 type Media = {
   url?: string
   alt?: string
@@ -18,8 +20,8 @@ type Props = {
 
 function getUrl(input?: Media | string | null): string | undefined {
   if (!input) return undefined
-  if (typeof input === 'string') return input
-  return input.url
+  if (typeof input === 'string') return getMediaUrl(input)
+  return input.url ? getMediaUrl(input.url) : undefined
 }
 
 export const RegistrationFlow: React.FC<Props> = ({

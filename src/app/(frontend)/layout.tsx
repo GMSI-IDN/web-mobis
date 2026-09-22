@@ -12,7 +12,6 @@ import PixelTiktok from '@/components/PixelTiktok'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
 import { Providers } from '@/providers'
-import { InitTheme } from '@/providers/Theme/InitTheme'
 import MobisWidgetProvider from '@/components/MobisWidget/LazyMobisWidgetProvider'
 import { inter } from './fonts'
 
@@ -21,7 +20,6 @@ export default async function FrontendLayout({ children }: { children: React.Rea
 
   return (
     <div className={`${inter.className} ${inter.variable} d-flex flex-column min-vh-100`}>
-      <InitTheme />
       <Providers>
         <AdminBar adminBarProps={{ preview: isEnabled }} />
         <BootstrapClient />

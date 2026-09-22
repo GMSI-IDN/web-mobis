@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { getMediaUrl } from '@/utilities/getMediaUrl'
 
 type Testi = {
   name: string
@@ -36,7 +37,8 @@ function Stars({ rating }: { rating: number }) {
 }
 
 function Card({ t }: { t: Testi }) {
-  const avatarUrl = t.avatar?.url
+  const rawAvatarUrl = t.avatar?.url
+  const avatarUrl = rawAvatarUrl ? getMediaUrl(rawAvatarUrl) : undefined
   const rating = t.rating ?? 5
 
   return (
