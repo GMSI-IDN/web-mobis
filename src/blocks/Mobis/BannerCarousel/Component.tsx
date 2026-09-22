@@ -7,32 +7,27 @@ import ScrollButton from '@/components/ui/ScrollButton'
 import { trackCustomEvent } from '@/utilities/pixelTracking'
 import { getMediaUrl } from '@/utilities/getMediaUrl'
 
-type Media = { url?: string; width?: number | null; height?: number | null }
+type Media = {
+  url?: string
+  width?: number | null
+  height?: number | null
+  sizes?: Record<string, { url?: string; width?: number | null; height?: number | null }>
+}
 
 const DESKTOP_FALLBACK_WIDTH = 1920
 const DESKTOP_FALLBACK_HEIGHT = 640
 const MOBILE_FALLBACK_WIDTH = 768
 const MOBILE_FALLBACK_HEIGHT = 960
 
-function buildBannerSrcSet(media: Media | undefined, fallbackWidth: number, fallbackHeight: number) {
+function buildBannerMedia(media: Media | undefined, fallbackWidth: number, fallbackHeight: number) {
   const url = media?.url
-  if (!url) return { srcSet: undefined, imgProps: undefined }
+  if (!url) return null
 
-  const { props } = getImageProps({
+  return {
     src: getMediaUrl(url),
     width: media?.width || fallbackWidth,
     height: media?.height || fallbackHeight,
-    quality: 82,
-    alt: '',
-    // TEMP: next/image's built-in optimizer rejects every remotePatterns entry on the
-    // current production build (Turbopack images-manifest.json regex bug — confirmed
-    // even `localhost` fails to match). Bypass the optimizer for CMS-hosted images until
-    // the Next.js version is upgraded/patched. Remove once verified fixed upstream.
-    unoptimized: true,
-  })
-
-  const { srcSet, ...imgProps } = props
-  return { srcSet, imgProps }
+  }
 }
 
 type Slide = {
@@ -63,6 +58,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
   const activeSlides = (slides ?? []).filter((s) => s?.isActive !== false)
 
   useEffect(() => {
+    let timer: any
     const initBootstrap = async () => {
       const bootstrap = await import('bootstrap')
       const element = document.getElementById(carouselId)
@@ -79,7 +75,17 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
       })
     }
 
-    initBootstrap()
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const handle = (window as any).requestIdleCallback(() => {
+        void initBootstrap()
+      }, { timeout: 1500 })
+      return () => (window as any).cancelIdleCallback(handle)
+    } else {
+      timer = setTimeout(() => {
+        void initBootstrap()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
   }, [carouselId, activeSlides.length])
 
   const handleBannerCTATrack = ({
@@ -132,13 +138,19 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
             {activeSlides.map((s, i) => {
               const isFirstSlide = i === 0
 
-              const desktop = buildBannerSrcSet(
+              const desktopMedia = buildBannerMedia(
                 s?.backgroundImage,
                 DESKTOP_FALLBACK_WIDTH,
                 DESKTOP_FALLBACK_HEIGHT,
               )
-              const mobile = buildBannerSrcSet(
-                s?.backgroundImageMobile ?? s?.backgroundImage,
+              const mobileMediaObj =
+                s?.backgroundImageMobile ??
+                (s?.backgroundImage?.sizes?.tablet?.url ? s.backgroundImage.sizes.tablet : undefined) ??
+                (s?.backgroundImage?.sizes?.mobile?.url ? s.backgroundImage.sizes.mobile : undefined) ??
+                s?.backgroundImage
+
+              const mobileMedia = buildBannerMedia(
+                mobileMediaObj,
                 MOBILE_FALLBACK_WIDTH,
                 MOBILE_FALLBACK_HEIGHT,
               )
@@ -151,14 +163,16 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
               return (
                 <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
                   <div className="banner-slide-fullbleed position-relative">
-                    {desktop.imgProps ? (
+                    {desktopMedia ? (
                       <picture>
-                        {mobile.srcSet && (
-                          <source media="(max-width: 767.98px)" srcSet={mobile.srcSet} />
-                        )}
-                        <source media="(min-width: 768px)" srcSet={desktop.srcSet} />
+                        {mobileMedia && mobileMedia.src !== desktopMedia.src ? (
+                          <source media="(max-width: 767.98px)" srcSet={mobileMedia.src} />
+                        ) : null}
+                        <source media="(min-width: 768px)" srcSet={desktopMedia.src} />
                         <img
-                          {...desktop.imgProps}
+                          src={desktopMedia.src}
+                          width={desktopMedia.width}
+                          height={desktopMedia.height}
                           className="banner-img-fullbleed"
                           alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
                           loading={isFirstSlide ? 'eager' : 'lazy'}

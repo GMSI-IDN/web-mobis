@@ -13,6 +13,15 @@ export const UnitsAvailableConfig: Block = {
       fields: [
         { name: 'name', type: 'text', required: true },
         { name: 'image', type: 'upload', relationTo: 'media', required: false },
+        {
+          name: 'isNew',
+          type: 'checkbox',
+          label: 'Unit Baru',
+          defaultValue: false,
+          admin: {
+            description: 'Centang jika unit ini adalah unit baru untuk menampilkan badge "UNIT BARU" di pojok kiri atas.',
+          },
+        },
       ],
     },
   ],

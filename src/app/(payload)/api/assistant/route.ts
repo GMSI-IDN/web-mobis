@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getClientIp } from '@/lib/http/getClientIp'
 import { checkRateLimit } from '@/lib/security/rateLimit'
 import { sanitizeFreeText, assertNoSuspiciousMarkup } from '@/lib/security/sanitize'
+import { signAssistantPayload } from '@/lib/security/assistantSigning'
 
 // Fail-closed: when MOBIS_ASSISTANT_API_BASE is unset we fall back to the local
 // STUB below (see `if (!UPSTREAM)`), NOT to a hardcoded staging host. A missing
@@ -10,7 +11,12 @@ const UPSTREAM = process.env.MOBIS_ASSISTANT_API_BASE || ''
 
 const CHAT_RATE_LIMIT = { limit: 20, windowMs: 60 * 1000 }
 
-function validateChatBody(body: any): { query: string; username?: string; phoneNumber?: string } {
+function validateChatBody(body: any): {
+  query: string
+  username?: string
+  phoneNumber?: string
+  token?: string
+} {
   const query = sanitizeFreeText(body?.query, 2000)
   if (!query) {
     const err = new Error('Pesan tidak boleh kosong.')
@@ -27,7 +33,15 @@ function validateChatBody(body: any): { query: string; username?: string; phoneN
   const phoneRaw = body?.phoneNumber ? String(body.phoneNumber) : ''
   const phoneNumber = phoneRaw ? phoneRaw.replace(/\D/g, '').slice(0, 20) : undefined
 
-  return { query, username, phoneNumber }
+  const token =
+    body?.token && typeof body.token === 'string'
+      ? sanitizeFreeText(body.token, 150)
+      : undefined
+  if (token) {
+    assertNoSuspiciousMarkup(token, 'token')
+  }
+
+  return { query, username, phoneNumber, ...(token ? { token } : {}) }
 }
 
 export async function POST(req: Request) {
@@ -63,21 +77,38 @@ export async function POST(req: Request) {
 
     const auth = req.headers.get('authorization') || ''
 
+    const { rawBody: signedBody, headers: signedHeaders } = signAssistantPayload(body)
+
     const upstreamRes = await fetch(UPSTREAM, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        ...signedHeaders,
         ...(auth ? { Authorization: auth } : {}),
       },
-      body: JSON.stringify(body),
+      body: signedBody,
       cache: 'no-store',
     })
 
     const text = await upstreamRes.text()
-    return new NextResponse(text, {
-      status: upstreamRes.status,
-      headers: { 'Content-Type': upstreamRes.headers.get('content-type') || 'application/json' },
-    })
+    if (!text || text.trim() === '') {
+      return NextResponse.json(
+        {
+          answer:
+            'Mohon maaf, asisten sedang sibuk atau mengalami gangguan sementara. Silakan coba beberapa saat lagi atau hubungi kami melalui WhatsApp.',
+        },
+        { status: 200 },
+      )
+    }
+
+    try {
+      const parsed = JSON.parse(text)
+      return NextResponse.json(parsed, { status: upstreamRes.status })
+    } catch {
+      return new NextResponse(text, {
+        status: upstreamRes.status,
+        headers: { 'Content-Type': upstreamRes.headers.get('content-type') || 'application/json' },
+      })
+    }
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Internal error' }, { status: 500 })
   }

@@ -25,3 +25,8 @@ node_modules/
 /playwright/.cache/
 /backdoor
 /private
+/src/private
+credentials.json
+*.pem
+opencode.json
+opencode.jsonc

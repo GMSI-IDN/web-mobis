@@ -26,7 +26,8 @@ export default function PixelTiktok({ pixelId }: { pixelId?: string }) {
   return (
     <Script
       id="tt-pixel"
-      strategy="afterInteractive"
+      // [10-09-2026] Defer load script tracking saat idle agar tidak memblokir render utama (LCP & TBT)
+      strategy="lazyOnload"
       dangerouslySetInnerHTML={{
         __html: `
           !function (w, d, t) {

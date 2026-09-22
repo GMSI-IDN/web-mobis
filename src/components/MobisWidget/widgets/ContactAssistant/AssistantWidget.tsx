@@ -52,6 +52,10 @@ export default function AssistantWidget({
   const endConfirmModalRef = useRef<HTMLDivElement | null>(null)
   const ratingModalRef = useRef<HTMLDivElement | null>(null)
 
+  const [showCountdown, setShowCountdown] = useState(false)
+  const [countdown, setCountdown] = useState(10)
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   const [rating, setRating] = useState(0)
   const [review, setReview] = useState('')
   const [reviewError, setReviewError] = useState('')
@@ -86,7 +90,7 @@ export default function AssistantWidget({
   useEffect(() => {
     if (!scrollRef.current) return
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-  }, [messages.length, isOpen, stage])
+  }, [messages.length, isOpen, stage, showCountdown])
 
   // reset state saat widget ditutup, supaya ketika dibuka lagi fresh
   useEffect(() => {
@@ -103,23 +107,61 @@ export default function AssistantWidget({
     setReviewError('')
     setNameError('')
     setPhoneError('')
+    setShowCountdown(false)
+    setCountdown(10)
 
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
     if (nameTimerRef.current) clearTimeout(nameTimerRef.current)
     if (phoneTimerRef.current) clearTimeout(phoneTimerRef.current)
   }, [isOpen, greeting])
 
   useEffect(() => {
     return () => {
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
       if (nameTimerRef.current) clearTimeout(nameTimerRef.current)
       if (phoneTimerRef.current) clearTimeout(phoneTimerRef.current)
     }
   }, [])
 
   function closeWidgetHard() {
-    // close modal jika masih kebuka
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
+    setShowCountdown(false)
     bsModalHide(endConfirmModalRef.current)
     bsModalHide(ratingModalRef.current)
     onCloseToButtons()
+  }
+
+  function startEndCountdown() {
+    setCountdown(10)
+    setShowCountdown(true)
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
+
+    countdownTimerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
+          setShowCountdown(false)
+          setTimeout(() => {
+            void bsModalShow(ratingModalRef.current)
+          }, 300)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  function handleContinueChat() {
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
+    setShowCountdown(false)
+  }
+
+  function handleFinishChat() {
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
+    setShowCountdown(false)
+    setTimeout(() => {
+      void bsModalShow(ratingModalRef.current)
+    }, 300)
   }
 
   function addLoading() {
@@ -148,6 +190,10 @@ export default function AssistantWidget({
     const text = input.trim()
     if (!text) return
 
+    if (showCountdown) {
+      handleContinueChat()
+    }
+
     if (hasSuspiciousMarkup(text)) {
       setInput('')
       setMessages((prev) => [
@@ -164,21 +210,15 @@ export default function AssistantWidget({
     const loadingId = addLoading()
 
     try {
-      // shortcut rules
-      if (isThankYouMessage(text)) {
-        replaceLoading(loadingId, 'Sama-sama, ada lagi yang bisa saya bantu?')
-        return
-      }
-      if (isNoMessage(text)) {
-        replaceLoading(loadingId, 'Baik kalau begitu, saya ijin akhiri chat ini. Terimakasih :)')
-        setTimeout(() => bsModalShow(ratingModalRef.current), 600)
-        return
-      }
-
       const headers = token ? { Authorization: token } : undefined
       const res = await postJSON<ChatResponse>(
         apiBase,
-        { query: text, username: name, phoneNumber: phone },
+        {
+          query: text,
+          username: name,
+          phoneNumber: phone,
+          ...(token ? { token } : {}),
+        },
         headers,
       )
 
@@ -188,6 +228,11 @@ export default function AssistantWidget({
         loadingId,
         res?.answer || 'Mohon maaf, asisten sedang sibuk. Silakan coba kembali.',
       )
+
+      // Jika bot mengakhiri percakapan, tampilkan hitung mundur 10 detik di dalam chat
+      if (res?.conversationEnded === true) {
+        setTimeout(() => startEndCountdown(), 800)
+      }
     } catch {
       replaceLoading(loadingId, 'Mobis assitent saat ini sedang tidak tersedia, silahkan coba beberapa saat lagi.')
     }
@@ -208,7 +253,13 @@ export default function AssistantWidget({
       const headers = token ? { Authorization: token } : undefined
       await postJSON(
         `${apiBase}/rating`,
-        { rating, review: review.trim(), username: name, phoneNumber: phone },
+        {
+          rating,
+          review: review.trim(),
+          username: name,
+          phoneNumber: phone,
+          ...(token ? { token } : {}),
+        },
         headers,
       )
     } catch {
@@ -355,6 +406,37 @@ export default function AssistantWidget({
                     </div>
                   )
                 })}
+                {showCountdown && (
+                  <div
+                    className="p-3 mobis-bubble-bot align-self-start"
+                    style={{ maxWidth: '85%' }}
+                  >
+                    <h6 className="fw-bold text-dark mb-1" style={{ fontSize: '13px' }}>
+                      Ada pertanyaan lain?
+                    </h6>
+                    <p className="text-muted mb-3" style={{ fontSize: '12px', lineHeight: '1.4' }}>
+                      Sesi chat akan selesai dalam <span className="text-success fw-bold">{countdown} detik</span>. Apakah masih mau lanjut?
+                    </p>
+                    <div className="d-flex gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-success btn-sm flex-fill fw-medium py-1"
+                        style={{ fontSize: '12px' }}
+                        onClick={handleContinueChat}
+                      >
+                        Lanjut Chat
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline-success btn-sm flex-fill py-1"
+                        style={{ fontSize: '12px' }}
+                        onClick={handleFinishChat}
+                      >
+                        Selesai
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="d-flex gap-2 mt-3">

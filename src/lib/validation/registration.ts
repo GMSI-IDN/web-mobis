@@ -109,6 +109,7 @@ export function validateRegistrationPayload(body: any): RegistrationPayload {
     driverApps: optionalText(body.driverApps, 150, 'driverApps'),
     activeAccountSelf: optionalText(body.activeAccountSelf, 150, 'activeAccountSelf'),
     driverExperience: optionalText(body.driverExperience, 150, 'driverExperience'),
+    carUnit: optionalText(body.carUnit, 100, 'carUnit'),
     handoverLocation: optionalText(body.handoverLocation, 150, 'handoverLocation'),
     sourceInfo: optionalText(body.sourceInfo, 150, 'sourceInfo'),
     sourceDetail: optionalText(body.sourceDetail, 150, 'sourceDetail'),

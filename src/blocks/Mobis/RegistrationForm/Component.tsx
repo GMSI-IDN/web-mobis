@@ -18,6 +18,7 @@ type Props = {
     handover?: Option[]
     onlineApp?: Option[]
     source?: Option[]
+    carUnit?: Option[]
   }
 }
 
@@ -42,6 +43,7 @@ type FormValues = {
   driverAppsOther: string
   activeAccountSelf: string
   driverExperience: string
+  carUnit: string
   handoverLocation: string
   sourceInfo: string
   sourceDetail: string
@@ -79,6 +81,21 @@ function normalizeValue(value: string) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, '_')
+}
+
+export function isJabodetabekHandover(handoverLocation?: string): boolean {
+  if (!handoverLocation) return false
+  const loc = handoverLocation.toLowerCase().trim()
+  return (
+    loc.includes('kranggan') ||
+    loc.includes('karawaci') ||
+    loc.includes('bubulak')
+  )
+}
+
+export function is2026CarUnit(option: Option): boolean {
+  const text = `${option.value} ${option.label}`.toLowerCase()
+  return text.includes('2026')
 }
 
 function formatDateInput(date: Date) {
@@ -138,6 +155,8 @@ function createMetaEventId() {
 }
 
 function SelectField({
+  id,
+  ariaLabel,
   name,
   required,
   placeholder,
@@ -145,8 +164,13 @@ function SelectField({
   className,
   value,
   onChange,
+  onFocus,
+  onClick,
   isInvalid,
+  disabled,
 }: {
+  id?: string
+  ariaLabel?: string
   name: string
   required?: boolean
   placeholder: string
@@ -154,15 +178,23 @@ function SelectField({
   className?: string
   value: string
   onChange: (value: string) => void
+  onFocus?: () => void
+  onClick?: () => void
   isInvalid?: boolean
+  disabled?: boolean
 }) {
   return (
     <select
+      id={id}
+      aria-label={ariaLabel || placeholder}
       name={name}
       className={`${className ?? 'form-select form-select-sm'} ${isInvalid ? 'is-invalid' : ''}`}
       required={required}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onFocus={onFocus}
+      onClick={onClick}
+      disabled={disabled}
     >
       <option value="" disabled>
         {placeholder}
@@ -199,6 +231,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
     driverAppsOther: '',
     activeAccountSelf: '',
     driverExperience: '',
+    carUnit: '',
     handoverLocation: '',
     sourceInfo: '',
     sourceDetail: '',
@@ -246,7 +279,7 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         { label: 'Surabaya', value: 'surabaya' },
         { label: 'Sidoarjo', value: 'sidoarjo' },
         { label: 'Gresik', value: 'gresik' },
-        { label: 'Bali', value: 'bali' },
+        // { label: 'Bali', value: 'bali' }, // [10-09-2026] Dinonaktifkan sementara
       ],
       house: [
         { label: 'Milik sendiri', value: 'milikSendiri' },
@@ -268,6 +301,12 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         { label: '> 1 tahun', value: 'gt1th' },
       ],
       handover: [{ label: 'Pool MOBIS', value: 'pool' }],
+      carUnit: [
+        { label: 'Toyota Avanza 2026', value: 'toyota_avanza_2026' },
+        { label: 'Toyota Calya 2026', value: 'toyota_calya_2026' },
+        { label: 'Daihatsu Sigra', value: 'daihatsu_sigra' },
+        { label: 'Toyota Calya', value: 'toyota_calya' },
+      ],
       onlineApp: [
         { label: 'Gojek', value: 'gojek' },
         { label: 'Grab', value: 'grab' },
@@ -295,7 +334,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
   const DOMICILE_OPTS = (() => {
     const v = normalizeOptions(opts?.dom)
-    return v.length ? v : defaults.dom
+    const base = v.length ? v : defaults.dom
+    // [10-09-2026] Opsi Bali dinonaktifkan sementara dari dropdown domisili
+    return base.filter((o) => !o.value.toLowerCase().includes('bali') && !o.label.toLowerCase().includes('bali'))
   })()
 
   const HOUSE_OPTS = (() => {
@@ -315,7 +356,27 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
   const HANDOVER_OPTS = (() => {
     const v = normalizeOptions(opts?.handover)
-    return v.length ? v : defaults.handover
+    const base = v.length ? v : defaults.handover
+    // [10-09-2026] Opsi Bali dinonaktifkan sementara (di-comment / exclude dari pilihan aktif)
+    // Opsi asli di database CMS tetap aman dan tidak dihapus
+    return base.filter(
+      (opt) =>
+        !opt.value.toLowerCase().includes('bali') &&
+        !opt.label.toLowerCase().includes('bali'),
+    )
+  })()
+
+  const ALL_CAR_UNIT_OPTS = (() => {
+    const v = normalizeOptions(opts?.carUnit)
+    return v.length ? v : defaults.carUnit
+  })()
+
+  const CAR_UNIT_OPTS = (() => {
+    const isJabodetabek = isJabodetabekHandover(values.handoverLocation)
+    if (isJabodetabek) {
+      return ALL_CAR_UNIT_OPTS
+    }
+    return ALL_CAR_UNIT_OPTS.filter((opt) => !is2026CarUnit(opt))
   })()
 
   const ONLINE_APP_OPTS = (() => {
@@ -496,6 +557,21 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
         if (!String(value).trim()) return 'Lama bekerja wajib dipilih.'
         return ''
 
+      case 'carUnit':
+        if (!allValues.handoverLocation) {
+          return 'Pilih lokasi serah terima unit terlebih dahulu.'
+        }
+        if (!String(value).trim()) return 'Pilihan jenis mobil wajib dipilih.'
+        if (!isJabodetabekHandover(allValues.handoverLocation)) {
+          const isSelected2026 = ALL_CAR_UNIT_OPTS.some(
+            (opt) => (opt.value === value || opt.label === value) && is2026CarUnit(opt),
+          )
+          if (isSelected2026) {
+            return 'Unit 2026 hanya tersedia untuk lokasi serah terima Jabodetabek (Kranggan, Karawaci, Bubulak).'
+          }
+        }
+        return ''
+
       case 'handoverLocation':
         if (!String(value).trim()) return 'Lokasi serah terima wajib dipilih.'
         return ''
@@ -594,6 +670,26 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
           ...nextValues,
           sourceDetail: '',
         }
+      }
+    }
+
+    if (field === 'handoverLocation') {
+      const isJabodetabek = isJabodetabekHandover(String(nextValue))
+      if (!isJabodetabek) {
+        const isSelected2026 = ALL_CAR_UNIT_OPTS.some(
+          (opt) =>
+            (opt.value === nextValues.carUnit || opt.label === nextValues.carUnit) &&
+            is2026CarUnit(opt),
+        )
+        if (isSelected2026) {
+          nextValues = {
+            ...nextValues,
+            carUnit: '',
+          }
+        }
+      }
+      if (errors.carUnit?.includes('lokasi')) {
+        setErrors((prev) => ({ ...prev, carUnit: '' }))
       }
     }
 
@@ -724,6 +820,10 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
           nextServerFieldErrors.emergencyPhone = apiErrors.emergencyPhone
         }
 
+        if (typeof apiErrors.carUnit === 'string') {
+          nextServerFieldErrors.carUnit = apiErrors.carUnit
+        }
+
         if (!nextServerFieldErrors.promoCode && values.promoCode.trim()) {
           if (
             code === 'INVALID_PROMO_CODE' ||
@@ -803,12 +903,14 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 />
               </div>
 
+              {/* [10-09-2026] Hubungkan seluruh label (htmlFor) dan input (id) untuk standar WCAG & Lighthouse Accessibility */}
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Nama</label>
+                  <label htmlFor={`field-name-${uid}`} className="form-label reg-label mb-0">Nama</label>
                 </div>
                 <div className={fieldCol}>
                   <input
+                    id={`field-name-${uid}`}
                     name="name"
                     className={`form-control form-control-sm ${touched.name && errors.name ? 'is-invalid' : ''}`}
                     placeholder="Ketik nama"
@@ -824,13 +926,15 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Tempat &amp; Tanggal Lahir</label>
+                  <label htmlFor={`field-birthPlace-${uid}`} className="form-label reg-label mb-0">Tempat &amp; Tanggal Lahir</label>
                 </div>
                 <div className={fieldCol}>
                   <div className="row g-2">
                     <div className="col-12 col-sm-6">
                       <input
+                        id={`field-birthPlace-${uid}`}
                         name="birthPlace"
+                        aria-label="Tempat Lahir"
                         className={`form-control form-control-sm ${touched.birthPlace && errors.birthPlace ? 'is-invalid' : ''}`}
                         placeholder="Tempat"
                         maxLength={100}
@@ -844,7 +948,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
                     <div className="col-12 col-sm-6">
                       <input
+                        id={`field-birthDate-${uid}`}
                         name="birthDate"
+                        aria-label="Tanggal Lahir"
                         type="date"
                         min={birthDateRange.min}
                         max={birthDateRange.max}
@@ -862,10 +968,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">No. HP (Whatsapp)</label>
+                  <label htmlFor={`field-phone-${uid}`} className="form-label reg-label mb-0">No. HP (Whatsapp)</label>
                 </div>
                 <div className={fieldCol}>
                   <input
+                    id={`field-phone-${uid}`}
                     name="phone"
                     className={`form-control form-control-sm ${touched.phone && errors.phone ? 'is-invalid' : ''}`}
                     placeholder="Ketik nomor handphone"
@@ -882,10 +989,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Nomor KTP</label>
+                  <label htmlFor={`field-ktpNumber-${uid}`} className="form-label reg-label mb-0">Nomor KTP</label>
                 </div>
                 <div className={fieldCol}>
                   <input
+                    id={`field-ktpNumber-${uid}`}
                     name="ktpNumber"
                     className={`form-control form-control-sm ${ktpFieldError ? 'is-invalid' : ''}`}
                     placeholder="Ketik nomor KTP"
@@ -902,13 +1010,15 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">SIM</label>
+                  <label htmlFor={`field-simNumber-${uid}`} className="form-label reg-label mb-0">SIM</label>
                 </div>
                 <div className={fieldCol}>
                   <div className="row g-2">
                     <div className="col-12">
                       <input
+                        id={`field-simNumber-${uid}`}
                         name="simNumber"
+                        aria-label="Nomor SIM"
                         className={`form-control form-control-sm ${touched.simNumber && errors.simNumber ? 'is-invalid' : ''}`}
                         placeholder="Nomor SIM"
                         maxLength={50}
@@ -922,7 +1032,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
                     <div className="col-12 col-sm-6">
                       <SelectField
+                        id={`field-simType-${uid}`}
                         name="simType"
+                        ariaLabel="Jenis SIM"
                         placeholder="Jenis SIM"
                         options={SIM_OPTS}
                         value={values.simType}
@@ -934,23 +1046,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                       ) : null}
                     </div>
 
-                    {/* <div className="col-12 col-sm-6">
-                      <SelectField
-                        name="domicile"
-                        placeholder="Pilih domisili"
-                        options={DOMICILE_OPTS}
-                        value={values.domicile}
-                        onChange={(value) => setField('domicile', value)}
-                        isInvalid={!!(touched.domicile && errors.domicile)}
-                      />
-                      {touched.domicile && errors.domicile ? (
-                        <div className="invalid-feedback d-block">{errors.domicile}</div>
-                      ) : null}
-                    </div> */}
-
                     <div className="col-12 col-sm-6">
                       <input
+                        id={`field-simValidUntil-${uid}`}
                         name="simValidUntil"
+                        aria-label="Masa Berlaku SIM"
                         type="date"
                         className={`form-control form-control-sm ${touched.simValidUntil && errors.simValidUntil ? 'is-invalid' : ''}`}
                         value={values.simValidUntil}
@@ -966,11 +1066,13 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Domisili</label>
+                  <label htmlFor={`field-domicile-${uid}`} className="form-label reg-label mb-0">Domisili</label>
                 </div>
                 <div className={fieldCol}>
                   <SelectField
+                    id={`field-domicile-${uid}`}
                     name="domicile"
+                    ariaLabel="Pilih domisili"
                     placeholder="Pilih domisili"
                     options={DOMICILE_OPTS}
                     value={values.domicile}
@@ -985,10 +1087,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Alamat Lengkap Saat Ini</label>
+                  <label htmlFor={`field-currentAddress-${uid}`} className="form-label reg-label mb-0">Alamat Lengkap Saat Ini</label>
                 </div>
                 <div className={fieldCol}>
                   <textarea
+                    id={`field-currentAddress-${uid}`}
                     name="currentAddress"
                     className={`form-control form-control-sm ${touched.currentAddress && errors.currentAddress ? 'is-invalid' : ''}`}
                     placeholder="Ketik alamat saat ini"
@@ -1005,11 +1108,13 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Status Kepemilikan Rumah</label>
+                  <label htmlFor={`field-houseOwnership-${uid}`} className="form-label reg-label mb-0">Status Kepemilikan Rumah</label>
                 </div>
                 <div className={fieldCol}>
                   <SelectField
+                    id={`field-houseOwnership-${uid}`}
                     name="houseOwnership"
+                    ariaLabel="Status Kepemilikan Rumah"
                     placeholder="- Pilih -"
                     options={HOUSE_OPTS}
                     value={values.houseOwnership}
@@ -1024,13 +1129,15 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Nama &amp; No. HP Emergency</label>
+                  <label htmlFor={`field-emergencyName-${uid}`} className="form-label reg-label mb-0">Nama &amp; No. HP Emergency</label>
                 </div>
                 <div className={fieldCol}>
                   <div className="row g-2">
                     <div className="col-12 col-sm-6">
                       <input
+                        id={`field-emergencyName-${uid}`}
                         name="emergencyName"
+                        aria-label="Nama Kontak Emergency"
                         className={`form-control form-control-sm ${touched.emergencyName && errors.emergencyName ? 'is-invalid' : ''}`}
                         placeholder="Ketik nama"
                         maxLength={100}
@@ -1044,7 +1151,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
                     <div className="col-12 col-sm-6">
                       <input
+                        id={`field-emergencyPhone-${uid}`}
                         name="emergencyPhone"
+                        aria-label="Nomor HP Kontak Emergency"
                         className={`form-control form-control-sm ${touched.emergencyPhone && errors.emergencyPhone ? 'is-invalid' : ''}`}
                         placeholder="Ketik nomor HP"
                         inputMode="tel"
@@ -1059,7 +1168,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
                     <div className="col-12">
                       <SelectField
+                        id={`field-emergencyRelation-${uid}`}
                         name="emergencyRelation"
+                        ariaLabel="Hubungan Kontak Emergency"
                         placeholder="Hubungan - Pilih -"
                         options={EMERGENCY_REL_OPTS}
                         value={values.emergencyRelation}
@@ -1076,11 +1187,13 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Aplikasi Driver Online</label>
+                  <label htmlFor={`field-driverApps-${uid}`} className="form-label reg-label mb-0">Aplikasi Driver Online</label>
                 </div>
                 <div className={fieldCol}>
                   <SelectField
+                    id={`field-driverApps-${uid}`}
                     name="driverApps"
+                    ariaLabel="Pilih aplikasi driver online"
                     placeholder="Pilih aplikasi driver online"
                     options={ONLINE_APP_OPTS}
                     value={values.driverApps}
@@ -1096,10 +1209,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
               {isOtherApp ? (
                 <div className="row g-2 align-items-md-center mb-2">
                   <div className={labelCol}>
-                    <label className="form-label reg-label mb-0">Aplikasi lainnya</label>
+                    <label htmlFor={`field-driverAppsOther-${uid}`} className="form-label reg-label mb-0">Aplikasi lainnya</label>
                   </div>
                   <div className={fieldCol}>
                     <input
+                      id={`field-driverAppsOther-${uid}`}
                       type="text"
                       name="driverAppsOther"
                       className={`form-control form-control-sm ${touched.driverAppsOther && errors.driverAppsOther ? 'is-invalid' : ''}`}
@@ -1119,9 +1233,9 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
                 <>
                   <div className="row g-2 align-items-md-center mb-2">
                     <div className={labelCol}>
-                      <label className="form-label reg-label mb-0">
+                      <span className="form-label reg-label mb-0 d-block">
                         Akun driver online aktif atas nama diri sendiri?
-                      </label>
+                      </span>
                     </div>
                     <div className={fieldCol}>
                       <div className="d-flex flex-wrap gap-3">
@@ -1163,13 +1277,15 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
                   <div className="row g-2 align-items-md-center mb-2">
                     <div className={labelCol}>
-                      <label className="form-label reg-label mb-0">
+                      <label htmlFor={`field-driverExperience-${uid}`} className="form-label reg-label mb-0">
                         Sudah berapa lama bekerja sebagai driver online?
                       </label>
                     </div>
                     <div className={fieldCol}>
                       <SelectField
+                        id={`field-driverExperience-${uid}`}
                         name="driverExperience"
+                        ariaLabel="Lama bekerja sebagai driver online"
                         placeholder="Pilih jangka waktu"
                         options={EXP_OPTS}
                         value={values.driverExperience}
@@ -1186,11 +1302,13 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Lokasi serah terima unit</label>
+                  <label htmlFor={`field-handoverLocation-${uid}`} className="form-label reg-label mb-0">Lokasi serah terima unit</label>
                 </div>
                 <div className={fieldCol}>
                   <SelectField
+                    id={`field-handoverLocation-${uid}`}
                     name="handoverLocation"
+                    ariaLabel="Lokasi serah terima unit"
                     placeholder="Pilih Lokasi"
                     options={HANDOVER_OPTS}
                     value={values.handoverLocation}
@@ -1205,11 +1323,62 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Mengetahui Informasi dari</label>
+                  <label htmlFor={`field-carUnit-${uid}`} className="form-label reg-label mb-0">Jenis Mobil</label>
+                </div>
+                <div className={fieldCol}>
+                  <div
+                    onClick={() => {
+                      if (!values.handoverLocation) {
+                        setTouched((prev) => ({
+                          ...prev,
+                          handoverLocation: true,
+                          carUnit: true,
+                        }))
+                        setErrors((prev) => ({
+                          ...prev,
+                          handoverLocation:
+                            'Silakan pilih lokasi serah terima unit terlebih dahulu.',
+                          carUnit: 'Pilih lokasi serah terima unit terlebih dahulu.',
+                        }))
+                      }
+                    }}
+                    style={{ cursor: !values.handoverLocation ? 'not-allowed' : 'default' }}
+                  >
+                    <SelectField
+                      id={`field-carUnit-${uid}`}
+                      name="carUnit"
+                      ariaLabel="Jenis Mobil"
+                      placeholder={
+                        values.handoverLocation
+                          ? 'Pilih jenis mobil'
+                          : 'Pilih lokasi serah terima terlebih dahulu'
+                      }
+                      options={values.handoverLocation ? CAR_UNIT_OPTS : []}
+                      disabled={!values.handoverLocation}
+                      value={values.carUnit}
+                      onChange={(value) => setField('carUnit', value)}
+                      isInvalid={
+                        !!((touched.carUnit && errors.carUnit) || serverFieldErrors.carUnit)
+                      }
+                    />
+                  </div>
+                  {(touched.carUnit && errors.carUnit) || serverFieldErrors.carUnit ? (
+                    <div className="invalid-feedback d-block">
+                      {serverFieldErrors.carUnit || errors.carUnit}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="row g-2 align-items-md-center mb-2">
+                <div className={labelCol}>
+                  <label htmlFor={`field-sourceInfo-${uid}`} className="form-label reg-label mb-0">Mengetahui Informasi dari</label>
                 </div>
                 <div className={fieldCol}>
                   <SelectField
+                    id={`field-sourceInfo-${uid}`}
                     name="sourceInfo"
+                    ariaLabel="Sumber Informasi"
                     placeholder="Pilih sumber informasi"
                     options={SOURCE_OPTS}
                     value={values.sourceInfo}
@@ -1225,10 +1394,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
               {sourceDetailConfig.show ? (
                 <div className="row g-2 align-items-md-center mb-2">
                   <div className={labelCol}>
-                    <label className="form-label reg-label mb-0">{sourceDetailConfig.label}</label>
+                    <label htmlFor={`field-sourceDetail-${uid}`} className="form-label reg-label mb-0">{sourceDetailConfig.label}</label>
                   </div>
                   <div className={fieldCol}>
                     <input
+                      id={`field-sourceDetail-${uid}`}
                       name="sourceDetail"
                       className={`form-control form-control-sm ${touched.sourceDetail && errors.sourceDetail ? 'is-invalid' : ''}`}
                       placeholder={sourceDetailConfig.placeholder}
@@ -1245,10 +1415,11 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
               <div className="row g-2 align-items-md-center mb-2">
                 <div className={labelCol}>
-                  <label className="form-label reg-label mb-0">Promo Code</label>
+                  <label htmlFor={`field-promoCode-${uid}`} className="form-label reg-label mb-0">Promo Code</label>
                 </div>
                 <div className={fieldCol}>
                   <input
+                    id={`field-promoCode-${uid}`}
                     name="promoCode"
                     className={`form-control form-control-sm ${
                       serverFieldErrors.promoCode ? 'is-invalid' : ''

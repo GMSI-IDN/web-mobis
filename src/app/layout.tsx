@@ -149,7 +149,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   ]
 
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" data-theme="light" suppressHydrationWarning>
       <body>
         {/* Tambahkan script/meta global non-standar di area layout/head terkait bila diperlukan. */}
         <script

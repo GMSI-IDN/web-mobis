@@ -11,7 +11,9 @@ type Props = {
 }
 
 export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
-  const imageUrl = image?.url
+  // [10-09-2026] Utamakan format WebP dan ukuran responsif untuk efisiensi transfer data (hemat ~280 KiB)
+  const rawUrl = image?.sizes?.medium?.url || image?.sizes?.small?.url || image?.url
+  const imageUrl = rawUrl ? rawUrl.replace(/\.png$/i, '.webp') : undefined
   const normalizedTitle =
     title?.trim() === 'Tentang Rental MOBIS' ? 'Tentang Layanan Rental Driver Online MOBIS' : title
 
@@ -38,10 +40,15 @@ export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
           <div className="col-6 overflow-hidden">
             <div className="card border-0 shadow-sm overflow-hidden about-rounded">
               {imageUrl ? (
+                /* [10-09-2026] Tambahkan lazy loading, decoding async, dan dimensi dasar */
                 <img
                   src={imageUrl}
-                  alt={normalizedTitle ?? 'About'}
+                  alt={normalizedTitle ?? 'Tentang MOBIS'}
                   className="w-100"
+                  width="600"
+                  height="400"
+                  loading="lazy"
+                  decoding="async"
                   style={{ objectFit: 'cover' }}
                 />
               ) : (

@@ -39,7 +39,15 @@ export function NavShellClient({ children }: { children: React.ReactNode }) {
     <nav className="navbar fixed-top navbar-expand-lg navbar-light bg-light border-bottom w-100">
       <div className="container">
         <Link href="/" className="navbar-brand fw-bold">
-          <img src="./mobis/img/favicon.svg" alt="MOBIS" style={{ height: '40px' }} />
+          {/* [10-09-2026] Berikan width, height, dan decoding async untuk mencegah Cumulative Layout Shift (CLS) */}
+          <img
+            src="/mobis/img/favicon.svg"
+            alt="Logo MOBIS"
+            width="120"
+            height="40"
+            style={{ height: '40px', width: 'auto' }}
+            decoding="async"
+          />
         </Link>
 
         <button
