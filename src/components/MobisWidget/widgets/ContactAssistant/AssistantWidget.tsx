@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { Send } from 'lucide-react'
 import Portal from '../../shared/Portal'
 import { bsModalHide, bsModalShow } from '../../shared/bootstrapModal'
 import { postJSON } from '../../shared/fetcher'
@@ -450,8 +451,8 @@ export default function AssistantWidget({
                     if (e.key === 'Enter') send()
                   }}
                 />
-                <button className="btn btn-success" type="button" onClick={send}>
-                  <i className="bi-regular bi-send-fill" />
+                <button className="btn btn-success d-inline-flex align-items-center justify-content-center" type="button" onClick={send} aria-label="Kirim pesan">
+                  <Send size={18} />
                 </button>
               </div>
             </div>

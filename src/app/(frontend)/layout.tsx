@@ -1,5 +1,4 @@
 import './bootstrap-custom.generated.css'
-import 'bootstrap-icons/font/bootstrap-icons.css'
 import './globals.css'
 import './style.css'
 

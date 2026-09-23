@@ -210,11 +210,21 @@ body {
   line-height: 1;
   transition: transform 0.2s ease, opacity 0.2s ease;
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .footer-mobis__icon:hover {
   transform: translateY(-2px);
   opacity: 0.85;
+}
+
+.footer-mobis__icon img,
+.footer-mobis__icon svg {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
 }
 
 

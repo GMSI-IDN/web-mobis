@@ -1,5 +1,6 @@
 'use client'
 import React, { useMemo, useState } from 'react'
+import { CheckCircle2, Hourglass, XCircle, Circle } from 'lucide-react'
 import { onlyDigits } from '../../shared/helpers'
 import { postJSON } from '../../shared/fetcher'
 import type { StatusResponse, StatusStep } from './types'
@@ -13,15 +14,15 @@ function getStepTextClass(status: StatusStep['status']) {
 
 function StepIcon({ status }: { status: StatusStep['status'] }) {
   if (status === 'success') {
-    return <i className="bi bi-check-circle-fill text-success fs-4 fw-bold" />
+    return <CheckCircle2 className="text-success fs-4 fw-bold" size={24} />
   }
   if (status === 'in-progress') {
-    return <i className="bi bi-hourglass-split mobis-gold fs-4 fw-bold" />
+    return <Hourglass className="mobis-gold fs-4 fw-bold" size={24} />
   }
   if (status === 'failed') {
-    return <i className="bi bi-x-circle-fill text-danger fs-4 fw-bold" />
+    return <XCircle className="text-danger fs-4 fw-bold" size={24} />
   }
-  return <i className="bi bi-circle text-secondary fs-4" />
+  return <Circle className="text-secondary fs-4" size={24} />
 }
 
 type StatusModalProps = {
