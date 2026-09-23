@@ -42,12 +42,12 @@ const isHttpsProduction =
 
 const FRONTEND_CSP_DIRECTIVES = [
   `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline' https://connect.facebook.net https://*.facebook.net https://analytics.tiktok.com https://*.tiktok.com`,
-  `style-src 'self' 'unsafe-inline'`,
-  `img-src 'self' data: blob: ${ADMIN_HOST} https://www.facebook.com https://*.facebook.com https://analytics.tiktok.com https://*.tiktok.com`,
-  `font-src 'self' data:`,
-  `connect-src 'self' https://*.facebook.com https://*.facebook.net https://*.on.aws https://*.run.app https://analytics.tiktok.com https://*.tiktok.com`,
-  `frame-src 'none'`,
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://*.facebook.net https://analytics.tiktok.com https://*.tiktok.com https://*.tiktokcdn.com https://*.byteoversea.com https://*.ibytedtos.com https://www.googletagmanager.com https://*.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.google.com https://*.google.co.id https://tagmanager.google.com https://tagassistant.google.com https://*.googleadservices.com https://*.googlesyndication.com https://*.g.doubleclick.net`,
+  `style-src 'self' 'unsafe-inline' https://tagmanager.google.com https://fonts.googleapis.com`,
+  `img-src 'self' data: blob: ${ADMIN_HOST} https://www.facebook.com https://*.facebook.com https://connect.facebook.net https://*.facebook.net https://analytics.tiktok.com https://*.tiktok.com https://*.tiktokcdn.com https://*.byteoversea.com https://*.ibytedtos.com https://www.googletagmanager.com https://*.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.google.com https://*.google.co.id https://*.googleadservices.com https://*.googlesyndication.com https://*.g.doubleclick.net https://googleads.g.doubleclick.net https://ssl.gstatic.com https://www.gstatic.com`,
+  `font-src 'self' data: https://fonts.gstatic.com`,
+  `connect-src 'self' https://*.facebook.com https://*.facebook.net https://*.on.aws https://*.run.app https://analytics.tiktok.com https://*.tiktok.com https://*.tiktokcdn.com https://*.byteoversea.com https://*.ibytedtos.com https://www.googletagmanager.com https://*.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.google.com https://*.google.co.id https://*.googleadservices.com https://*.googlesyndication.com https://*.g.doubleclick.net https://googleads.g.doubleclick.net https://stats.g.doubleclick.net`,
+  `frame-src 'self' https://www.googletagmanager.com https://*.googletagmanager.com https://tagassistant.google.com https://*.google.com https://analytics.tiktok.com https://*.tiktok.com https://www.facebook.com https://*.facebook.com`,
   `frame-ancestors 'self' ${FRONTEND_HOST} ${ADMIN_HOST}`,
   `object-src 'none'`,
   `base-uri 'self'`,

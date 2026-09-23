@@ -9,6 +9,7 @@ import { AdminBar } from '@/components/AdminBar'
 import { BootstrapClient } from '@/components/BootstrapClient'
 import PixelFacebook from '@/components/PixelFacebook'
 import PixelTiktok from '@/components/PixelTiktok'
+import GoogleTag from '@/components/GoogleTag'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
 import { Providers } from '@/providers'
@@ -17,6 +18,14 @@ import { inter } from './fonts'
 
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
   const { isEnabled } = await draftMode()
+
+  const googleTagId =
+    process.env.NEXT_PUBLIC_GOOGLE_TAG_ID ||
+    process.env.NEXT_PUBLIC_GTM_ID ||
+    process.env.NEXT_PUBLIC_GA_ID ||
+    process.env.GOOGLE_TAG_ID ||
+    process.env.GTM_ID ||
+    process.env.GA_ID
 
   return (
     <div className={`${inter.className} ${inter.variable} d-flex flex-column min-vh-100`}>
@@ -29,6 +38,9 @@ export default async function FrontendLayout({ children }: { children: React.Rea
         </Suspense>
         <Suspense fallback={null}>
           <PixelTiktok pixelId={process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || process.env.TIKTOK_PIXEL_ID} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <GoogleTag tagId={googleTagId} />
         </Suspense>
 
         <Header />
