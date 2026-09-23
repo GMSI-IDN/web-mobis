@@ -40,7 +40,10 @@ function getLcpBannerUrl(layout: any[] | null | undefined): string | null {
 
     for (const slide of slides) {
       if (slide?.isActive === false) continue
-      const url = slide?.backgroundImage?.url
+      const url =
+        slide?.backgroundImage?.sizes?.large?.url ||
+        slide?.backgroundImage?.sizes?.medium?.url ||
+        slide?.backgroundImage?.url
       if (url) return getMediaUrl(url)
     }
   }
