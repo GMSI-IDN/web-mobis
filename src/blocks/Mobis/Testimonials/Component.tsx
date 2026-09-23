@@ -37,7 +37,7 @@ function Stars({ rating }: { rating: number }) {
 }
 
 function Card({ t }: { t: Testi }) {
-  const rawAvatarUrl = t.avatar?.url
+  const rawAvatarUrl = t.avatar?.sizes?.thumbnail?.url || t.avatar?.sizes?.square?.url || t.avatar?.url
   const avatarUrl = rawAvatarUrl ? getMediaUrl(rawAvatarUrl) : undefined
   const rating = t.rating ?? 5
 

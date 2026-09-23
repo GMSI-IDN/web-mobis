@@ -48,7 +48,11 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
 
         <div className="row g-4 gy-5 justify-content-center">
           {(units ?? []).map((u, idx) => {
-            const rawImageUrl = u.image?.url || u.image?.sizes?.small?.url || u.image?.sizes?.thumbnail?.url
+            const rawImageUrl =
+              u.image?.sizes?.square?.url ||
+              u.image?.sizes?.small?.url ||
+              u.image?.sizes?.thumbnail?.url ||
+              u.image?.url
             const imageUrl = getMediaUrl(rawImageUrl)
             const imageAlt = resolveUnitAlt(u.name, u.image)
             return (

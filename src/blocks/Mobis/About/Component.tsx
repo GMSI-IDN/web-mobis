@@ -12,7 +12,7 @@ type Props = {
 }
 
 export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
-  const rawUrl = image?.url || image?.sizes?.medium?.url || image?.sizes?.small?.url
+  const rawUrl = image?.sizes?.medium?.url || image?.sizes?.small?.url || image?.url
   const imageUrl = rawUrl ? getMediaUrl(rawUrl) : undefined
   const normalizedTitle =
     title?.trim() === 'Tentang Rental MOBIS' ? 'Tentang Layanan Rental Driver Online MOBIS' : title

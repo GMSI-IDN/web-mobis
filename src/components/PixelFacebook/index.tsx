@@ -54,18 +54,8 @@ export default function PixelFacebook({ pixelId }: { pixelId?: string }) {
 
     events.forEach((event) => window.addEventListener(event, onUserInteraction, { once: true, passive: true }))
 
-    let idleHandle: any
-    let timer: any
-    if ('requestIdleCallback' in window) {
-      idleHandle = (window as any).requestIdleCallback(loadScript, { timeout: 7000 })
-    } else {
-      timer = setTimeout(loadScript, 7000)
-    }
-
     return () => {
       cleanupEvents()
-      if (idleHandle && 'cancelIdleCallback' in window) (window as any).cancelIdleCallback(idleHandle)
-      if (timer) clearTimeout(timer)
     }
   }, [pixelId])
 

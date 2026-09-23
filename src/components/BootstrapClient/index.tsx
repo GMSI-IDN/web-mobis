@@ -18,18 +18,8 @@ export function BootstrapClient() {
 
     events.forEach((event) => window.addEventListener(event, loadBootstrap, { once: true, passive: true }))
 
-    let idleHandle: any
-    let timer: any
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      idleHandle = (window as any).requestIdleCallback(loadBootstrap, { timeout: 6000 })
-    } else {
-      timer = setTimeout(loadBootstrap, 5000)
-    }
-
     return () => {
       cleanup()
-      if (idleHandle && 'cancelIdleCallback' in window) (window as any).cancelIdleCallback(idleHandle)
-      if (timer) clearTimeout(timer)
     }
   }, [])
 
