@@ -26,11 +26,11 @@ type Args = {
 }
 
 /**
- * Extract the first active banner image URL from page layout blocks.
+ * Extract the first active banner image URL and srcSet from page layout blocks.
  * Used to inject a `<link rel="preload">` hint so the browser starts
- * downloading the LCP image immediately when the HTML is received.
+ * downloading the exact responsive LCP image variant immediately.
  */
-function getLcpBannerUrl(layout: any[] | null | undefined): string | null {
+function getLcpBannerMedia(layout: any[] | null | undefined): { url: string; srcSet?: string } | null {
   if (!Array.isArray(layout)) return null
 
   for (const block of layout) {
@@ -40,11 +40,22 @@ function getLcpBannerUrl(layout: any[] | null | undefined): string | null {
 
     for (const slide of slides) {
       if (slide?.isActive === false) continue
-      const url =
-        slide?.backgroundImage?.sizes?.large?.url ||
-        slide?.backgroundImage?.sizes?.medium?.url ||
-        slide?.backgroundImage?.url
-      if (url) return getMediaUrl(url)
+      const bg = slide?.backgroundImage
+      if (!bg?.url) continue
+
+      const url = getMediaUrl(bg.sizes?.large?.url || bg.sizes?.medium?.url || bg.url)
+      const srcSet = bg.sizes
+        ? [
+            bg.sizes.small?.url ? `${getMediaUrl(bg.sizes.small.url)} 600w` : '',
+            bg.sizes.medium?.url ? `${getMediaUrl(bg.sizes.medium.url)} 900w` : '',
+            bg.sizes.large?.url ? `${getMediaUrl(bg.sizes.large.url)} 1400w` : '',
+            bg.sizes.xlarge?.url ? `${getMediaUrl(bg.sizes.xlarge.url)} 1920w` : '',
+          ]
+            .filter(Boolean)
+            .join(', ')
+        : undefined
+
+      return { url, srcSet }
     }
   }
 
@@ -77,12 +88,19 @@ export default async function Page({ params: paramsPromise }: Args) {
   const localBusinessSchemas = buildLocalBusinessStructuredData(layout, getPublicURL())
 
   // Preload the LCP banner image so the browser fetches it before CSS/JS parsing
-  const lcpBannerUrl = getLcpBannerUrl(layout)
+  const lcpBanner = getLcpBannerMedia(layout)
 
   return (
     <article className="pb-24">
-      {lcpBannerUrl && (
-        <link rel="preload" as="image" href={lcpBannerUrl} fetchPriority="high" />
+      {lcpBanner && (
+        <link
+          rel="preload"
+          as="image"
+          href={lcpBanner.url}
+          imageSrcSet={lcpBanner.srcSet}
+          imageSizes="100vw"
+          fetchPriority="high"
+        />
       )}
       <PageClient />
       {/* Allows redirects for valid pages too */}

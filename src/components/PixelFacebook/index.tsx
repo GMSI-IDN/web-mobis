@@ -57,9 +57,9 @@ export default function PixelFacebook({ pixelId }: { pixelId?: string }) {
     let idleHandle: any
     let timer: any
     if ('requestIdleCallback' in window) {
-      idleHandle = (window as any).requestIdleCallback(loadScript, { timeout: 4000 })
+      idleHandle = (window as any).requestIdleCallback(loadScript, { timeout: 7000 })
     } else {
-      timer = setTimeout(loadScript, 3500)
+      timer = setTimeout(loadScript, 7000)
     }
 
     return () => {
