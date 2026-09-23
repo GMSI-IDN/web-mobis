@@ -37,9 +37,11 @@ export default function PixelTiktok({ pixelId }: { pixelId?: string }) {
       }
       for (let i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i])
       ttq.instance = function (t: any) {
-        for (let e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++)
-          ttq.setAndDefer(e, ttq.methods[n])
-        return e
+        const inst = ttq._i[t] || []
+        for (let n = 0; n < ttq.methods.length; n++) {
+          ttq.setAndDefer(inst, ttq.methods[n])
+        }
+        return inst
       }
       ttq.load = function (e: any, n: any) {
         const i = 'https://analytics.tiktok.com/i18n/pixel/events.js'
