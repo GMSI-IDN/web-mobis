@@ -1,8 +1,8 @@
-/* eslint-disable */
 'use client'
 
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
+import Script from 'next/script'
 import { trackFacebookPageView } from '@/utilities/pixelFacebook'
 
 export default function PixelFacebook({ pixelId }: { pixelId?: string }) {
@@ -10,57 +10,7 @@ export default function PixelFacebook({ pixelId }: { pixelId?: string }) {
   const isFirstLoad = useRef(true)
 
   useEffect(() => {
-    if (!pixelId || typeof window === 'undefined') return
-
-    // 1. Initialize queue stub immediately so window.fbq is always available for tracking
-    if (!(window as any).fbq) {
-      const n: any = function () {
-        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments)
-      }
-      if (!(window as any)._fbq) (window as any)._fbq = n
-      n.push = n
-      n.loaded = !0
-      n.version = '2.0'
-      n.queue = []
-      ;(window as any).fbq = n
-      ;(window as any).fbq('set', 'autoConfig', false, pixelId)
-      ;(window as any).fbq('init', pixelId)
-      ;(window as any).fbq('track', 'PageView')
-    }
-
-    let scriptLoaded = false
-    const loadScript = () => {
-      if (scriptLoaded) return
-      scriptLoaded = true
-      cleanupEvents()
-      const t = document.createElement('script')
-      t.async = true
-      t.src = 'https://connect.facebook.net/en_US/fbevents.js'
-      const s = document.getElementsByTagName('script')[0]
-      if (s && s.parentNode) {
-        s.parentNode.insertBefore(t, s)
-      } else {
-        document.head.appendChild(t)
-      }
-    }
-
-    const events = ['scroll', 'touchstart', 'mousemove', 'click', 'keydown']
-    const onUserInteraction = () => {
-      loadScript()
-    }
-    const cleanupEvents = () => {
-      events.forEach((event) => window.removeEventListener(event, onUserInteraction))
-    }
-
-    events.forEach((event) => window.addEventListener(event, onUserInteraction, { once: true, passive: true }))
-
-    return () => {
-      cleanupEvents()
-    }
-  }, [pixelId])
-
-  useEffect(() => {
-    // Skip tracking on initial load because the initFB handler tracks PageView
+    // Skip tracking on initial load because the inline script handles it
     if (isFirstLoad.current) {
       isFirstLoad.current = false
       return
@@ -72,5 +22,27 @@ export default function PixelFacebook({ pixelId }: { pixelId?: string }) {
     }
   }, [pathname])
 
-  return null
+  if (!pixelId) return null
+
+  return (
+    <Script
+      id="fb-pixel"
+      strategy="afterInteractive"
+      dangerouslySetInnerHTML={{
+        __html: `
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('set', 'autoConfig', false, '${pixelId}');
+          fbq('init', '${pixelId}');
+          fbq('track', 'PageView');
+        `,
+      }}
+    />
+  )
 }

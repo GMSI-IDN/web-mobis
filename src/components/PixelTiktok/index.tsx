@@ -1,8 +1,8 @@
-/* eslint-disable */
 'use client'
 
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
+import Script from 'next/script'
 import { trackTiktokPageView } from '@/utilities/pixelTiktok'
 
 export default function PixelTiktok({ pixelId }: { pixelId?: string }) {
@@ -10,89 +10,7 @@ export default function PixelTiktok({ pixelId }: { pixelId?: string }) {
   const isFirstLoad = useRef(true)
 
   useEffect(() => {
-    if (!pixelId || typeof window === 'undefined') return
-
-    // 1. Initialize ttq queue stub immediately
-    if (!(window as any).ttq) {
-      const ttq: any = ((window as any).ttq = (window as any).ttq || [])
-      ttq.methods = [
-        'page',
-        'track',
-        'identify',
-        'instances',
-        'debug',
-        'on',
-        'off',
-        'once',
-        'ready',
-        'alias',
-        'group',
-        'enableCookie',
-        'disableCookie',
-      ]
-      ttq.setAndDefer = function (t: any, e: any) {
-        t[e] = function () {
-          t.push([e].concat(Array.prototype.slice.call(arguments, 0)))
-        }
-      }
-      for (let i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i])
-      ttq.instance = function (t: any) {
-        const inst = ttq._i[t] || []
-        for (let n = 0; n < ttq.methods.length; n++) {
-          ttq.setAndDefer(inst, ttq.methods[n])
-        }
-        return inst
-      }
-      ttq.load = function (e: any, n: any) {
-        const i = 'https://analytics.tiktok.com/i18n/pixel/events.js'
-        ttq._i = ttq._i || {}
-        ttq._i[e] = []
-        ttq._i[e]._u = i
-        ttq._t = ttq._t || {}
-        ttq._t[e] = +new Date()
-        ttq._o = ttq._o || {}
-        ttq._o[e] = n || {}
-        const script = document.createElement('script')
-        script.type = 'text/javascript'
-        script.async = true
-        script.src = i + '?sdkid=' + e + '&lib=ttq'
-        const s = document.getElementsByTagName('script')[0]
-        if (s && s.parentNode) {
-          s.parentNode.insertBefore(script, s)
-        } else {
-          document.head.appendChild(script)
-        }
-      }
-      ttq.page()
-    }
-
-    let scriptLoaded = false
-    const loadScript = () => {
-      if (scriptLoaded) return
-      scriptLoaded = true
-      cleanupEvents()
-      if ((window as any).ttq?.load) {
-        ;(window as any).ttq.load(pixelId)
-      }
-    }
-
-    const events = ['scroll', 'touchstart', 'mousemove', 'click', 'keydown']
-    const onUserInteraction = () => {
-      loadScript()
-    }
-    const cleanupEvents = () => {
-      events.forEach((event) => window.removeEventListener(event, onUserInteraction))
-    }
-
-    events.forEach((event) => window.addEventListener(event, onUserInteraction, { once: true, passive: true }))
-
-    return () => {
-      cleanupEvents()
-    }
-  }, [pixelId])
-
-  useEffect(() => {
-    // Skip tracking on initial load because initTT handles page()
+    // Skip tracking on initial load because the inline script handles it
     if (isFirstLoad.current) {
       isFirstLoad.current = false
       return
@@ -103,5 +21,21 @@ export default function PixelTiktok({ pixelId }: { pixelId?: string }) {
     }
   }, [pathname])
 
-  return null
+  if (!pixelId) return null
+
+  return (
+    <Script
+      id="tt-pixel"
+      strategy="afterInteractive"
+      dangerouslySetInnerHTML={{
+        __html: `
+          !function (w, d, t) {
+            w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=i+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+            ttq.load('${pixelId}');
+            ttq.page();
+          }(window, document, 'ttq');
+        `,
+      }}
+    />
+  )
 }
