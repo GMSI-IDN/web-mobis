@@ -12,64 +12,90 @@ export default function PixelTiktok({ pixelId }: { pixelId?: string }) {
   useEffect(() => {
     if (!pixelId || typeof window === 'undefined') return
 
-    const initTT = () => {
-      if ((window as any).ttq) return
-      ;(function (w: any, d: any, t: any) {
-        w.TiktokAnalyticsObject = t
-        var ttq = (w[t] = w[t] || [])
-        ttq.methods = [
-          'page',
-          'track',
-          'identify',
-          'instances',
-          'debug',
-          'on',
-          'off',
-          'once',
-          'ready',
-          'alias',
-          'group',
-          'enableCookie',
-          'disableCookie',
-        ]
-        ttq.setAndDefer = function (t: any, e: any) {
-          t[e] = function () {
-            t.push([e].concat(Array.prototype.slice.call(arguments, 0)))
-          }
+    // 1. Initialize ttq queue stub immediately
+    if (!(window as any).ttq) {
+      const ttq: any = ((window as any).ttq = (window as any).ttq || [])
+      ttq.methods = [
+        'page',
+        'track',
+        'identify',
+        'instances',
+        'debug',
+        'on',
+        'off',
+        'once',
+        'ready',
+        'alias',
+        'group',
+        'enableCookie',
+        'disableCookie',
+      ]
+      ttq.setAndDefer = function (t: any, e: any) {
+        t[e] = function () {
+          t.push([e].concat(Array.prototype.slice.call(arguments, 0)))
         }
-        for (var i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i])
-        ttq.instance = function (t: any) {
-          for (var e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++)
-            ttq.setAndDefer(e, ttq.methods[n])
-          return e
+      }
+      for (let i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i])
+      ttq.instance = function (t: any) {
+        for (let e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++)
+          ttq.setAndDefer(e, ttq.methods[n])
+        return e
+      }
+      ttq.load = function (e: any, n: any) {
+        const i = 'https://analytics.tiktok.com/i18n/pixel/events.js'
+        ttq._i = ttq._i || {}
+        ttq._i[e] = []
+        ttq._i[e]._u = i
+        ttq._t = ttq._t || {}
+        ttq._t[e] = +new Date()
+        ttq._o = ttq._o || {}
+        ttq._o[e] = n || {}
+        const script = document.createElement('script')
+        script.type = 'text/javascript'
+        script.async = true
+        script.src = i + '?sdkid=' + e + '&lib=ttq'
+        const s = document.getElementsByTagName('script')[0]
+        if (s && s.parentNode) {
+          s.parentNode.insertBefore(script, s)
+        } else {
+          document.head.appendChild(script)
         }
-        ttq.load = function (e: any, n: any) {
-          var i = 'https://analytics.tiktok.com/i18n/pixel/events.js'
-          ttq._i = ttq._i || {}
-          ttq._i[e] = []
-          ttq._i[e]._u = i
-          ttq._t = ttq._t || {}
-          ttq._t[e] = +new Date()
-          ttq._o = ttq._o || {}
-          ttq._o[e] = n || {}
-          n = d.createElement('script')
-          n.type = 'text/javascript'
-          n.async = !0
-          n.src = i + '?sdkid=' + e + '&lib=' + t
-          var s = d.getElementsByTagName('script')[0]
-          s.parentNode.insertBefore(n, s)
-        }
-        ttq.load(pixelId)
-        ttq.page()
-      })(window, document, 'ttq')
+      }
+      ttq.page()
     }
 
+    let scriptLoaded = false
+    const loadScript = () => {
+      if (scriptLoaded) return
+      scriptLoaded = true
+      cleanupEvents()
+      if ((window as any).ttq?.load) {
+        ;(window as any).ttq.load(pixelId)
+      }
+    }
+
+    const events = ['scroll', 'touchstart', 'mousemove', 'click', 'keydown']
+    const onUserInteraction = () => {
+      loadScript()
+    }
+    const cleanupEvents = () => {
+      events.forEach((event) => window.removeEventListener(event, onUserInteraction))
+    }
+
+    events.forEach((event) => window.addEventListener(event, onUserInteraction, { once: true, passive: true }))
+
+    let idleHandle: any
+    let timer: any
     if ('requestIdleCallback' in window) {
-      const handle = (window as any).requestIdleCallback(initTT, { timeout: 2500 })
-      return () => (window as any).cancelIdleCallback(handle)
+      idleHandle = (window as any).requestIdleCallback(loadScript, { timeout: 4000 })
     } else {
-      const timer = setTimeout(initTT, 1500)
-      return () => clearTimeout(timer)
+      timer = setTimeout(loadScript, 3500)
+    }
+
+    return () => {
+      cleanupEvents()
+      if (idleHandle && 'cancelIdleCallback' in window) (window as any).cancelIdleCallback(idleHandle)
+      if (timer) clearTimeout(timer)
     }
   }, [pixelId])
 
