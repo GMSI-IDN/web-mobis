@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { getFooterCached } from '@/Footer/getFooter'
-import { getServerSideURL } from '@/utilities/getURL'
 
 type FooterData = {
   logo?: any
@@ -23,19 +22,6 @@ function iconToBootstrapClass(icon?: string) {
   }
 }
 
-function toAbsURL(url?: string) {
-  if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-
-  // Prioritas: URL Payload (jika frontend & payload beda host)
-  const payloadBase =
-    process.env.NEXT_PUBLIC_PAYLOAD_URL || process.env.PAYLOAD_PUBLIC_SERVER_URL || ''
-
-  const base = (payloadBase || getServerSideURL()).replace(/\/$/, '')
-  const path = url.startsWith('/') ? url : `/${url}`
-  return `${base}${path}`
-}
-
 /**
  * layout.tsx Anda:
  *   import { Footer } from '@/Footer/Component'
@@ -51,16 +37,10 @@ export async function Footer() {
     <footer className="footer-mobis">
       <div className="container-fluid py-4 text-center">
         {/* Logo */}
-        {/* {logoUrl ? (
-          <div className="mb-2">
-            <img src={logoUrl} alt="MOBIS" className="footer-mobis__logo" />
-          </div>
-        ) : null} */}
-
         <div className="mb-2">
           {/* [10-09-2026] Tambahkan dimensi eksplisit, decoding async, dan lazy loading */}
           <img
-            src="/media/new-white-2.png"
+            src="/mobis/img/mobis-white-logo.svg"
             alt="Logo MOBIS Footer"
             width="120"
             height="40"

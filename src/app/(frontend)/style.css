@@ -1,11 +1,3 @@
-/* [10-09-2026] Pastikan bootstrap-icons menggunakan font-display: swap agar teks/icon tidak memblokir render */
-@font-face {
-  font-family: "bootstrap-icons";
-  font-display: swap;
-  src: url("/node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2") format("woff2"),
-       url("/node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff") format("woff");
-}
-
 html {
   scroll-behavior: smooth;
 }
