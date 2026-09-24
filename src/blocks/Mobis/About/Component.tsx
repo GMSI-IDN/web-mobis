@@ -12,24 +12,8 @@ type Props = {
 }
 
 export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
-  const imgSizes = image?.sizes
-  const thumbUrl = imgSizes?.thumbnail?.url ? getMediaUrl(imgSizes.thumbnail.url) : null
-  const smallUrl = imgSizes?.small?.url ? getMediaUrl(imgSizes.small.url) : null
-  const mediumUrl = imgSizes?.medium?.url ? getMediaUrl(imgSizes.medium.url) : null
-  const originalUrl = image?.url ? getMediaUrl(image.url) : undefined
-
-  // Fallback: prefer small/medium over full original
-  const imageUrl = smallUrl || mediumUrl || thumbUrl || originalUrl
-
-  // Build responsive srcSet
-  const srcSetEntries: string[] = []
-  if (thumbUrl) srcSetEntries.push(`${thumbUrl} 300w`)
-  if (smallUrl) srcSetEntries.push(`${smallUrl} 600w`)
-  if (mediumUrl) srcSetEntries.push(`${mediumUrl} 900w`)
-  if (originalUrl) srcSetEntries.push(`${originalUrl} 1200w`)
-  const srcSet = srcSetEntries.length > 1 ? srcSetEntries.join(', ') : undefined
-  const sizesAttr = '(max-width: 768px) 50vw, 600px'
-
+  const rawUrl = image?.sizes?.medium?.url || image?.sizes?.small?.url || image?.url
+  const imageUrl = rawUrl ? getMediaUrl(rawUrl) : undefined
   const normalizedTitle =
     title?.trim() === 'Tentang Rental MOBIS' ? 'Tentang Layanan Rental Driver Online MOBIS' : title
 
@@ -58,8 +42,6 @@ export const AboutSplit: React.FC<Props> = ({ title, description, image }) => {
               {imageUrl ? (
                 <img
                   src={imageUrl}
-                  srcSet={srcSet}
-                  sizes={sizesAttr}
                   alt={normalizedTitle ?? 'Tentang MOBIS'}
                   className="w-100"
                   width="600"

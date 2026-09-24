@@ -66,19 +66,12 @@ function ProgramCard({
 }) {
   if (!side) return null
 
-  const imgSizes = side.headerImage?.sizes
-  const thumbUrl = imgSizes?.thumbnail?.url ? getMediaUrl(imgSizes.thumbnail.url) : null
-  const smallUrl = imgSizes?.small?.url ? getMediaUrl(imgSizes.small.url) : null
-  const originalUrl = side.headerImage?.url ? getMediaUrl(side.headerImage.url) : undefined
-
-  const headerUrl = thumbUrl || smallUrl || originalUrl
-
-  const srcSetEntries: string[] = []
-  if (thumbUrl) srcSetEntries.push(`${thumbUrl} 300w`)
-  if (smallUrl) srcSetEntries.push(`${smallUrl} 600w`)
-  if (originalUrl) srcSetEntries.push(`${originalUrl} 900w`)
-  const srcSet = srcSetEntries.length > 1 ? srcSetEntries.join(', ') : undefined
-
+  // [10-09-2026] Gunakan varian thumbnail/small agar ukuran download hemat
+  const rawHeaderUrl =
+    side.headerImage?.sizes?.small?.url ||
+    side.headerImage?.sizes?.thumbnail?.url ||
+    side.headerImage?.url
+  const headerUrl = rawHeaderUrl ? getMediaUrl(rawHeaderUrl) : undefined
   const headerAlt = resolveProgramHeaderAlt(side)
 
   return (
@@ -88,8 +81,6 @@ function ProgramCard({
         {headerUrl ? (
           <img
             src={headerUrl}
-            srcSet={srcSet}
-            sizes="(max-width: 768px) 300px, 466px"
             alt={headerAlt}
             className="img-fluid"
             width="466"

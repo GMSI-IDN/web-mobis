@@ -1,43 +1,77 @@
 import React from 'react'
 
 import { getFooterCached } from '@/Footer/getFooter'
-import { getServerSideURL } from '@/utilities/getURL'
 
 type FooterData = {
   logo?: any
   socials?: Array<{ icon?: string; url?: string }>
 }
 
-function iconToBootstrapClass(icon?: string) {
+function renderSocialIcon(icon?: string) {
   switch (icon) {
     case 'instagram':
-      return 'bi bi-instagram'
+      return (
+        <img
+          src="/mobis/img/ig_white_logo.svg"
+          alt="Instagram"
+          width="26"
+          height="26"
+          loading="lazy"
+          decoding="async"
+        />
+      )
     case 'facebook':
-      return 'bi bi-facebook'
-    case 'youtube':
-      return 'bi bi-youtube'
+      return (
+        <img
+          src="/mobis/img/fb_white_logo.svg"
+          alt="Facebook"
+          width="26"
+          height="26"
+          loading="lazy"
+          decoding="async"
+        />
+      )
     case 'tiktok':
-      return 'bi bi-tiktok'
+      return (
+        <img
+          src="/mobis/img/tk_white_logo.svg"
+          alt="TikTok"
+          width="26"
+          height="26"
+          loading="lazy"
+          decoding="async"
+        />
+      )
+    case 'whatsapp':
+      return (
+        <img
+          src="/mobis/img/wa_white_logo.svg"
+          alt="WhatsApp"
+          width="26"
+          height="26"
+          loading="lazy"
+          decoding="async"
+        />
+      )
+    case 'youtube':
+      return (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+        </svg>
+      )
     default:
-      return 'bi bi-globe'
+      return (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+      )
   }
 }
 
-function toAbsURL(url?: string) {
-  if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-
-  // Prioritas: URL Payload (jika frontend & payload beda host)
-  const payloadBase =
-    process.env.NEXT_PUBLIC_PAYLOAD_URL || process.env.PAYLOAD_PUBLIC_SERVER_URL || ''
-
-  const base = (payloadBase || getServerSideURL()).replace(/\/$/, '')
-  const path = url.startsWith('/') ? url : `/${url}`
-  return `${base}${path}`
-}
-
 /**
- * layout.tsx Anda:
+ * layout.tsx:
  *   import { Footer } from '@/Footer/Component'
  *   <Footer />
  *
@@ -51,16 +85,10 @@ export async function Footer() {
     <footer className="footer-mobis">
       <div className="container-fluid py-4 text-center">
         {/* Logo */}
-        {/* {logoUrl ? (
-          <div className="mb-2">
-            <img src={logoUrl} alt="MOBIS" className="footer-mobis__logo" />
-          </div>
-        ) : null} */}
-
         <div className="mb-2">
           {/* [10-09-2026] Tambahkan dimensi eksplisit, decoding async, dan lazy loading */}
           <img
-            src="/media/new-white-2.png"
+            src="/mobis/img/mobis-white-logo.svg"
             alt="Logo MOBIS Footer"
             width="120"
             height="40"
@@ -82,7 +110,7 @@ export async function Footer() {
               /* [10-09-2026] Tingkatkan deskripsi aria-label untuk pembaca layar */
               aria-label={`Kunjungi media sosial ${s?.icon || 'MOBIS'}`}
             >
-              <i className={iconToBootstrapClass(s?.icon)} />
+              {renderSocialIcon(s?.icon)}
             </a>
           ))}
         </div>

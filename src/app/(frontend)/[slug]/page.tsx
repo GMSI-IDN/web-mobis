@@ -25,18 +25,12 @@ type Args = {
   }>
 }
 
-type LcpBannerPreload = {
-  href: string
-  imageSrcSet?: string
-  imageSizes?: string
-}
-
 /**
- * Extract the first active banner image from page layout blocks.
- * Used to inject a `<link rel="preload">` hint with responsive imageSrcSet
- * so the browser starts downloading the right-sized image immediately on mobile/desktop.
+ * Extract the first active banner image URL and srcSet from page layout blocks.
+ * Used to inject a `<link rel="preload">` hint so the browser starts
+ * downloading the exact responsive LCP image variant immediately.
  */
-function getLcpBannerPreload(layout: any[] | null | undefined): LcpBannerPreload | null {
+function getLcpBannerMedia(layout: any[] | null | undefined): { url: string; srcSet?: string } | null {
   if (!Array.isArray(layout)) return null
 
   for (const block of layout) {
@@ -49,33 +43,19 @@ function getLcpBannerPreload(layout: any[] | null | undefined): LcpBannerPreload
       const bg = slide?.backgroundImage
       if (!bg?.url) continue
 
-      const fallbackSrc = getMediaUrl(bg.url)
-      const srcSetEntries: string[] = []
-      const payloadSizes = bg?.sizes
-      if (payloadSizes) {
-        const sizeDefs = [
-          { name: 'small', defaultW: 600 },
-          { name: 'medium', defaultW: 900 },
-          { name: 'large', defaultW: 1400 },
-          { name: 'xlarge', defaultW: 1920 },
-        ] as const
+      const url = getMediaUrl(bg.sizes?.large?.url || bg.sizes?.medium?.url || bg.url)
+      const srcSet = bg.sizes
+        ? [
+            bg.sizes.small?.url ? `${getMediaUrl(bg.sizes.small.url)} 600w` : '',
+            bg.sizes.medium?.url ? `${getMediaUrl(bg.sizes.medium.url)} 900w` : '',
+            bg.sizes.large?.url ? `${getMediaUrl(bg.sizes.large.url)} 1400w` : '',
+            bg.sizes.xlarge?.url ? `${getMediaUrl(bg.sizes.xlarge.url)} 1920w` : '',
+          ]
+            .filter(Boolean)
+            .join(', ')
+        : undefined
 
-        for (const { name, defaultW } of sizeDefs) {
-          const s = payloadSizes[name]
-          if (s?.url) {
-            srcSetEntries.push(`${getMediaUrl(s.url)} ${s.width || defaultW}w`)
-          }
-        }
-      }
-      if (bg.width) {
-        srcSetEntries.push(`${fallbackSrc} ${bg.width}w`)
-      }
-
-      return {
-        href: fallbackSrc,
-        imageSrcSet: srcSetEntries.length > 1 ? srcSetEntries.join(', ') : undefined,
-        imageSizes: srcSetEntries.length > 1 ? '100vw' : undefined,
-      }
+      return { url, srcSet }
     }
   }
 
@@ -108,7 +88,7 @@ export default async function Page({ params: paramsPromise }: Args) {
   const localBusinessSchemas = buildLocalBusinessStructuredData(layout, getPublicURL())
 
   // Preload the LCP banner image so the browser fetches it before CSS/JS parsing
-  const lcpBanner = getLcpBannerPreload(layout)
+  const lcpBanner = getLcpBannerMedia(layout)
 
   return (
     <article className="pb-24">
@@ -116,10 +96,9 @@ export default async function Page({ params: paramsPromise }: Args) {
         <link
           rel="preload"
           as="image"
-          href={lcpBanner.href}
-          {...(lcpBanner.imageSrcSet
-            ? { imageSrcSet: lcpBanner.imageSrcSet, imageSizes: lcpBanner.imageSizes }
-            : {})}
+          href={lcpBanner.url}
+          imageSrcSet={lcpBanner.srcSet}
+          imageSizes="100vw"
           fetchPriority="high"
         />
       )}

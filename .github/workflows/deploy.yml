@@ -9,6 +9,16 @@ on:
   push:
     branches: [staging, production]
   workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force build and restart even if commit is unchanged'
+        type: boolean
+        default: false
+        required: false
+
+concurrency:
+  group: deploy-workflow-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -24,6 +34,7 @@ jobs:
     with:
       environment: staging
       git_ref: staging
+      force_rebuild: ${{ inputs.force_rebuild || false }}
     secrets: inherit
 
   # Production ada di server berbeda dengan path berbeda. Semua perbedaan itu
@@ -36,4 +47,5 @@ jobs:
     with:
       environment: production
       git_ref: production
+      force_rebuild: ${{ inputs.force_rebuild || false }}
     secrets: inherit
