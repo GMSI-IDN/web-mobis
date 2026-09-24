@@ -34,10 +34,24 @@ type Props = {
 
 import { getMediaUrl as formatMediaUrl } from '@/utilities/getMediaUrl'
 
-function getMediaUrl(poolImage: Area['PoolImage']): string | null {
+function resolvePoolImageUrl(poolImage: Area['PoolImage']): string | null {
   if (!poolImage) return null
-  if (typeof poolImage === 'string') return null // belum populated
-  return poolImage.url ? formatMediaUrl(poolImage.url) : null
+
+  if (typeof poolImage === 'string') {
+    if (poolImage.startsWith('/') || poolImage.startsWith('http')) {
+      return formatMediaUrl(poolImage)
+    }
+    return null
+  }
+
+  const media = poolImage as any
+  const rawUrl =
+    media?.sizes?.thumbnail?.url ||
+    media?.sizes?.small?.url ||
+    media?.sizes?.medium?.url ||
+    media?.url
+
+  return rawUrl ? formatMediaUrl(rawUrl) : null
 }
 
 export default function AreaChipsBlockComponent({ title, description, areas }: Props) {
@@ -92,16 +106,7 @@ export default function AreaChipsBlockComponent({ title, description, areas }: P
 
         <div className="row g-3 g-lg-4 justify-content-center">
           {(areas ?? []).map((a, i) => {
-            const poolMedia =
-              typeof a?.PoolImage === 'object' && a?.PoolImage !== null
-                ? (a.PoolImage as any)
-                : null
-            const poolRawUrl =
-              poolMedia?.sizes?.thumbnail?.url ||
-              poolMedia?.sizes?.small?.url ||
-              poolMedia?.url ||
-              (typeof a?.PoolImage === 'string' ? a.PoolImage : undefined)
-            const imgUrl = getMediaUrl(poolRawUrl)
+            const imgUrl = resolvePoolImageUrl(a?.PoolImage)
             const alt =
               (typeof a?.PoolImage === 'string' ? '' : a?.PoolImage?.alt) ||
               (a?.label ? `Lokasi pool Mobis ${a.label}` : 'Lokasi pool Mobis')
@@ -121,7 +126,15 @@ export default function AreaChipsBlockComponent({ title, description, areas }: P
                       <span className="area-partner-badge">Partner Mobis</span>
                     )}
                     {imgUrl ? (
-                      <img src={imgUrl} alt={alt} loading="lazy" decoding="async" fetchPriority="low" />
+                      <img
+                        src={imgUrl}
+                        alt={alt}
+                        width="350"
+                        height="150"
+                        loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
+                      />
                     ) : (
                       <div
                         style={{
