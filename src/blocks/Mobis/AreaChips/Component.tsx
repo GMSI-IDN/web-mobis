@@ -92,7 +92,16 @@ export default function AreaChipsBlockComponent({ title, description, areas }: P
 
         <div className="row g-3 g-lg-4 justify-content-center">
           {(areas ?? []).map((a, i) => {
-            const imgUrl = getMediaUrl(a?.PoolImage)
+            const poolMedia =
+              typeof a?.PoolImage === 'object' && a?.PoolImage !== null
+                ? (a.PoolImage as any)
+                : null
+            const poolRawUrl =
+              poolMedia?.sizes?.thumbnail?.url ||
+              poolMedia?.sizes?.small?.url ||
+              poolMedia?.url ||
+              (typeof a?.PoolImage === 'string' ? a.PoolImage : undefined)
+            const imgUrl = getMediaUrl(poolRawUrl)
             const alt =
               (typeof a?.PoolImage === 'string' ? '' : a?.PoolImage?.alt) ||
               (a?.label ? `Lokasi pool Mobis ${a.label}` : 'Lokasi pool Mobis')

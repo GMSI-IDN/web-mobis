@@ -66,12 +66,19 @@ function ProgramCard({
 }) {
   if (!side) return null
 
-  // [10-09-2026] Gunakan varian thumbnail/small agar ukuran download hemat
-  const rawHeaderUrl =
-    side.headerImage?.url ||
-    side.headerImage?.sizes?.thumbnail?.url ||
-    side.headerImage?.sizes?.small?.url
-  const headerUrl = rawHeaderUrl ? getMediaUrl(rawHeaderUrl) : undefined
+  const imgSizes = side.headerImage?.sizes
+  const thumbUrl = imgSizes?.thumbnail?.url ? getMediaUrl(imgSizes.thumbnail.url) : null
+  const smallUrl = imgSizes?.small?.url ? getMediaUrl(imgSizes.small.url) : null
+  const originalUrl = side.headerImage?.url ? getMediaUrl(side.headerImage.url) : undefined
+
+  const headerUrl = thumbUrl || smallUrl || originalUrl
+
+  const srcSetEntries: string[] = []
+  if (thumbUrl) srcSetEntries.push(`${thumbUrl} 300w`)
+  if (smallUrl) srcSetEntries.push(`${smallUrl} 600w`)
+  if (originalUrl) srcSetEntries.push(`${originalUrl} 900w`)
+  const srcSet = srcSetEntries.length > 1 ? srcSetEntries.join(', ') : undefined
+
   const headerAlt = resolveProgramHeaderAlt(side)
 
   return (
@@ -79,9 +86,10 @@ function ProgramCard({
       {/* ✅ Header image floating (z-index tinggi) */}
       <div className="program-card__header">
         {headerUrl ? (
-          /* [10-09-2026] Tambahkan lazy loading, decoding async, dan dimensi dasar */
           <img
             src={headerUrl}
+            srcSet={srcSet}
+            sizes="(max-width: 768px) 300px, 466px"
             alt={headerAlt}
             className="img-fluid"
             width="466"

@@ -16,14 +16,49 @@ type Media = {
 const DESKTOP_FALLBACK_WIDTH = 1920
 const DESKTOP_FALLBACK_HEIGHT = 640
 
+/**
+ * Build responsive banner media from Payload CMS image sizes.
+ * Generates srcSet so the browser picks the right size for the viewport,
+ * e.g. medium (900px) on mobile instead of the full 1440px original.
+ */
 function buildBannerMedia(media: Media | undefined, fallbackWidth: number, fallbackHeight: number) {
   const url = media?.url
   if (!url) return null
 
+  const src = getMediaUrl(url)
+  const width = media?.width || fallbackWidth
+  const height = media?.height || fallbackHeight
+
+  // Build srcSet from available Payload responsive sizes
+  const srcSetEntries: string[] = []
+  const payloadSizes = media?.sizes
+  if (payloadSizes) {
+    const sizeDefs = [
+      { name: 'small', defaultW: 600 },
+      { name: 'medium', defaultW: 900 },
+      { name: 'large', defaultW: 1400 },
+      { name: 'xlarge', defaultW: 1920 },
+    ] as const
+
+    for (const { name, defaultW } of sizeDefs) {
+      const s = payloadSizes[name]
+      if (s?.url) {
+        srcSetEntries.push(`${getMediaUrl(s.url)} ${s.width || defaultW}w`)
+      }
+    }
+  }
+  // Always include the original as the largest option
+  if (width) {
+    srcSetEntries.push(`${src} ${width}w`)
+  }
+
   return {
-    src: getMediaUrl(url),
-    width: media?.width || fallbackWidth,
-    height: media?.height || fallbackHeight,
+    src,
+    width,
+    height,
+    srcSet: srcSetEntries.length > 1 ? srcSetEntries.join(', ') : undefined,
+    // Tell browser: full viewport width (banner is always full-width)
+    imgSizes: srcSetEntries.length > 1 ? '100vw' : undefined,
   }
 }
 
@@ -157,6 +192,8 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                       <picture>
                         <img
                           src={desktopMedia.src}
+                          srcSet={desktopMedia.srcSet}
+                          sizes={desktopMedia.imgSizes}
                           alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
                           className="banner-img-fullbleed"
                           width={desktopMedia.width}

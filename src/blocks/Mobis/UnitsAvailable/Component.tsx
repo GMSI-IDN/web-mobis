@@ -48,8 +48,24 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
 
         <div className="row g-4 gy-5 justify-content-center">
           {(units ?? []).map((u, idx) => {
-            const rawImageUrl = u.image?.url || u.image?.sizes?.small?.url || u.image?.sizes?.thumbnail?.url
-            const imageUrl = getMediaUrl(rawImageUrl)
+            const imgSizes = u.image?.sizes
+            const thumbUrl = imgSizes?.thumbnail?.url ? getMediaUrl(imgSizes.thumbnail.url) : null
+            const squareUrl = imgSizes?.square?.url ? getMediaUrl(imgSizes.square.url) : null
+            const smallUrl = imgSizes?.small?.url ? getMediaUrl(imgSizes.small.url) : null
+            const originalUrl = u.image?.url ? getMediaUrl(u.image.url) : null
+
+            // Fallback src: prefer square (500x500) or small over full original
+            const imageUrl = squareUrl || smallUrl || thumbUrl || originalUrl
+
+            // Responsive srcSet: mobile (273px display) downloads thumbnail (300w) or square (500w)
+            const srcSetEntries: string[] = []
+            if (thumbUrl) srcSetEntries.push(`${thumbUrl} 300w`)
+            if (squareUrl) srcSetEntries.push(`${squareUrl} 500w`)
+            if (smallUrl) srcSetEntries.push(`${smallUrl} 600w`)
+            if (originalUrl) srcSetEntries.push(`${originalUrl} 820w`)
+            const srcSet = srcSetEntries.length > 1 ? srcSetEntries.join(', ') : undefined
+            const sizesAttr = '(max-width: 576px) 280px, (max-width: 992px) 350px, 300px'
+
             const imageAlt = resolveUnitAlt(u.name, u.image)
             return (
               <div key={idx} className={colClass}>
@@ -63,9 +79,10 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
                   )}
                   <div className="unit-card__media">
                     {imageUrl ? (
-                      /* [10-09-2026] Tambahkan lazy loading, decoding async, dan dimensi eksplisit */
                       <img
                         src={imageUrl}
+                        srcSet={srcSet}
+                        sizes={sizesAttr}
                         alt={imageAlt}
                         className="unit-card__img"
                         width="500"
