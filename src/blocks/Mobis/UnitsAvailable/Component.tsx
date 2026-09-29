@@ -35,18 +35,32 @@ function resolveUnitAlt(unitName?: string, image?: { alt?: string; filename?: st
 
 export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) => {
   const totalUnits = units?.length ?? 0
-  const isEvenFromFour = totalUnits >= 4 && totalUnits % 2 === 0
-  const colClass = isEvenFromFour ? 'col-10 col-sm-6 col-lg-6' : 'col-10 col-sm-6 col-lg-4'
+  const colClass = totalUnits === 3 ? 'col-6 col-sm-4 col-lg-4' : 'col-6 col-lg-3'
 
   return (
-    <section id="unit_mobil" className="bg-success-subtle">
-      <div className="container py-4 pb-5">
-        <div className="text-center mb-3">
-          <h2 className="small fw-bold text-success mb-0">{title}</h2>
-          {description && <p className="units-description">{description}</p>}
+    <section id="unit_mobil" className="unit-mobil-section">
+      <div className="container py-3 py-md-4 pb-4 pb-md-5">
+        <div className="text-center mb-3 mb-md-4">
+          <h2 className="visually-hidden">{title || 'Pilihan Mobil Buat Onbid Kamu'}</h2>
+          <div className="d-flex justify-content-center mb-1 mb-md-2">
+            <img
+              src="/mobis/img/pilihan-mobil-header.webp"
+              alt={title || 'Pilihan Mobil Buat Onbid Kamu'}
+              className="unit-header-sticker img-fluid"
+              width="545"
+              height="118"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <p className="unit-header-subtitle mx-auto mb-0">
+            {description ||
+              'Tersedia pilihan mobil yang irit dan terbaru biar onbid lebih hemat dan tetap nyaman!'}
+          </p>
         </div>
 
-        <div className="row g-4 gy-5 justify-content-center">
+        <div className="unit-cards-wrapper mx-auto">
+          <div className="row g-3 g-md-4 g-lg-4 gy-4 justify-content-center">
           {(units ?? []).map((u, idx) => {
             const rawImageUrl =
               u.image?.sizes?.square?.url ||
@@ -89,6 +103,7 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
           })}
         </div>
       </div>
-    </section>
-  )
+    </div>
+  </section>
+)
 }

@@ -138,7 +138,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
           data-bs-pause="false"
         >
           {activeSlides.length > 1 && (
-            <div className="carousel-indicators">
+            <div className="carousel-indicators d-none">
               {activeSlides.map((_, i) => (
                 <button
                   key={i}
@@ -234,7 +234,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
           {activeSlides.length > 1 && (
             <>
               <button
-                className="carousel-control-prev"
+                className="carousel-control-prev d-none d-md-flex"
                 type="button"
                 data-bs-target={`#${carouselId}`}
                 data-bs-slide="prev"
@@ -244,7 +244,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
               </button>
 
               <button
-                className="carousel-control-next"
+                className="carousel-control-next d-none d-md-flex"
                 type="button"
                 data-bs-target={`#${carouselId}`}
                 data-bs-slide="next"

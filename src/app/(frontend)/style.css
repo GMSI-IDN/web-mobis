@@ -162,22 +162,97 @@ body {
   font-size: medium;
 }
 
-.text-about{
+/* About Section Responsive */
+.about-section {
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 50%, #eaf8e7 100%);
+  padding: 24px 0 28px 0;
+}
+
+.text-about {
   display: flex;
   flex-direction: column;
-  width: 26rem;
   margin: 0 auto;
 }
 
-.about-rounded {
-    border-radius: 22px;
-    width: 24rem;
-    margin: 0 auto;
+.title-about {
+  color: #3BAC1F !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  letter-spacing: 0.01em !important;
+  font-size: 15px !important;
+  margin-bottom: 8px !important;
 }
 
-.title-about{
-  font-size: 1.5rem;
-  line-height: 1.2;
+.about-description,
+.about-description p,
+.about-description span {
+  font-family: var(--font-inter), sans-serif !important;
+  color: #3BAC1F !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.about-description strong,
+.about-description b,
+.about-description strong span,
+.about-description b span {
+  font-family: var(--font-inter), sans-serif !important;
+  color: #3BAC1F !important;
+  font-weight: 700 !important;
+}
+
+/* Desktop Mode (>= 768px) - Persis Figma */
+@media (min-width: 768px) {
+  .text-about {
+    max-width: 440px !important;
+  }
+  .title-about {
+    font-family: var(--font-inter), sans-serif !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    line-height: 26px !important;
+    text-align: center !important;
+    margin-bottom: 10px !important;
+    color: #3BAC1F !important;
+    letter-spacing: 0 !important;
+  }
+  .about-description,
+  .about-description p,
+  .about-description span {
+    font-size: 16px !important;
+    line-height: 26px !important;
+    text-align: justify !important;
+    text-justify: inter-word !important;
+  }
+}
+
+/* Mobile Mode (< 768px) - Persis Figma */
+@media (max-width: 767.98px) {
+  .text-about {
+    max-width: 363px !important;
+    width: 100% !important;
+    padding: 0 12px !important;
+    margin: 0 auto !important;
+  }
+  .title-about {
+    font-family: var(--font-inter), sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 100% !important;
+    letter-spacing: 0 !important;
+    color: #3BAC1F !important;
+    text-align: center !important;
+    margin-bottom: 8px !important;
+    text-transform: none !important;
+  }
+  .about-description,
+  .about-description p,
+  .about-description span {
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+    text-align: center !important;
+  }
 }
 
 .carousel-height {
@@ -268,9 +343,36 @@ body {
 }
 
 
+.unit-mobil-section {
+  background-color: #edfbe9;
+}
+
+.unit-header-sticker {
+  max-width: 545px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.unit-header-subtitle {
+  color: #3bac1f;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: center;
+  max-width: 580px;
+}
+
+.unit-cards-wrapper {
+  max-width: 1140px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 8px;
+}
+
 .bg_gradient_avaliabel_programs {
-  background: linear-gradient(#e9f8e6 41%, #3BAC1F 100%);
-  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 32%, #a5eb94 72%, #3bac1f 100%);
+  border-radius: 18px;
 }
 
 .btn-banner{
@@ -290,19 +392,27 @@ body {
 /* wrapper card */
 .unit-card {
   position: relative;
-  border-radius: 22px;
-  padding: 16px 16px 20px;
+  border-radius: 18px;
+  padding: 12px 6px 22px 6px;
   margin: 0 auto;
-  max-width: 560px;
+  width: 100%;
+  max-width: 260px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.unit-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(59, 172, 31, 0.18);
 }
 
 /* ribbon 3D folded 'UNIT BARU' pojok kiri atas */
 .unit-card__ribbon-wrapper {
   position: absolute;
-  top: -6px;
-  left: -6px;
-  width: 90px;
-  height: 90px;
+  top: -4px;
+  left: -4px;
+  width: 72px;
+  height: 72px;
   overflow: hidden;
   pointer-events: none;
   z-index: 10;
@@ -331,48 +441,54 @@ body {
 .unit-card__ribbon {
   position: absolute;
   display: block;
-  width: 130px;
-  padding: 5px 0;
+  width: 104px;
+  padding: 2.5px 0;
   background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -2px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.25);
   color: #fff;
-  font-size: 0.70rem;
+  font-size: 0.62rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   text-align: center;
-  left: -28px;
-  top: 20px;
+  left: -22px;
+  top: 15px;
   transform: rotate(-45deg);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   z-index: 2;
 }
 
-/* area gambar: lebih tinggi agar mobil tampak besar dan tidak terpotong */
+/* area gambar: proporsional agar kartu compact dan mobil tampak besar */
 .unit-card__media {
-  border-radius: 18px;
+  border-radius: 14px;
   background: transparent;
-  height: 22rem;
+  height: 175px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px 18px;
+  padding: 2px 4px 8px;
   position: relative;
 }
 
-/* gambar mobil: di-scale besar agar mendominasi card */
+/* gambar mobil: diperbesar proporsional mengisi kartu */
 .unit-card__img {
-  width: 100%;
-  height: 100%;
   max-width: 100%;
   max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   display: block;
-  transform: scale(1.24);
-  filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.25));
+  transform: scale(1.22);
+  transform-origin: center center;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.24));
+  transition: transform 0.3s ease;
 }
 
-/* footer area untuk badge: posisi presisi di tepi bawah tanpa merusak flow baris */
+.unit-card:hover .unit-card__img {
+  transform: scale(1.26);
+}
+
+/* footer area untuk badge: posisi presisi di tepi bawah */
 .unit-card__footer {
   position: absolute;
   bottom: 0;
@@ -382,19 +498,22 @@ body {
   justify-content: center;
   transform: translateY(50%);
   z-index: 5;
+  pointer-events: none;
 }
 
 /* badge pill putih */
 .unit-card__badge {
   background: #fff;
-  color: #16a34a;
-  font-weight: 800;
-  padding: 8px 22px;
+  color: #3bac1f;
+  font-weight: 700;
+  padding: 4px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(22, 163, 74, 0.2);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(59, 172, 31, 0.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
   line-height: 1.2;
+  font-size: 11.5px;
   white-space: nowrap;
+  pointer-events: auto;
 }
 
 /* ===== ProgramDual (sticker title) ===== */
@@ -847,8 +966,22 @@ body {
 
 
 .btn-banner-cta-fullbleed {
-  color: #3BAC1F;
-  padding: .25rem 1.5rem !important;
+  color: #3BAC1F !important;
+  background-color: #ffffff !important;
+  font-weight: 800 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.02em !important;
+  border: none !important;
+  padding: 0.4rem 1.6rem !important;
+  font-size: 13px !important;
+}
+
+.btn-banner-cta-fullbleed:hover {
+  background-color: #f4fbf5 !important;
+  color: #2e8b15 !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28) !important;
 }
 
 /* carousel End  */
@@ -873,17 +1006,12 @@ body {
 
 /* Fix: pastikan navbar-collapse tampil di desktop */
 @media (max-width: 992px) {
-
   .btn-banner-cta-fullbleed {
-    margin-bottom: 4rem;
- }
+    margin-bottom: 0 !important;
+  }
 
- /* .program-card__header img {
-    width: 75%;
-  } */
-
-  .program-card__header{
-     width: 21rem;
+  .program-card__header {
+    width: 21rem;
     margin-top: -4rem;
   }
 }
@@ -907,17 +1035,19 @@ body {
   }
 
   .banner-cta-fullbleed {
-    bottom: 22px;
+    bottom: 16px;
   }
   .banner-slide-fullbleed {
-    aspect-ratio: 472 / 242;
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    margin-top: 0 !important;
   }
 
   .area-thumb img {
     height: 210px;
   }
 
-  .rf-img{
+  .rf-img {
     max-width: 420px !important;
   }
 
@@ -934,17 +1064,62 @@ body {
   }
 
   .about-rounded {
-    width: 18rem !important;
+    width: 100% !important;
+    max-width: 22rem;
+    margin: 0 auto;
   }
 
   .text-about {
-    width: 20rem;
+    width: 100% !important;
+    max-width: 580px;
+    margin: 0 auto;
+  }
+  .unit-header-sticker {
+    max-width: 300px;
+    width: 90%;
+  }
+  .unit-header-subtitle {
+    font-size: 11.5px;
+    max-width: 300px;
+  }
+  .unit-cards-wrapper {
+    max-width: 380px;
+    padding: 0 8px;
+  }
+  .unit-card {
+    border-radius: 14px;
+    padding: 8px 4px 18px 4px;
+    max-width: 100%;
   }
   .unit-card__media {
-    height: 15rem !important;
+    height: 115px !important;
+    padding: 2px 2px 6px;
   }
   .unit-card__img {
-    transform: scale(1.12);
+    transform: scale(1.20) !important;
+    transform-origin: center center;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+  }
+  .unit-card__badge {
+    font-size: 9.5px;
+    padding: 3px 8px;
+    max-width: 92%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .unit-card__ribbon-wrapper {
+    width: 54px;
+    height: 54px;
+    top: -3px;
+    left: -3px;
+  }
+  .unit-card__ribbon {
+    width: 76px;
+    font-size: 0.46rem;
+    padding: 2px 0;
+    left: -17px;
+    top: 11px;
+    letter-spacing: 0.3px;
   }
 
   .program-card__header {
@@ -956,51 +1131,50 @@ body {
   }
 }
 
-
-@media (max-width:541px) {
+@media (max-width: 541px) {
   .about-rounded {
-    width: 15rem !important;
+    width: 100% !important;
+    max-width: 18rem;
+    margin: 0 auto;
   }
 
-  .m-mobis-button{
-      margin-bottom: 2.5rem;
+  .m-mobis-button {
+    margin-bottom: 2.5rem;
   }
 
   .banner-slide-fullbleed {
-    height: 16rem;
-    margin-top: 4rem !important;
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    margin-top: 0 !important;
     overflow: hidden;
   }
   .text-about {
-    width: 16rem;
+    width: 100% !important;
+    max-width: 100%;
+    margin: 0 auto;
   }
   .program-card__header {
-    /* width: 28rem; */
     margin-top: -4rem;
   }
 
   .unit-card {
-    margin: 1.5rem 1rem;
+    margin: 0 auto;
   }
 
   .btn-banner-cta-fullbleed {
     margin-bottom: 0rem !important;
+    font-size: 13px !important;
+    padding: 0.35rem 1.25rem !important;
   }
-
 }
 
-
-@media  (max-width: 450px) {
-
-  /* .program-card__header img {
-    width: 50%;
-  } */
-
+@media (max-width: 450px) {
   .banner-slide-fullbleed {
-    height: 16rem;
-    margin-top: 4rem !important;
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    margin-top: 0 !important;
     overflow: hidden;
-    }
+  }
 
   .program-card__header {
     /* width: 36rem; */
@@ -1058,10 +1232,29 @@ body {
     margin-bottom: 2.5rem;
   }
 
+  .unit-header-sticker {
+    max-width: 240px;
+    width: 88%;
+  }
+  .unit-cards-wrapper {
+    max-width: 330px;
+    padding: 0 2px;
+  }
   .unit-card {
-    border-radius: 22px;
-    margin: 1.5rem 1rem;
-    padding: 5px 0px;
+    border-radius: 12px;
+    margin: 0 auto;
+    padding: 5px 3px 14px 3px;
+  }
+  .unit-card__media {
+    height: 95px !important;
+  }
+  .unit-card__img {
+    transform: scale(1.18) !important;
+    transform-origin: center center;
+  }
+  .unit-card__badge {
+    font-size: 8.5px;
+    padding: 2.5px 6px;
   }
 
 }
