@@ -39,10 +39,10 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
 
   return (
     <section id="unit_mobil" className="unit-mobil-section">
-      <div className="container py-3 py-md-4 pb-4 pb-md-5">
-        <div className="text-center mb-3 mb-md-4">
+      <div className="container py-4 py-md-5 pb-5">
+        <div className="text-center mb-4 mb-md-5">
           <h2 className="visually-hidden">{title || 'Pilihan Mobil Buat Onbid Kamu'}</h2>
-          <div className="d-flex justify-content-center mb-1 mb-md-2">
+          <div className="d-flex justify-content-center mb-2 mb-md-3">
             <img
               src="/mobis/img/pilihan-mobil-header.webp"
               alt={title || 'Pilihan Mobil Buat Onbid Kamu'}
@@ -60,7 +60,7 @@ export const UnitsAvailable: React.FC<Props> = ({ title, description, units }) =
         </div>
 
         <div className="unit-cards-wrapper mx-auto">
-          <div className="row g-3 g-md-4 g-lg-4 gy-4 justify-content-center">
+          <div className="row g-3 g-md-4 g-lg-5 gy-4 justify-content-center">
           {(units ?? []).map((u, idx) => {
             const rawImageUrl =
               u.image?.sizes?.square?.url ||

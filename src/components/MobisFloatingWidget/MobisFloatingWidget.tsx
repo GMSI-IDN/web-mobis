@@ -89,9 +89,9 @@ export default function MobisFloatingWidget() {
           type="button"
           className="mobis-btn mobis-btn--yellow"
           onClick={() => open('status')}
-          aria-label="Status Pendaftaran"
+          aria-label="Cek Status Pendaftaran"
         >
-          Status Pendaftaran
+          Cek Status Pendaftaran
         </button>
 
         <button
@@ -113,7 +113,7 @@ export default function MobisFloatingWidget() {
 
       {/* ✅ Modal: Status */}
       {active === 'status' && (
-        <Modal title="Registration Mobis Check" onClose={closeAll}>
+        <Modal title="Cek Status Pendaftaran Kamu Disini!" onClose={closeAll}>
           <StatusForm />
         </Modal>
       )}

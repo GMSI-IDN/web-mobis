@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
+import React, { useMemo, useRef, useState, useEffect } from 'react'
 import { getMediaUrl } from '@/utilities/getMediaUrl'
 
 type Testi = {
+  id?: string
   name: string
   role?: string
   rating?: number
@@ -17,18 +18,43 @@ type Props = {
   intervalMs?: number // 0 = off
 }
 
-function chunk<T>(arr: T[], size: number) {
-  const out: T[][] = []
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
-  return out
-}
+const DEFAULT_TESTIS: Testi[] = [
+  {
+    name: 'HARMAINI',
+    role: 'Gabung 2020',
+    rating: 5,
+    text: 'Harga murah dibanding yang lain, dan penanganannya cepat',
+    avatar: { url: '/mobis/img/foto-5.webp' },
+  },
+  {
+    name: 'RIZAL',
+    role: 'Gabung 2024',
+    rating: 5,
+    text: 'Rental yang terbaik, biaya sewa cukup ekonomis, service bulanan dijamin',
+    avatar: { url: '/mobis/img/foto-6.webp' },
+  },
+  {
+    name: 'JOHN',
+    role: 'Gabung 2025',
+    rating: 5,
+    text: 'Administrasi mudah tidak rumit, setoran murah dan dikasih tempo seminggu jadi lebih tenang',
+    avatar: { url: '/mobis/img/foto-7.webp' },
+  },
+  {
+    name: 'FARIS',
+    role: 'Gabung 2025',
+    rating: 5,
+    text: 'Lokasi dekat, harga murah, dan prosesnya mudah',
+    avatar: { url: '/mobis/img/foto-8.webp' },
+  },
+]
 
 function Stars({ rating }: { rating: number }) {
   const r = Math.max(1, Math.min(5, rating))
   return (
-    <div className="d-flex gap-1" aria-label={`Rating ${r} dari 5`}>
+    <div className="testi-stars" aria-label={`Rating ${r} dari 5`}>
       {Array.from({ length: 5 }).map((_, i) => (
-        <span key={i} className={i < r ? 'text-warning' : 'text-muted'}>
+        <span key={i} className={i < r ? 'testi-star--active' : 'testi-star--inactive'}>
           ★
         </span>
       ))}
@@ -37,301 +63,182 @@ function Stars({ rating }: { rating: number }) {
 }
 
 function Card({ t }: { t: Testi }) {
-  const rawAvatarUrl = t.avatar?.sizes?.thumbnail?.url || t.avatar?.sizes?.square?.url || t.avatar?.url
+  const rawAvatarUrl =
+    t.avatar?.sizes?.thumbnail?.url ||
+    t.avatar?.sizes?.square?.url ||
+    t.avatar?.url ||
+    (typeof t.avatar === 'string' ? t.avatar : undefined)
+
   const avatarUrl = rawAvatarUrl ? getMediaUrl(rawAvatarUrl) : undefined
   const rating = t.rating ?? 5
 
   return (
-    <div className="card border-0 shadow-sm h-100 testi-card">
-      <div className="card-body p-3 p-md-4">
-        <div className="d-flex gap-3 align-items-start">
-          <div
-            className="rounded-circle bg-light overflow-hidden flex-shrink-0"
-            style={{ width: 56, height: 56 }}
-          >
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={t.name}
-                className="w-100 h-100"
-                style={{ objectFit: 'cover' }}
-                loading="lazy"
-              />
-            ) : null}
-          </div>
-
-          <div className="w-100">
-            <div className="fw-bold">{t.name}</div>
-            {t.role ? <div className="text-muted small">{t.role}</div> : null}
-
-            <div className="mt-2">
-              <Stars rating={rating} />
+    <div className="testi-card" style={{ minHeight: 112 }}>
+      {/* Kolom Kiri: Foto Profil, Nama, & Masa Gabung */}
+      <div className="testi-card__profile" style={{ width: 68, flexShrink: 0 }}>
+        <div
+          className="testi-card__avatar"
+          style={{ width: 44, height: 44, minWidth: 44, maxWidth: 44, borderRadius: '50%', overflow: 'hidden' }}
+        >
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={t.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: '50%' }}
+              loading="lazy"
+            />
+          ) : (
+            <div className="testi-card__avatar-placeholder">
+              {t.name?.charAt(0) || 'M'}
             </div>
-
-            <p className="small text-muted mt-2 mb-0" style={{ lineHeight: 1.4 }}>
-              {t.text}
-            </p>
-          </div>
+          )}
         </div>
+        <div className="testi-card__name">{t.name}</div>
+        {t.role ? <div className="testi-card__role">{t.role}</div> : null}
+      </div>
+
+      {/* Kolom Kanan: Teks Ulasan & Rating Bintang di bawahnya */}
+      <div className="testi-card__content" style={{ flex: 1, minWidth: 0 }}>
+        <p className="testi-card__quote">{t.text}</p>
+        <Stars rating={rating} />
       </div>
     </div>
   )
 }
 
-/** breakpoint -> perSlide (mobile=1, md=2, lg=3, xl=4) */
-function usePerSlide() {
-  const [perSlide, setPerSlide] = useState<1 | 2 | 3 | 4>(1)
+export const Testimonials: React.FC<Props> = ({ title, items, intervalMs }) => {
+  const list = useMemo(() => {
+    if (items && items.length > 0) return items
+    return DEFAULT_TESTIS
+  }, [items])
 
-  useEffect(() => {
-    // SSR safe
-    if (typeof window === 'undefined') return
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
 
-    const calc = () => {
-      const w = window.innerWidth
-      if (w >= 1200) return 4
-      if (w >= 992) return 3
-      if (w >= 768) return 2
-      return 1
-    }
-
-    const apply = () => setPerSlide(calc() as 1 | 2 | 3 | 4)
-    apply()
-
-    window.addEventListener('resize', apply, { passive: true })
-    return () => window.removeEventListener('resize', apply)
-  }, [])
-
-  return perSlide
-}
-
-function safeCall(api: any, rootEl: HTMLDivElement | null, fn: () => void) {
-  if (!api) return
-  if (!rootEl || !rootEl.isConnected) return
-  try {
-    fn()
-  } catch {
-    // swallow to avoid crashing during fast UI changes
+  const checkScroll = () => {
+    if (!trackRef.current) return
+    const { scrollLeft, scrollWidth, clientWidth } = trackRef.current
+    setCanScrollLeft(scrollLeft > 10)
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10)
   }
-}
-
-function useBootstrapCarousel({
-  rootRef,
-  enabled,
-  intervalMs,
-}: {
-  rootRef: React.RefObject<HTMLDivElement | null>
-  enabled: boolean
-  intervalMs: number
-}) {
-  const [api, setApi] = useState<any>(null)
 
   useEffect(() => {
-    let instance: any = null
-    let cancelled = false
-
-    const el = rootRef.current
+    checkScroll()
+    const el = trackRef.current
     if (!el) return
-    ;(async () => {
-      const mod = await import('bootstrap/js/dist/carousel')
-      if (cancelled) return
-      if (!el || !el.isConnected) return
-
-      const Carousel = mod.default
-
-      // dispose old
-      try {
-        const old = Carousel.getInstance(el)
-        if (old) old.dispose()
-      } catch {}
-
-      instance = new Carousel(el, {
-        interval: enabled && intervalMs > 0 ? intervalMs : false,
-        ride: enabled && intervalMs > 0 ? 'carousel' : false,
-        wrap: enabled,
-        touch: enabled,
-        pause: enabled ? 'hover' : false,
-      })
-
-      setApi(instance)
-    })()
-
+    el.addEventListener('scroll', checkScroll, { passive: true })
+    window.addEventListener('resize', checkScroll, { passive: true })
     return () => {
-      cancelled = true
-      try {
-        if (instance) instance.dispose()
-      } catch {}
-      setApi(null)
+      el.removeEventListener('scroll', checkScroll)
+      window.removeEventListener('resize', checkScroll)
     }
-  }, [rootRef, enabled, intervalMs])
+  }, [list])
 
-  return api
-}
+  // Auto-scroll jika intervalMs disediakan
+  useEffect(() => {
+    const ms = typeof intervalMs === 'number' && intervalMs > 0 ? intervalMs : 0
+    if (!ms || list.length <= 1) return
 
-function useDragToSlide({
-  enabled,
-  api,
-  rootRef,
-  threshold = 60,
-}: {
-  enabled: boolean
-  api: any
-  rootRef: React.RefObject<HTMLDivElement | null>
-  threshold?: number
-}) {
-  const startX = useRef<number | null>(null)
-  const dragging = useRef(false)
+    const timer = setInterval(() => {
+      if (trackRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = trackRef.current
+        if (scrollLeft + clientWidth >= scrollWidth - 15) {
+          trackRef.current.scrollTo({ left: 0, behavior: 'smooth' })
+        } else {
+          trackRef.current.scrollBy({ left: 285, behavior: 'smooth' })
+        }
+      }
+    }, ms)
+
+    return () => clearInterval(timer)
+  }, [intervalMs, list.length])
+
+  // Support drag-to-scroll dengan pointer
+  const isDragging = useRef(false)
+  const startX = useRef(0)
+  const initialScrollLeft = useRef(0)
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (!enabled || !api) return
+    if (!trackRef.current) return
     if (e.pointerType === 'mouse' && e.button !== 0) return
-    dragging.current = true
+    isDragging.current = true
     startX.current = e.clientX
+    initialScrollLeft.current = trackRef.current.scrollLeft
     try {
-      ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+      trackRef.current.setPointerCapture(e.pointerId)
     } catch {}
   }
 
-  const end = (e: React.PointerEvent) => {
-    if (!enabled || !api) return
-    if (!dragging.current || startX.current == null) return
-
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!isDragging.current || !trackRef.current) return
     const dx = e.clientX - startX.current
-    dragging.current = false
-    startX.current = null
-
-    if (Math.abs(dx) < threshold) return
-    const rootEl = rootRef.current
-    if (dx < 0) safeCall(api, rootEl, () => api.next?.())
-    else safeCall(api, rootEl, () => api.prev?.())
+    trackRef.current.scrollLeft = initialScrollLeft.current - dx
   }
 
-  return {
-    onPointerDown,
-    onPointerUp: end,
-    onPointerCancel: end,
-    onPointerLeave: end,
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!isDragging.current) return
+    isDragging.current = false
+    try {
+      trackRef.current?.releasePointerCapture(e.pointerId)
+    } catch {}
   }
-}
 
-export const Testimonials: React.FC<Props> = ({ title, items, intervalMs }) => {
-  const list = useMemo(() => items ?? [], [items])
-  const baseId = useId().replace(/:/g, '')
-  const perSlide = usePerSlide()
-  const ms = typeof intervalMs === 'number' ? intervalMs : 0
-
-  const groups = useMemo(() => chunk(list, perSlide), [list, perSlide])
-
-  // enable slide jika lebih dari 1 halaman
-  const enableSlide = groups.length > 1
-
-  const rootRef = useRef<HTMLDivElement | null>(null)
-  const api = useBootstrapCarousel({
-    rootRef,
-    enabled: enableSlide,
-    intervalMs: ms,
-  })
-
-  const drag = useDragToSlide({ enabled: enableSlide, api, rootRef })
-
-  const colClass =
-    perSlide === 1
-      ? 'col-12'
-      : perSlide === 2
-        ? 'col-12 col-md-6'
-        : perSlide === 3
-          ? 'col-12 col-md-6 col-lg-4'
-          : 'col-12 col-md-6 col-lg-3'
+  const scrollBy = (offset: number) => {
+    if (trackRef.current) {
+      trackRef.current.scrollBy({ left: offset, behavior: 'smooth' })
+    }
+  }
 
   return (
-    <div className="bg-white" id="kata_mitra_kami">
-      <div className="container py-4">
+    <section className="testi-section" id="kata_mitra_kami">
+      <div className="container px-0 px-md-3">
+        {/* Judul Seksi */}
         <div className="text-center mb-3">
-          <h2 className="h6 fw-bold text-success mb-0">{title ?? 'KATA MITRA KAMI'}</h2>
+          <h2 className="testi-title">{title ?? 'KATA MITRA KAMI'}</h2>
         </div>
 
-        <div id={`${baseId}-carousel`} ref={rootRef} className="carousel slide testi-carousel">
+        {/* Track Slider Testimoni */}
+        <div className="testi-track-wrapper">
+          {/* Tombol navigasi desktop */}
+          {canScrollLeft && (
+            <button
+              type="button"
+              className="testi-nav-btn testi-nav-btn--prev d-none d-md-flex"
+              onClick={() => scrollBy(-285)}
+              aria-label="Previous Testimonial"
+            >
+              ‹
+            </button>
+          )}
+
           <div
-            className={`carousel-inner ${enableSlide ? 'cursor-grab' : ''}`}
-            style={{ userSelect: 'none' }}
-            {...drag}
+            ref={trackRef}
+            className="testi-track"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
           >
-            {groups.map((grp, i) => (
-              <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
-                <div className="row m-carusel-testimoni  g-3">
-                  {grp.map((t, idx) => (
-                    <div key={idx} className={colClass}>
-                      <Card t={t} />
-                    </div>
-                  ))}
-                </div>
+            {list.map((t, idx) => (
+              <div key={t.id || idx} className="testi-slide">
+                <Card t={t} />
               </div>
             ))}
           </div>
 
-          {/* controls */}
-          <button
-            className={`carousel-control-prev ${enableSlide ? '' : 'd-none'}`}
-            type="button"
-            onClick={() => safeCall(api, rootRef.current, () => api?.prev?.())}
-            aria-label="Previous"
-          >
-            <span className="carousel-control-prev-icon" aria-hidden="true" />
-          </button>
-
-          <button
-            className={`carousel-control-next ${enableSlide ? '' : 'd-none'}`}
-            type="button"
-            onClick={() => safeCall(api, rootRef.current, () => api?.next?.())}
-            aria-label="Next"
-          >
-            <span className="carousel-control-next-icon" aria-hidden="true" />
-          </button>
-
-          {/* ✅ IMPORTANT:
-              indikator SELALU ada + button harus punya data-bs-target & data-bs-slide-to
-              agar Bootstrap tidak null saat _setActiveIndicatorElement
-          */}
-          <div
-            className={`carousel-indicators position-static mt-3 mb-0 ${enableSlide ? '' : 'd-none'}`}
-          >
-            {groups.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                data-bs-target={`#${baseId}-carousel`}
-                data-bs-slide-to={idx}
-                className={idx === 0 ? 'active' : ''}
-                aria-current={idx === 0 ? 'true' : undefined}
-                aria-label={`Slide ${idx + 1}`}
-                onClick={() => safeCall(api, rootRef.current, () => api?.to?.(idx))}
-              />
-            ))}
-          </div>
+          {canScrollRight && (
+            <button
+              type="button"
+              className="testi-nav-btn testi-nav-btn--next d-none d-md-flex"
+              onClick={() => scrollBy(285)}
+              aria-label="Next Testimonial"
+            >
+              ›
+            </button>
+          )}
         </div>
       </div>
-
-      <style jsx global>{`
-        .testi-card {
-          border-radius: 14px;
-        }
-
-        .testi-carousel .carousel-control-prev,
-        .testi-carousel .carousel-control-next {
-          width: 44px;
-        }
-
-        .testi-carousel .carousel-control-prev-icon,
-        .testi-carousel .carousel-control-next-icon {
-          filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
-        }
-
-        .cursor-grab {
-          cursor: grab;
-        }
-        .cursor-grab:active {
-          cursor: grabbing;
-        }
-      `}</style>
-    </div>
+    </section>
   )
 }

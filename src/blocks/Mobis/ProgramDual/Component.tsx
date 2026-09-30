@@ -18,10 +18,18 @@ type ProgramSide = {
   note?: string
 }
 
+type RequirementsData = {
+  title?: string
+  left?: { heading?: string; items?: { text: string }[] }
+  right?: { heading?: string; items?: { text: string }[] }
+  note?: string
+}
+
 type Props = {
   title?: string
   left?: ProgramSide
   right?: ProgramSide
+  requirements?: RequirementsData
   style?: {
     sectionBgClass?: string
     cardBgClass?: string
@@ -38,132 +46,174 @@ function resolveProgramHeaderAlt(side?: ProgramSide) {
 
   const filename = side?.headerImage?.filename?.toLowerCase() || ''
   if (filename.includes('pro-mingguan')) return 'Program rental driver online mingguan'
-  if (filename.includes('program_rwo') || filename.includes('rwo')) {
-    return 'Program rent to own rental driver online'
-  }
 
-  if ((side?.title || '').toLowerCase().includes('mingguan')) {
-    return 'Program rental driver online mingguan'
-  }
-
-  return side?.title || 'Program rental driver online MOBIS'
+  return side?.title || 'Program rental driver online mingguan'
 }
 
-function ProgramCard({
-  side,
-  cardBgClass,
-  cardTextClass,
-  _headerImgMaxWidth,
-  _headerTop,
-  bodyTopPadding,
-}: {
-  side?: ProgramSide
-  cardBgClass: string
-  cardTextClass: string
-  _headerImgMaxWidth?: number
-  _headerTop?: number
-  bodyTopPadding: number
-}) {
-  if (!side) return null
+const DEFAULT_PERSYARATAN = {
+  umum: {
+    heading: 'Persyaratan Umum',
+    items: [
+      'Berdomisili di Jabodetabek/Bandung/Surabaya/Sidoarjo/Gresik/Bali',
+      'Usia 18 - 62 tahun',
+    ],
+  },
+  dokumen: {
+    heading: 'Persyaratan Dokumen',
+    items: [
+      'KTP',
+      'Kartu Keluarga',
+      'SIM A / B',
+      'PBB / Surat Ket. kepemilikan rumah/\nBukti sewa',
+      'Surat keterangan domisili*',
+      'Dokumen Penjamin*',
+    ],
+  },
+  note: '*S&K Berlaku',
+}
 
-  // [10-09-2026] Gunakan varian thumbnail/small agar ukuran download hemat
-  const rawHeaderUrl =
-    side.headerImage?.sizes?.small?.url ||
-    side.headerImage?.sizes?.thumbnail?.url ||
-    side.headerImage?.url
-  const headerUrl = rawHeaderUrl ? getMediaUrl(rawHeaderUrl) : undefined
-  const headerAlt = resolveProgramHeaderAlt(side)
+function RequirementsCard({ requirements }: { requirements?: RequirementsData }) {
+  const umumHeading = requirements?.left?.heading || DEFAULT_PERSYARATAN.umum.heading
+  const formatText = (text: string) => {
+    let res = text
+    if (res.toLowerCase().includes('mojokerto') || res.toLowerCase().includes('malang')) {
+      res = 'Berdomisili di Jabodetabek/Bandung/Surabaya/Sidoarjo/Gresik/Bali'
+    }
+    // Allow natural line breaks after slashes so long slurred paths wrap without overflowing
+    return res.replace(/\/(?!\s)/g, '/\u200B')
+  }
+
+  const umumItems =
+    requirements?.left?.items && requirements.left.items.length > 0
+      ? requirements.left.items.map((it) => formatText(it.text))
+      : DEFAULT_PERSYARATAN.umum.items.map((it) => formatText(it))
+
+  const dokumenHeading = requirements?.right?.heading || DEFAULT_PERSYARATAN.dokumen.heading
+  const dokumenItems =
+    requirements?.right?.items && requirements.right.items.length > 0
+      ? requirements.right.items.map((it) => formatText(it.text))
+      : DEFAULT_PERSYARATAN.dokumen.items.map((it) => formatText(it))
+
+  const note = requirements?.note || DEFAULT_PERSYARATAN.note
 
   return (
-    <div className="program-card position-relative">
-      {/* ✅ Header image floating (z-index tinggi) */}
-      <div className="program-card__header">
-        {headerUrl ? (
-          <img
-            src={headerUrl}
-            alt={headerAlt}
-            className="img-fluid"
-            width="466"
-            height="193"
-            loading="lazy"
-            decoding="async"
-          />
-        ) : side.title ? (
-          <div className="program-card__header--text text-center">{side.title}</div>
-        ) : null}
-      </div>
+    <div className="persyaratan-card">
+      <div className="persyaratan-card__body">
+        <div>
+          {/* Persyaratan Umum */}
+          <div className="mb-3">
+            <h3 className="persyaratan-card__heading">{umumHeading}</h3>
+            <ol className="persyaratan-card__list">
+              {umumItems.map((text, idx) => (
+                <li key={idx} className="persyaratan-card__item">
+                  <span className="persyaratan-card__item-number">{idx + 1}.</span>
+                  <span className="persyaratan-card__item-text">{text}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
 
-      {/* ✅ Card body dikasih padding-top supaya judul tidak menimpa */}
-      <div
-        className={`program-card__body card border-0 shadow-sm ${cardBgClass} ${cardTextClass}`}
-        style={{ paddingTop: bodyTopPadding }}
-      >
-        <div className="card-body p-4">
-          {side.subtitle ? (
-            <p className="small mb-3 opacity-75 text-center" style={{ whiteSpace: 'pre-line' }}>
-              {side.subtitle}
-            </p>
-          ) : null}
-
-          <ul className="list-unstyled mb-3">
-            {(side.bullets ?? []).map((b, idx) => (
-              <li key={idx} className="d-flex gap-2 mb-2">
-                <span aria-hidden="true" className="fw-bold">
-                  ✓
-                </span>
-                <span className="small">{b.text}</span>
-              </li>
-            ))}
-          </ul>
-
-          {side.note ? <div className="small opacity-75">{side.note}</div> : null}
+          {/* Persyaratan Dokumen */}
+          <div>
+            <h3 className="persyaratan-card__heading">{dokumenHeading}</h3>
+            <ol className="persyaratan-card__list">
+              {dokumenItems.map((text, idx) => (
+                <li key={idx} className="persyaratan-card__item">
+                  <span className="persyaratan-card__item-number">{idx + 1}.</span>
+                  <span className="persyaratan-card__item-text" style={{ whiteSpace: 'pre-line' }}>
+                    {text}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
+
+        {note && <div className="persyaratan-card__note">{note}</div>}
       </div>
     </div>
   )
 }
 
-export const ProgramDual: React.FC<Props> = ({ title, left, right, style }) => {
-  const normalizedTitle =
-    title?.trim() === 'Program Rental' ? 'Pilihan Program Rental Driver Online' : title
-  const sectionBgClass = style?.sectionBgClass ?? 'bg-white'
-  const cardBgClass = style?.cardBgClass ?? 'bg-success'
-  const cardTextClass = style?.cardTextClass ?? 'text-white'
-  const headerImgMaxWidth = style?.headerImgMaxWidth ?? 320
-  const headerTop = typeof style?.headerTop === 'number' ? style.headerTop : -26
-  const bodyTopPadding = typeof style?.bodyTopPadding === 'number' ? style.bodyTopPadding : 60
+function ProgramCard({
+  side,
+}: {
+  side?: ProgramSide
+}) {
+  const fallbackSide: ProgramSide = {
+    title: 'Program Rental Mingguan',
+    subtitle: 'Program sewa mobil yang fleksibel dengan pembayaran mingguan/harian',
+    bullets: [
+      { text: 'Gratis Service Rutin & pajak tahunan' },
+      { text: 'Tersedia mobil pengganti' },
+      { text: 'Lepas kunci 24 jam' },
+      { text: 'Harga sewa mulai dari 120 ribu/hari' },
+      { text: 'Tersedia tim towing dan storing' },
+    ],
+  }
+
+  const activeSide = side || fallbackSide
+  const rawHeaderUrl =
+    activeSide.headerImage?.sizes?.small?.url ||
+    activeSide.headerImage?.sizes?.thumbnail?.url ||
+    activeSide.headerImage?.url
+  const headerUrl = rawHeaderUrl ? getMediaUrl(rawHeaderUrl) : '/mobis/img/pro-mingguan.webp'
+  const headerAlt = resolveProgramHeaderAlt(activeSide)
 
   return (
-    <section id="program" className={sectionBgClass}>
-      <div className="container py-4">
-        {title ? (
-          <div className="text-center mb-3">
-            <h2 className="h6 fw-bold text-success mb-0">{normalizedTitle}</h2>
-          </div>
-        ) : null}
+    <div className="program-card">
+      {/* Header image floating */}
+      <div className="program-card__header">
+        <img
+          src={headerUrl}
+          alt={headerAlt}
+          className="img-fluid"
+          width="466"
+          height="193"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
 
-        {/* mobile stack, md+ 2 kolom */}
-        <div className="row g-4 justify-content-center">
-          <div className="col-12 col-md-6 mt-5 mt-md-0 m-mobis-button">
-            <ProgramCard
-              side={left}
-              cardBgClass={cardBgClass}
-              cardTextClass={cardTextClass}
-              _headerImgMaxWidth={headerImgMaxWidth}
-              _headerTop={headerTop}
-              bodyTopPadding={bodyTopPadding}
-            />
+      <div className="program-card__body">
+        <div>
+          {activeSide.subtitle ? (
+            <p className="program-card__subtitle">
+              {activeSide.subtitle}
+            </p>
+          ) : null}
+
+          <ul className="program-bullets">
+            {(activeSide.bullets ?? fallbackSide.bullets ?? []).map((b, idx) => (
+              <li key={idx}>
+                <span aria-hidden="true" className="program-bullet-icon">
+                  ✓
+                </span>
+                <span>{b.text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {activeSide.note ? <div className="small opacity-75 mt-2">{activeSide.note}</div> : null}
+      </div>
+    </div>
+  )
+}
+
+export const ProgramDual: React.FC<Props> = ({ left, requirements }) => {
+  return (
+    <section id="program" className="program-section">
+      <div className="container py-4 py-md-5">
+        <div className="row g-4 justify-content-center align-items-stretch program-cards-row mx-auto">
+          {/* Card 1: Program Rental Mingguan */}
+          <div className="col-12 col-md-6 d-flex justify-content-center">
+            <ProgramCard side={left} />
           </div>
 
-          <div className="col-12 col-md-6 mt-5 mt-md-0 m-mobis-button">
-            <ProgramCard
-              side={right}
-              cardBgClass={cardBgClass}
-              cardTextClass={cardTextClass}
-              _headerImgMaxWidth={headerImgMaxWidth}
-              _headerTop={headerTop}
-              bodyTopPadding={bodyTopPadding}
-            />
+          {/* Card 2: Persyaratan */}
+          <div className="col-12 col-md-6 d-flex justify-content-center">
+            <RequirementsCard requirements={requirements} />
           </div>
         </div>
       </div>

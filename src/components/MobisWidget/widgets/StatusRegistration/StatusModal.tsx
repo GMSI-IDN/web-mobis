@@ -107,12 +107,17 @@ export default function StatusModal({
           ]
       : []
 
+  const displayTitle =
+    !title || title === 'Registration Mobis Check'
+      ? 'Cek Status Pendaftaran Kamu Disini!'
+      : title
+
   return (
     <div className="modal fade" tabIndex={-1} ref={modalRef} aria-hidden="true">
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">{title}</h5>
+            <h5 className="modal-title">{displayTitle}</h5>
             <button type="button" className="btn-close" onClick={onClose} />
           </div>
 

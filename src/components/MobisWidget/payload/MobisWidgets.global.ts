@@ -25,7 +25,7 @@ export const MobisWidgetsGlobal: GlobalConfig = {
       name: 'statusWidget',
       type: 'group',
       fields: [
-        { name: 'title', type: 'text', defaultValue: 'Registration Mobis Check' },
+        { name: 'title', type: 'text', defaultValue: 'Cek Status Pendaftaran Kamu Disini!' },
         {
           name: 'areas',
           type: 'array',

@@ -74,7 +74,11 @@ export default function MobisWidgetProvider({
       </div>
 
       <StatusModal
-        title={status.title || 'Registration Mobis Check'}
+        title={
+          status.title && status.title !== 'Registration Mobis Check'
+            ? status.title
+            : 'Cek Status Pendaftaran Kamu Disini!'
+        }
         areas={areas}
         apiPath={status.apiPath || '/api/widget/status-check'}
         modalRef={statusModalRef}
