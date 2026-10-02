@@ -72,6 +72,20 @@ export default function StatusModal({
       })
     }
 
+    if (inputType === 'nik' && v.length !== 16) {
+      return setAlert({
+        type: 'danger',
+        message: 'NIK harus berjumlah tepat 16 digit angka.',
+      })
+    }
+
+    if (inputType === 'phone' && (v.length < 9 || v.length > 15)) {
+      return setAlert({
+        type: 'danger',
+        message: 'Nomor handphone harus valid (9 - 15 digit angka).',
+      })
+    }
+
     setLoading(true)
     try {
       const res = await postJSON<StatusResponse>(apiPath, {
@@ -87,8 +101,14 @@ export default function StatusModal({
         setAlert({ type: 'danger', message: res.message || res.error || 'Data tidak ditemukan.' })
         setSteps([])
       }
-    } catch {
-      setAlert({ type: 'danger', message: 'Terjadi kesalahan saat mengambil data. Coba lagi.' })
+    } catch (err: any) {
+      const msg =
+        err?.data?.error ||
+        err?.data?.message ||
+        err?.message ||
+        'Terjadi kesalahan saat mengambil data. Coba lagi.'
+      setAlert({ type: 'danger', message: msg })
+      setSteps([])
     } finally {
       setLoading(false)
     }
