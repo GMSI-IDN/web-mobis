@@ -14,27 +14,20 @@ type Props = {
 
 export const FaqAccordion: React.FC<Props> = ({ title, items }) => {
   const rows = items ?? []
-  const [openIndices, setOpenIndices] = useState<Record<number, boolean>>({})
-
-  const toggleIndex = (idx: number) => {
-    setOpenIndices((prev) => ({
-      ...prev,
-      [idx]: !prev[idx],
-    }))
-  }
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   if (rows.length === 0) return null
 
   return (
     <section id="faq" className="faq-mobis-section">
-      <div className="container px-3">
+      <div className="container py-4 py-md-5">
         <div className="row justify-content-center">
-          <div className="faq-mobis-card-container">
+          <div className="col-12 col-lg-8">
             <h2 className="faq-mobis-title">{title || 'PERTANYAAN UMUM (FAQ)'}</h2>
 
             <div className="faq-mobis-list">
               {rows.map((item, idx) => {
-                const isOpen = !!openIndices[idx]
+                const isOpen = openIndex === idx
                 const question = item?.question?.trim() || `Pertanyaan ${idx + 1}`
                 const answer = item?.answer?.trim() || 'Jawaban akan segera diperbarui.'
 
@@ -47,25 +40,12 @@ export const FaqAccordion: React.FC<Props> = ({ title, items }) => {
                       aria-controls={`faq-answer-${idx}`}
                       aria-expanded={isOpen}
                       className="faq-mobis-trigger"
-                      onClick={() => toggleIndex(idx)}
+                      onClick={() => setOpenIndex((prev) => (prev === idx ? null : idx))}
                       type="button"
                     >
                       <span className="faq-mobis-question">{question}</span>
                       <span className="faq-mobis-icon" aria-hidden="true">
-                        <svg
-                          className="faq-mobis-icon-svg"
-                          viewBox="0 0 32 32"
-                          width="32"
-                          height="32"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <circle cx="16" cy="16" r="16" fill="#2ea113" />
-                          <g className="faq-mobis-symbol-group">
-                            <rect x="14.2" y="8" width="3.6" height="16" rx="0.6" fill="white" />
-                            <rect x="8" y="14.2" width="16" height="3.6" rx="0.6" fill="white" />
-                          </g>
-                        </svg>
+                        <span className="faq-mobis-symbol" />
                       </span>
                     </button>
 

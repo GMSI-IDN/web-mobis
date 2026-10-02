@@ -217,27 +217,30 @@ export async function POST(req: Request) {
     // 7. Server Environment Credentials (No NEXT_PUBLIC_ prefix to prevent browser exposure)
     const GAS_URL =
       process.env.MOBIS_GAS_STATUS_CHECK_URL ||
-      'https://script.google.com/macros/s/AKfycbwueMEz3gDjWlQMNYGB6zWdt22oVvVKE6fElnnGV9LJdwgs4kkNqQ0wiQPWfjisZhKB/exec'
-    const GAS_TOKEN = process.env.MOBIS_GAS_SECRET_TOKEN || 'MOBIS_SECRET_123'
+      'https://script.google.com/macros/s/AKfycbyf0I4_ed09nbhXsbDBoNl4tsD4PHoUv7NMZEHxsgTfug0n1F9YePChPAWg3OURRtUjYA/exec'
+    const GAS_TOKEN = process.env.MOBIS_GAS_SECRET_TOKEN || '6a7fc404e3c757344d5321492b286a29c8c5268e92078c01044a2878073afb47'
 
-    // 8. Query Parameters (exact match to legacy PHP $query_args expected by Google Apps Script)
-    const queryParams = new URLSearchParams({
-      token: GAS_TOKEN,
-      ca_pref: area,
-      ca_preferensi: area,
-      input_type: inputType,
-      nik: inputType === 'nik' ? value : '',
-      nik_raw: inputType === 'nik' ? rawValue : '',
-      nik_str: inputType === 'nik' ? `'${value}` : '',
-      phone: inputType === 'phone' ? value : '',
-      phone_raw: inputType === 'phone' ? rawValue : '',
-    })
+    // 8. Prepare Form Data for Google Apps Script (x-www-form-urlencoded)
+    const gasBody = new URLSearchParams()
+    gasBody.append('token', GAS_TOKEN)
+    if (area) gasBody.append('area', area)
+    
+    if (inputType === 'nik') {
+      gasBody.append('nik', value)
+    } else {
+      gasBody.append('phone', value)
+    }
 
-    // 9. Direct Native Fetch to GAS with 15-second timeout and no-store cache
-    const gasRes = await fetch(`${GAS_URL}?${queryParams.toString()}`, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
+    // 9. Direct Native Fetch to GAS (POST Method) with 15-second timeout
+    const gasRes = await fetch(GAS_URL, {
+      method: 'POST',
+      body: gasBody,
+      headers: { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json' 
+      },
       cache: 'no-store',
+      redirect: 'follow',
       signal: AbortSignal.timeout(15000),
     })
 
@@ -255,26 +258,25 @@ export async function POST(req: Request) {
       )
     }
 
-    // 10. Handle GAS ok: false responses gracefully
-    if (raw?.ok === false) {
-      const notFoundResult: Out = {
-        success: false,
-        message: raw.error || 'Data pendaftaran tidak ditemukan.',
-        steps: [],
-      }
-      return NextResponse.json(notFoundResult)
+    // 10. Handle Authentication or Missing Input Errors
+    if (raw?.message === 'Unauthorized' || String(raw?.message).startsWith('Harus kirim')) {
+       return NextResponse.json(
+        {
+          success: false,
+          error: 'Konfigurasi server bermasalah atau input tidak lengkap.',
+        } satisfies Out,
+        { status: 500 },
+      )
     }
 
     // 11. Zero-PII Whitelisting: ONLY return status, message, and steps. NEVER leak PII to client!
     const steps = mapWpToSteps(raw)
-    const success = raw?.success ?? (steps.length > 0)
-    const message =
-      raw?.message ||
-      (success ? 'Status pendaftaran berhasil ditemukan.' : 'Data pendaftaran tidak ditemukan.')
+    const success = Boolean(raw?.success)
+    const message = raw?.message || (success ? 'Status pendaftaran berhasil ditemukan.' : 'Data pendaftaran tidak ditemukan.')
 
     const result: Out = {
-      success: Boolean(success),
-      message: String(message),
+      success,
+      message,
       steps,
     }
 

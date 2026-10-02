@@ -7,9 +7,11 @@ html {
 }
 :root {
   --bs-font-sans-serif: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --navbar-height: 67px;
 }
 body {
   font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  padding-top: var(--navbar-height);
 }
 .mobis-widget-root,
 .mobis-widget-root *,
@@ -164,7 +166,7 @@ body {
 
 /* About Section Responsive */
 .about-section {
-  background: linear-gradient(180deg, #ffffff 0%, #ffffff 50%, #eaf8e7 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 20%, #f6fdf5 55%, #edfbe9 80%, #edfbe9 100%);
   padding: 24px 0 28px 0;
 }
 
@@ -389,7 +391,6 @@ body {
   font-size: 1rem !important;
 }
 
-/* wrapper card */
 .unit-card {
   position: relative;
   border-radius: 18px;
@@ -406,55 +407,36 @@ body {
   box-shadow: 0 8px 18px rgba(59, 172, 31, 0.18);
 }
 
-/* ribbon 3D folded 'UNIT BARU' pojok kiri atas */
+/* ribbon 'UNIT BARU' pojok kiri atas */
 .unit-card__ribbon-wrapper {
   position: absolute;
-  top: -4px;
-  left: -4px;
-  width: 72px;
-  height: 72px;
+  top: 0;
+  left: 0;
+  width: 100px;
+  height: 100px;
   overflow: hidden;
+  border-top-left-radius: 18px;
   pointer-events: none;
   z-index: 10;
-}
-
-.unit-card__ribbon-wrapper::before,
-.unit-card__ribbon-wrapper::after {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  border: 3px solid #92400e;
-  border-top-color: transparent;
-  border-left-color: transparent;
-}
-
-.unit-card__ribbon-wrapper::before {
-  top: 0;
-  right: 0;
-}
-
-.unit-card__ribbon-wrapper::after {
-  bottom: 0;
-  left: 0;
 }
 
 .unit-card__ribbon {
   position: absolute;
   display: block;
-  width: 104px;
-  padding: 2.5px 0;
-  background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%);
-  box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.25);
+  width: 142px;
+  padding: 5px 0;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
   color: #fff;
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   text-align: center;
-  left: -22px;
-  top: 15px;
+  left: -33px;
+  top: 22px;
   transform: rotate(-45deg);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   z-index: 2;
 }
 
@@ -754,7 +736,7 @@ body {
 /* ===== Registration Form styling (Figma Match) ===== */
 
 .bg-gradient-form {
-  background: #edfbe9;
+  background: linear-gradient(180deg, #ffffff 0%, #edfbe9 15%, #edfbe9 100%);
   padding: 3rem 0;
 }
 
@@ -1129,32 +1111,36 @@ p.reg-disclaimer {
 
 .banner-slide-fullbleed {
   width: 100%;
-  height: 37rem;
+  height: auto !important;
   margin: 0 !important;
   padding: 0 !important;
-  aspect-ratio: 1724 / 617;
+  aspect-ratio: auto !important;
   overflow: hidden;
   background: #fff;
 }
 
+.banner-slide-fullbleed picture {
+  display: block;
+  width: 100%;
+}
 
 .banner-img-fullbleed {
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: auto !important;
   display: block;
-  object-fit: cover;
-  object-position: top;
+  object-fit: contain !important;
+  object-position: center;
 }
 
 /* CTA */
 .banner-cta-fullbleed {
-  bottom: 60px;
+  bottom: clamp(14px, 3.8vw, 55px);
   z-index: 5;
 }
 
 /* ===== FAQ Section ===== */
 .faq-mobis-section {
-  background: linear-gradient(180deg, #d8ecc9 0%, #90d473 24%, #46c52b 52%, #1db411 82%, #0eb107 100%);
+  background: linear-gradient(180deg, #edfbe9 0%, #d8ecc9 15%, #90d473 40%, #46c52b 60%, #1db411 82%, #2fa90d 100%);
   padding: 24px 0 36px;
 }
 
@@ -1302,8 +1288,9 @@ p.reg-disclaimer {
   text-transform: uppercase !important;
   letter-spacing: 0.02em !important;
   border: none !important;
-  padding: 0.4rem 1.6rem !important;
-  font-size: 13px !important;
+  padding: clamp(0.35rem, 1.2vw, 0.45rem) clamp(1rem, 2.8vw, 1.6rem) !important;
+  font-size: clamp(11px, 1.8vw, 13.5px) !important;
+  white-space: nowrap !important;
 }
 
 .btn-banner-cta-fullbleed:hover {
@@ -1358,12 +1345,17 @@ p.reg-disclaimer {
   }
 
   .banner-cta-fullbleed {
-    bottom: 16px;
+    bottom: clamp(10px, 3vw, 18px);
   }
   .banner-slide-fullbleed {
     height: auto !important;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: auto !important;
     margin-top: 0 !important;
+  }
+  .banner-img-fullbleed {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
   }
 
   .area-thumb img {
@@ -1431,18 +1423,19 @@ p.reg-disclaimer {
     text-overflow: ellipsis;
   }
   .unit-card__ribbon-wrapper {
-    width: 54px;
-    height: 54px;
-    top: -3px;
-    left: -3px;
+    width: 76px;
+    height: 76px;
+    top: 0;
+    left: 0;
+    border-top-left-radius: 14px;
   }
   .unit-card__ribbon {
-    width: 76px;
-    font-size: 0.46rem;
-    padding: 2px 0;
-    left: -17px;
-    top: 11px;
-    letter-spacing: 0.3px;
+    width: 108px;
+    font-size: 0.52rem;
+    padding: 3.5px 0;
+    left: -25px;
+    top: 16px;
+    letter-spacing: 0.5px;
   }
 
   .footer-mobis {
@@ -1463,7 +1456,7 @@ p.reg-disclaimer {
 
   .banner-slide-fullbleed {
     height: auto !important;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: auto !important;
     margin-top: 0 !important;
     overflow: hidden;
   }
@@ -1477,19 +1470,30 @@ p.reg-disclaimer {
     margin: 0 auto;
   }
 
+  .banner-cta-fullbleed {
+    bottom: clamp(8px, 2.5vw, 14px);
+  }
+
   .btn-banner-cta-fullbleed {
     margin-bottom: 0rem !important;
-    font-size: 13px !important;
-    padding: 0.35rem 1.25rem !important;
+    font-size: clamp(10px, 2.4vw, 12px) !important;
+    padding: clamp(0.25rem, 1vw, 0.35rem) clamp(0.9rem, 2.5vw, 1.25rem) !important;
   }
 }
 
 @media (max-width: 450px) {
   .banner-slide-fullbleed {
     height: auto !important;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: auto !important;
     margin-top: 0 !important;
     overflow: hidden;
+  }
+  .banner-cta-fullbleed {
+    bottom: clamp(6px, 2.2vw, 12px);
+  }
+  .btn-banner-cta-fullbleed {
+    font-size: clamp(9.5px, 2.3vw, 11px) !important;
+    padding: 0.22rem 0.8rem !important;
   }
 
   .list-unstyled li{

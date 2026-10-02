@@ -142,7 +142,12 @@ export default function StatusModal({
           </div>
 
           <div className="modal-body">
-            {alert && <div className={`alert alert-${alert.type}`}>{alert.message}</div>}
+            {alert && (
+              <div 
+                className={`alert alert-${alert.type}`} 
+                dangerouslySetInnerHTML={{ __html: alert.message }} 
+              />
+            )}
 
             <div className="mb-3">
               <label className="form-label">Area/Preferensi</label>
