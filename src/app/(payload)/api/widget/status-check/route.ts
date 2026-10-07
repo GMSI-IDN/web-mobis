@@ -123,6 +123,64 @@ function mapWpToSteps(raw: any): Step[] {
   return []
 }
 
+/**
+ * Replaces broken external/legacy social media icon images from Google Apps Script
+ * with reliable local SVG icons from /mobis/img/ that comply with CSP in both local & prod.
+ */
+/**
+ * Replaces broken external/legacy social media icon images and outdated account handles
+ * with updated official channels (@rentalmobis) and clean card UI.
+ */
+function normalizeStatusCheckMessage(msg?: string | null): string {
+  if (!msg || typeof msg !== 'string') return ''
+
+  const lower = msg.toLowerCase()
+  const hasSocialOrContact =
+    lower.includes('hubungi kami') ||
+    lower.includes('informasi lebih lanjut') ||
+    lower.includes('instagram') ||
+    lower.includes('facebook') ||
+    lower.includes('tiktok') ||
+    lower.includes('globalmobilityservice')
+
+  if (hasSocialOrContact) {
+    let prefixText = ''
+    const matchPrefix = msg.match(/^(?:<p[^>]*>)?(Data\s+[^.<]+[.!?])/i)
+    if (matchPrefix && matchPrefix[1]) {
+      prefixText = `<div class="status-alert-prefix">${matchPrefix[1]}</div>`
+    }
+
+    return `
+${prefixText}
+<div class="status-contact-card">
+  <div class="status-contact-header">
+    <svg class="status-contact-icon-info" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="16" x2="12" y2="12"></line>
+      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+    <span>Informasi lebih lanjut silakan hubungi kami melalui:</span>
+  </div>
+  <div class="status-contact-grid">
+    <a href="https://www.instagram.com/rentalmobis" target="_blank" rel="noopener noreferrer" class="status-contact-btn status-ig-btn">
+      <img src="/mobis/img/instagram-color.svg" alt="Instagram" width="20" height="20" />
+      <span class="status-contact-label">@rentalmobis</span>
+    </a>
+    <a href="https://www.facebook.com/rentalmobis" target="_blank" rel="noopener noreferrer" class="status-contact-btn status-fb-btn">
+      <img src="/mobis/img/facebook-color.svg" alt="Facebook" width="20" height="20" />
+      <span class="status-contact-label">Rental Mobis</span>
+    </a>
+    <a href="https://www.tiktok.com/@rentalmobis" target="_blank" rel="noopener noreferrer" class="status-contact-btn status-tk-btn">
+      <img src="/mobis/img/tiktok-color.svg" alt="TikTok" width="20" height="20" />
+      <span class="status-contact-label">@rentalmobis</span>
+    </a>
+  </div>
+</div>`.trim()
+  }
+
+  return msg
+}
+
 export async function POST(req: Request) {
   try {
     const clientIp = getClientIp(req) ?? 'unknown'
@@ -272,7 +330,8 @@ export async function POST(req: Request) {
     // 11. Zero-PII Whitelisting: ONLY return status, message, and steps. NEVER leak PII to client!
     const steps = mapWpToSteps(raw)
     const success = Boolean(raw?.success)
-    const message = raw?.message || (success ? 'Status pendaftaran berhasil ditemukan.' : 'Data pendaftaran tidak ditemukan.')
+    const rawMsg = raw?.message || raw?.data?.message || (success ? 'Status pendaftaran berhasil ditemukan.' : 'Data pendaftaran tidak ditemukan.')
+    const message = normalizeStatusCheckMessage(rawMsg)
 
     const result: Out = {
       success,

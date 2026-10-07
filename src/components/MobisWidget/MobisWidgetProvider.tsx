@@ -42,8 +42,13 @@ export default function MobisWidgetProvider({
   const anchor = floating.registerAnchorId || 'RegistrationForm'
   const width = floating.buttonWidth ?? 225
 
+  // [07-10-2026] Opsi Bali dan Bandung dinonaktifkan sementara dari dropdown Cek Status
+  const excludedAreas = ['bali', 'bandung']
   const areas = useMemo(
-    () => (status.areas?.length ? status.areas : [{ label: 'Jabodetabek' }]).map((a) => a.label),
+    () =>
+      (status.areas?.length ? status.areas : [{ label: 'Jabodetabek' }])
+        .map((a) => a.label)
+        .filter((label) => !excludedAreas.includes(label.toLowerCase().trim())),
     [status.areas],
   )
 

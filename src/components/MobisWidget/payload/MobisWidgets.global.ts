@@ -32,11 +32,11 @@ export const MobisWidgetsGlobal: GlobalConfig = {
           fields: [{ name: 'label', type: 'text', required: true }],
           defaultValue: [
             { label: 'Jabodetabek' },
-            { label: 'Bali' },
+            // { label: 'Bali' },
             { label: 'Surabaya' },
             { label: 'Sidoarjo' },
             { label: 'Gresik' },
-            { label: 'Bandung' },
+            // { label: 'Bandung' },
           ],
         },
         // Ini route internal Next (proxy)
