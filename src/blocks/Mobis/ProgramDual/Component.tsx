@@ -75,12 +75,8 @@ const DEFAULT_PERSYARATAN = {
 function RequirementsCard({ requirements }: { requirements?: RequirementsData }) {
   const umumHeading = requirements?.left?.heading || DEFAULT_PERSYARATAN.umum.heading
   const formatText = (text: string) => {
-    let res = text
-    if (res.toLowerCase().includes('mojokerto') || res.toLowerCase().includes('malang')) {
-      res = 'Berdomisili di Jabodetabek/Bandung/Surabaya/Sidoarjo/Gresik/Bali'
-    }
-    // Allow natural line breaks after slashes so long slurred paths wrap without overflowing
-    return res.replace(/\/(?!\s)/g, '/\u200B')
+    // Allow natural line breaks after slashes so long paths wrap without overflowing on mobile
+    return String(text || '').replace(/\/(?!\s)/g, '/\u200B')
   }
 
   const umumItems =

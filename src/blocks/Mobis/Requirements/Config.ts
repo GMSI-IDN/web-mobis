@@ -31,5 +31,6 @@ export const RequirementsConfig: Block = {
         },
       ],
     },
+    { name: 'note', type: 'text', defaultValue: '*S&K Berlaku' },
   ],
 }

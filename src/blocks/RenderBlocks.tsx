@@ -90,8 +90,9 @@ export const RenderBlocks: React.FC<{
         const blockType = block?.blockType as string | undefined
         if (!blockType) return null
 
-        // Persyaratan is now unified into the programDual section card
-        if (blockType === 'requirements') {
+        const hasProgramDual = blocks?.some((b) => b?.blockType === 'programDual')
+        // Persyaratan is unified into the programDual section card if programDual is present
+        if (blockType === 'requirements' && hasProgramDual) {
           return null
         }
 
@@ -104,7 +105,7 @@ export const RenderBlocks: React.FC<{
 
           const extraProps: Record<string, any> = { disableInnerContainer: true }
           if (blockType === 'programDual') {
-            extraProps.requirements = requirementsBlock
+            extraProps.requirements = (block as any)?.requirements || requirementsBlock
           }
 
           return (

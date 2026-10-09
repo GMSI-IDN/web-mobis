@@ -56,6 +56,47 @@ export const ProgramDualConfig: Block = {
     },
 
     {
+      name: 'requirements',
+      type: 'group',
+      label: 'Persyaratan (Kartu Kanan)',
+      admin: {
+        description:
+          'Data persyaratan untuk kartu kanan. Jika diisi, akan tampil di kartu kanan Program.',
+      },
+      fields: [
+        {
+          name: 'left',
+          type: 'group',
+          label: 'Persyaratan Umum',
+          fields: [
+            { name: 'heading', type: 'text', defaultValue: 'Persyaratan Umum' },
+            {
+              name: 'items',
+              type: 'array',
+              label: 'Poin Persyaratan Umum',
+              fields: [{ name: 'text', type: 'text', required: true }],
+            },
+          ],
+        },
+        {
+          name: 'right',
+          type: 'group',
+          label: 'Persyaratan Dokumen',
+          fields: [
+            { name: 'heading', type: 'text', defaultValue: 'Persyaratan Dokumen' },
+            {
+              name: 'items',
+              type: 'array',
+              label: 'Poin Persyaratan Dokumen',
+              fields: [{ name: 'text', type: 'text', required: true }],
+            },
+          ],
+        },
+        { name: 'note', type: 'text', defaultValue: '*S&K Berlaku' },
+      ],
+    },
+
+    {
       name: 'style',
       type: 'group',
       fields: [
