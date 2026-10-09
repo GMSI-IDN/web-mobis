@@ -334,11 +334,12 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
   const DOMICILE_OPTS = (() => {
     const v = normalizeOptions(opts?.dom)
-    const base = v.length ? v : defaults.dom
-    // [10-09-2026] Opsi Bali dinonaktifkan sementara dari dropdown domisili
-    // [30-09-2026] Take out: Bandung, Malang, Pasuruan, Blitar
+    // Jika admin mengisi pilihan domisili di CMS, gunakan langsung data dari CMS
+    if (v.length > 0) return v
+
+    // Fallback jika belum diisi di CMS
     const excluded = ['bali', 'bandung', 'malang', 'pasuruan', 'blitar']
-    return base.filter((o) => {
+    return defaults.dom.filter((o) => {
       const val = o.value.toLowerCase()
       const lbl = o.label.toLowerCase()
       return !excluded.some((exc) => val.includes(exc) || lbl.includes(exc))
@@ -362,11 +363,12 @@ export const RegistrationForm: React.FC<Props> = ({ title, submitLabel, successM
 
   const HANDOVER_OPTS = (() => {
     const v = normalizeOptions(opts?.handover)
-    const base = v.length ? v : defaults.handover
-    // [10-09-2026] Opsi Bali dinonaktifkan sementara (di-comment / exclude dari pilihan aktif)
-    // [30-09-2026] Take out: Malang, Bandung, Mojokerto
+    // Jika admin mengisi pilihan lokasi serah terima di CMS, gunakan langsung data dari CMS
+    if (v.length > 0) return v
+
+    // Fallback jika belum diisi di CMS
     const excluded = ['bali', 'malang', 'bandung', 'mojokerto']
-    return base.filter((opt) => {
+    return defaults.handover.filter((opt) => {
       const val = opt.value.toLowerCase()
       const lbl = opt.label.toLowerCase()
       return !excluded.some((exc) => val.includes(exc) || lbl.includes(exc))

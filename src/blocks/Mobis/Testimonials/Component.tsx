@@ -18,37 +18,6 @@ type Props = {
   intervalMs?: number // 0 = off
 }
 
-const DEFAULT_TESTIS: Testi[] = [
-  {
-    name: 'HARMAINI',
-    role: 'Gabung 2020',
-    rating: 5,
-    text: 'Harga murah dibanding yang lain, dan penanganannya cepat',
-    avatar: { url: '/mobis/img/foto-5.webp' },
-  },
-  {
-    name: 'RIZAL',
-    role: 'Gabung 2024',
-    rating: 5,
-    text: 'Rental yang terbaik, biaya sewa cukup ekonomis, service bulanan dijamin',
-    avatar: { url: '/mobis/img/foto-6.webp' },
-  },
-  {
-    name: 'JOHN',
-    role: 'Gabung 2025',
-    rating: 5,
-    text: 'Administrasi mudah tidak rumit, setoran murah dan dikasih tempo seminggu jadi lebih tenang',
-    avatar: { url: '/mobis/img/foto-7.webp' },
-  },
-  {
-    name: 'FARIS',
-    role: 'Gabung 2025',
-    rating: 5,
-    text: 'Lokasi dekat, harga murah, dan prosesnya mudah',
-    avatar: { url: '/mobis/img/foto-8.webp' },
-  },
-]
-
 function Stars({ rating }: { rating: number }) {
   const r = Math.max(1, Math.min(5, rating))
   return (
@@ -67,7 +36,9 @@ function Card({ t }: { t: Testi }) {
     t.avatar?.sizes?.thumbnail?.url ||
     t.avatar?.sizes?.square?.url ||
     t.avatar?.url ||
-    (typeof t.avatar === 'string' ? t.avatar : undefined)
+    (typeof t.avatar === 'string' && (t.avatar.startsWith('/') || t.avatar.startsWith('http'))
+      ? t.avatar
+      : undefined)
 
   const avatarUrl = rawAvatarUrl ? getMediaUrl(rawAvatarUrl) : undefined
   const rating = t.rating ?? 5
@@ -83,13 +54,13 @@ function Card({ t }: { t: Testi }) {
           {avatarUrl ? (
             <img
               src={avatarUrl}
-              alt={t.name}
+              alt={t.name || 'Mitra MOBIS'}
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: '50%' }}
               loading="lazy"
             />
           ) : (
             <div className="testi-card__avatar-placeholder">
-              {t.name?.charAt(0) || 'M'}
+              {t.name?.charAt(0)?.toUpperCase() || 'M'}
             </div>
           )}
         </div>
@@ -108,8 +79,7 @@ function Card({ t }: { t: Testi }) {
 
 export const Testimonials: React.FC<Props> = ({ title, items, intervalMs }) => {
   const list = useMemo(() => {
-    if (items && items.length > 0) return items
-    return DEFAULT_TESTIS
+    return Array.isArray(items) && items.length > 0 ? items : []
   }, [items])
 
   const trackRef = useRef<HTMLDivElement | null>(null)
@@ -190,12 +160,16 @@ export const Testimonials: React.FC<Props> = ({ title, items, intervalMs }) => {
     }
   }
 
+  if (list.length === 0) {
+    return null
+  }
+
   return (
     <section className="testi-section" id="kata_mitra_kami">
       <div className="container px-0 px-md-3">
         {/* Judul Seksi */}
         <div className="text-center mb-3">
-          <h2 className="testi-title">{title ?? 'KATA MITRA KAMI'}</h2>
+          <h2 className="testi-title">{title || 'KATA MITRA KAMI'}</h2>
         </div>
 
         {/* Track Slider Testimoni */}
