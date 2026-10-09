@@ -105,7 +105,7 @@ export const RenderBlocks: React.FC<{
 
           const extraProps: Record<string, any> = { disableInnerContainer: true }
           if (blockType === 'programDual') {
-            extraProps.requirements = (block as any)?.requirements || requirementsBlock
+            extraProps.requirements = requirementsBlock
           }
 
           return (

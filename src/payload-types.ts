@@ -951,7 +951,6 @@ export interface RequirementsBlock {
       id?: string | null;
     }[];
   };
-  note?: string | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'requirements';
@@ -1105,30 +1104,6 @@ export interface ProgramDualBlock {
           id?: string | null;
         }[]
       | null;
-    note?: string | null;
-  };
-  /**
-   * Data persyaratan untuk kartu kanan. Jika diisi, akan tampil di kartu kanan Program.
-   */
-  requirements?: {
-    left?: {
-      heading?: string | null;
-      items?:
-        | {
-            text: string;
-            id?: string | null;
-          }[]
-        | null;
-    };
-    right?: {
-      heading?: string | null;
-      items?:
-        | {
-            text: string;
-            id?: string | null;
-          }[]
-        | null;
-    };
     note?: string | null;
   };
   style?: {
@@ -1828,7 +1803,6 @@ export interface RequirementsBlockSelect<T extends boolean = true> {
               id?: T;
             };
       };
-  note?: T;
   id?: T;
   blockName?: T;
 }
@@ -1978,33 +1952,6 @@ export interface ProgramDualBlockSelect<T extends boolean = true> {
           | {
               text?: T;
               id?: T;
-            };
-        note?: T;
-      };
-  requirements?:
-    | T
-    | {
-        left?:
-          | T
-          | {
-              heading?: T;
-              items?:
-                | T
-                | {
-                    text?: T;
-                    id?: T;
-                  };
-            };
-        right?:
-          | T
-          | {
-              heading?: T;
-              items?:
-                | T
-                | {
-                    text?: T;
-                    id?: T;
-                  };
             };
         note?: T;
       };
