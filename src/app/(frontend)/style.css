@@ -987,10 +987,7 @@ p.reg-disclaimer {
   color: #1f5f2c;
 }
 
-.testi-card p {
-  font-size: 1rem !important;
-  font-weight: 400;
-}
+/* .testi-card p override removed to allow .testi-card__quote styling */
 
 .requirements-note {
   padding-right: 0;
@@ -1678,8 +1675,9 @@ p.reg-disclaimer {
 
 @media (min-width: 992px) {
   .testi-track {
-    justify-content: center;
+    justify-content: flex-start;
     padding: 8px 24px 18px 24px;
+    scroll-padding-left: 24px;
   }
 }
 
@@ -1780,13 +1778,11 @@ p.reg-disclaimer {
 .testi-card__quote {
   font-family: var(--font-inter), 'Inter', sans-serif;
   font-size: 11.5px;
-  line-height: 1.35;
+  line-height: 1.45;
   color: #374151;
   margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* Bintang Rating */
