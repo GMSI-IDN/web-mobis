@@ -25,6 +25,19 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN mkdir -p /app/private
+
+ARG PAYLOAD_SECRET
+ARG DATABASE_URL
+ARG NEXT_PUBLIC_SERVER_URL
+ARG PAYLOAD_PUBLIC_SERVER_URL
+ARG NEXT_PUBLIC_SITE_URL
+
+ENV PAYLOAD_SECRET=${PAYLOAD_SECRET} \
+    DATABASE_URL=${DATABASE_URL} \
+    NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL} \
+    PAYLOAD_PUBLIC_SERVER_URL=${PAYLOAD_PUBLIC_SERVER_URL} \
+    NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+
 # Migrations are NEVER run from a build — a build pointed at the live DATABASE_URL
 # would silently mutate the production database on every push. Use the manual
 # .github/workflows/migrate.yml workflow instead (it takes a verified pg_dump first).
