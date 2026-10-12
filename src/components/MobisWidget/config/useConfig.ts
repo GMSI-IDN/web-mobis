@@ -15,7 +15,7 @@ const DEFAULT_CONFIG: MobisWidgetConfig = {
     buttonWidth: 225,
   },
   statusWidget: {
-    title: 'Registration Mobis Check',
+    title: 'Cek Status Pendaftaran Kamu Disini!',
     areas: [{ label: 'Jabodetabek' }],
     apiPath: '/api/widget/status-check',
   },

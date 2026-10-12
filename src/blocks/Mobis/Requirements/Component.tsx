@@ -46,12 +46,9 @@ export const Requirements: React.FC<Props> = ({ title, left, right, note }) => {
                     </li>
                   ))}
                 </ol>
-                <div className="requirements-note">* S&K Berlaku</div>
+                <div className="requirements-note">{note || '* S&K Berlaku'}</div>
               </div>
-              {/* <div className="requirements-note">*S&K Berlaku</div> */}
             </div>
-            {/* <div className="requirements-note">*S&K Berlaku</div> */}
-            {note ? <div className="requirements-note">{note}</div> : null}
           </div>
         </div>
       </div>

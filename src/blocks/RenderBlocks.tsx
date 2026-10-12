@@ -82,11 +82,19 @@ export const RenderBlocks: React.FC<{
   const hasBlocks = Array.isArray(blocks) && blocks.length > 0
   if (!hasBlocks) return null
 
+  const requirementsBlock = blocks?.find((b) => b?.blockType === 'requirements') as any
+
   return (
     <Fragment>
       {blocks.map((block, index) => {
         const blockType = block?.blockType as string | undefined
         if (!blockType) return null
+
+        const hasProgramDual = blocks?.some((b) => b?.blockType === 'programDual')
+        // Persyaratan is unified into the programDual section card if programDual is present
+        if (blockType === 'requirements' && hasProgramDual) {
+          return null
+        }
 
         if (blockType in blockComponents) {
           const Block = blockComponents[blockType as BlockTypeKey]
@@ -95,9 +103,14 @@ export const RenderBlocks: React.FC<{
           const standardBlocks = new Set(['archive', 'content', 'cta', 'formBlock', 'mediaBlock'])
           const wrapperClass = standardBlocks.has(blockType) ? 'my-4 my-md-5' : 'my-0'
 
+          const extraProps: Record<string, any> = { disableInnerContainer: true }
+          if (blockType === 'programDual') {
+            extraProps.requirements = requirementsBlock
+          }
+
           return (
             <div className={wrapperClass} key={index}>
-              <Block {...(block as any)} disableInnerContainer />
+              <Block {...(block as any)} {...extraProps} />
             </div>
           )
         }

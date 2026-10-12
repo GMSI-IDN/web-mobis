@@ -38,7 +38,7 @@ export default function FloatingButtons({
           onClick={onStatus}
         >
           <FileText className="me-2" size={22} />
-          <span>Status Pendaftaran</span>
+          <span>Cek Status Pendaftaran</span>
         </button>
       )}
 

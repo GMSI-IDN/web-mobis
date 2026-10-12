@@ -25,18 +25,18 @@ export const MobisWidgetsGlobal: GlobalConfig = {
       name: 'statusWidget',
       type: 'group',
       fields: [
-        { name: 'title', type: 'text', defaultValue: 'Registration Mobis Check' },
+        { name: 'title', type: 'text', defaultValue: 'Cek Status Pendaftaran Kamu Disini!' },
         {
           name: 'areas',
           type: 'array',
           fields: [{ name: 'label', type: 'text', required: true }],
           defaultValue: [
             { label: 'Jabodetabek' },
-            { label: 'Bali' },
+            // { label: 'Bali' },
             { label: 'Surabaya' },
             { label: 'Sidoarjo' },
             { label: 'Gresik' },
-            { label: 'Bandung' },
+            // { label: 'Bandung' },
           ],
         },
         // Ini route internal Next (proxy)

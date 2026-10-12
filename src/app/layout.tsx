@@ -112,7 +112,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       logo: 'https://rentalmobis.com/mobis/img/favicon.svg',
       description:
         'Program rental mobil dari PT Global Mobility Service (GMS) Indonesia khusus untuk pengemudi taksi online dengan opsi bayar mingguan dan Rent to Own.',
-      areaServed: ['Jabodetabek', 'Surabaya', 'Sidoarjo', 'Gresik', 'Bali', 'Bandung'],
+      areaServed: ['Jabodetabek', 'Surabaya', 'Sidoarjo'],
       knowsAbout: primaryKeywords,
       keywords: primaryKeywords.join(', '),
       additionalType: 'https://schema.org/Service',
@@ -140,7 +140,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         name: siteName,
         url: siteURL,
       },
-      areaServed: ['Jabodetabek', 'Surabaya', 'Sidoarjo', 'Gresik', 'Bali', 'Bandung', 'Malang'],
+      areaServed: ['Jabodetabek', 'Surabaya', 'Sidoarjo'],
       keywords: primaryKeywords.join(', '),
       description:
         'Layanan sewa kendaraan dan rental driver online dengan unit siap jalan, perawatan berkala, dan skema pembayaran mingguan.',

@@ -16,12 +16,30 @@ type Media = {
 const DESKTOP_FALLBACK_WIDTH = 1920
 const DESKTOP_FALLBACK_HEIGHT = 640
 
+/**
+ * Build responsive banner media from Payload CMS image sizes.
+ * Generates srcSet so the browser picks the right size for the viewport,
+ * e.g. medium (900px) on mobile instead of the full 1440px original.
+ */
 function buildBannerMedia(media: Media | undefined, fallbackWidth: number, fallbackHeight: number) {
-  const url = media?.url
+  const url = media?.sizes?.large?.url || media?.sizes?.medium?.url || media?.url
   if (!url) return null
 
+  const mainSrc = getMediaUrl(url)
+  const srcSet = media?.sizes
+    ? [
+        media.sizes.small?.url ? `${getMediaUrl(media.sizes.small.url)} 600w` : '',
+        media.sizes.medium?.url ? `${getMediaUrl(media.sizes.medium.url)} 900w` : '',
+        media.sizes.large?.url ? `${getMediaUrl(media.sizes.large.url)} 1400w` : '',
+        media.sizes.xlarge?.url ? `${getMediaUrl(media.sizes.xlarge.url)} 1920w` : '',
+      ]
+        .filter(Boolean)
+        .join(', ')
+    : undefined
+
   return {
-    src: getMediaUrl(url),
+    src: mainSrc,
+    srcSet,
     width: media?.width || fallbackWidth,
     height: media?.height || fallbackHeight,
   }
@@ -120,7 +138,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
           data-bs-pause="false"
         >
           {activeSlides.length > 1 && (
-            <div className="carousel-indicators">
+            <div className="carousel-indicators d-none">
               {activeSlides.map((_, i) => (
                 <button
                   key={i}
@@ -157,6 +175,8 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
                       <picture>
                         <img
                           src={desktopMedia.src}
+                          srcSet={desktopMedia.srcSet}
+                          sizes="100vw"
                           alt={`Banner Mobis untuk promo pendaftaran driver online ${i + 1}`}
                           className="banner-img-fullbleed"
                           width={desktopMedia.width}
@@ -214,7 +234,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
           {activeSlides.length > 1 && (
             <>
               <button
-                className="carousel-control-prev"
+                className="carousel-control-prev d-none d-md-flex"
                 type="button"
                 data-bs-target={`#${carouselId}`}
                 data-bs-slide="prev"
@@ -224,7 +244,7 @@ export default function BannerCarouselBlockComponent({ slides }: { slides?: Slid
               </button>
 
               <button
-                className="carousel-control-next"
+                className="carousel-control-next d-none d-md-flex"
                 type="button"
                 data-bs-target={`#${carouselId}`}
                 data-bs-slide="next"

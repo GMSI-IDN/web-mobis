@@ -65,7 +65,7 @@ docker volume inspect "$UPLOADS_VOLUME" >/dev/null 2>&1 \
   || { echo "FATAL: uploads volume '$UPLOADS_VOLUME' not found — refusing to deploy"; exit 1; }
 
 # ---------------------------------------------------------------------------
-# 1. Establish the rollback point.
+# 1. Update source. Tracked files only; server-only files are untouched.
 # ---------------------------------------------------------------------------
 PREV_SHA="$(git -C "$SRC_DIR" rev-parse HEAD)"
 log "current commit: $PREV_SHA"
@@ -78,19 +78,6 @@ HAD_ENV=0;     [ -f "$SRC_DIR/.env" ]     && HAD_ENV=1
 HAD_PRIVATE=0; [ -d "$SRC_DIR/private" ]  && HAD_PRIVATE=1
 log "server-only files before reset: .env=$HAD_ENV private/=$HAD_PRIVATE"
 
-HAVE_PREV_IMAGE=0
-if docker image inspect "${IMAGE}:latest" >/dev/null 2>&1; then
-  docker tag "${IMAGE}:latest" "${IMAGE}:previous"
-  docker tag "${IMAGE}:latest" "${IMAGE}:rollback-${STAMP}"
-  HAVE_PREV_IMAGE=1
-  log "tagged rollback image ${IMAGE}:rollback-${STAMP}"
-else
-  log "WARN: no ${IMAGE}:latest present — image rollback will be unavailable this run"
-fi
-
-# ---------------------------------------------------------------------------
-# 2. Update source. Tracked files only; server-only files are untouched.
-# ---------------------------------------------------------------------------
 log "fetching origin/$GIT_REF"
 git -C "$SRC_DIR" fetch --prune origin "$GIT_REF"
 git -C "$SRC_DIR" reset --hard "origin/${GIT_REF}"
@@ -112,6 +99,27 @@ if [ -n "$VANISHED" ]; then
   echo "       untracked files were wiped — restore them before deploying again"
   git -C "$SRC_DIR" reset --hard "$PREV_SHA"
   exit 1
+fi
+
+# Skip redundant build if commit is unchanged and running container is healthy
+if [ "$PREV_SHA" = "$NEW_SHA" ] && [ "${FORCE_REBUILD:-false}" != "true" ]; then
+  if docker container inspect "$CONTAINER" >/dev/null 2>&1 && health; then
+    log "Server is already running commit $NEW_SHA and is healthy. Skipping redundant build/deploy."
+    exit 0
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# 2. Establish the rollback point.
+# ---------------------------------------------------------------------------
+HAVE_PREV_IMAGE=0
+if docker image inspect "${IMAGE}:latest" >/dev/null 2>&1; then
+  docker tag "${IMAGE}:latest" "${IMAGE}:previous"
+  docker tag "${IMAGE}:latest" "${IMAGE}:rollback-${STAMP}"
+  HAVE_PREV_IMAGE=1
+  log "tagged rollback image ${IMAGE}:rollback-${STAMP}"
+else
+  log "WARN: no ${IMAGE}:latest present — image rollback will be unavailable this run"
 fi
 
 # ---------------------------------------------------------------------------
@@ -180,6 +188,24 @@ fi
 
 log "DEPLOYED $NEW_SHA — healthy"
 
+# ---------------------------------------------------------------------------
+# 7. Cleanup & Rotation — retain only 2 most recent rollback snapshots.
+# ---------------------------------------------------------------------------
+log "pruning obsolete rollback images (keeping 2 most recent)"
+docker images --format '{{.Repository}}:{{.Tag}}' | \
+  grep "^${IMAGE}:rollback-" | \
+  sort -r | \
+  tail -n +3 | \
+  while read -r old_img; do
+    if [ -n "$old_img" ]; then
+      log "removing obsolete rollback image: $old_img"
+      docker rmi "$old_img" >/dev/null 2>&1 || true
+    fi
+  done
+
 # Dangling (untagged) layers only. No -a, no --volumes: tagged images including
-# :previous and the rollback snapshots must survive.
+# :previous and the retained rollback snapshots must survive.
 docker image prune -f >/dev/null 2>&1 || true
+
+# Prune BuildKit builder cache older than 48 hours to avoid disk accumulation
+docker builder prune -f --filter "until=48h" >/dev/null 2>&1 || true

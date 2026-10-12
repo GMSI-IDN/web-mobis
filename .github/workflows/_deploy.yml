@@ -39,6 +39,11 @@ on:
         description: Branch to check out on the server
         required: true
         type: string
+      force_rebuild:
+        description: Force build and restart even if commit is unchanged
+        required: false
+        type: boolean
+        default: false
     secrets:
       SSH_HOST:
         required: true
@@ -130,6 +135,7 @@ jobs:
                PORT='${APP_PORT}' \
                HEALTH_PATH='${HEALTH_PATH}' \
                UPLOADS_VOLUME='${UPLOADS_VOLUME}' \
+               FORCE_REBUILD='${{ inputs.force_rebuild }}' \
                bash '${REMOTE_TMP}'
                rc=\$?
                rm -f '${REMOTE_TMP}'

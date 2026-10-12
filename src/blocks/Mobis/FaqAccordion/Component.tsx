@@ -45,7 +45,13 @@ export const FaqAccordion: React.FC<Props> = ({ title, items }) => {
                     >
                       <span className="faq-mobis-question">{question}</span>
                       <span className="faq-mobis-icon" aria-hidden="true">
-                        <span className="faq-mobis-symbol" />
+                        <svg className="faq-mobis-icon-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <g className="faq-mobis-symbol-group">
+                            <circle cx="16" cy="16" r="14" fill="#3bac1f" />
+                            <path d="M16 9.5V22.5" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
+                            <path d="M9.5 16H22.5" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
+                          </g>
+                        </svg>
                       </span>
                     </button>
 

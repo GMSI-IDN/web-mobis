@@ -20,4 +20,8 @@ export const inter = localFont({
   ],
   variable: '--font-inter',
   display: 'swap',
+  // Disable preloading to free 336KB of critical bandwidth for the LCP image.
+  // Fonts still load via CSS @font-face with font-display:swap — text appears
+  // immediately with the system font and swaps to Inter when it finishes loading.
+  preload: false,
 })
