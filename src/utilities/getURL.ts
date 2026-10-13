@@ -50,7 +50,7 @@ export const isStagingEnvironment = (): boolean => {
   if (
     process.env.APP_ENV === 'staging' ||
     process.env.NEXT_PUBLIC_APP_ENV === 'staging' ||
-    process.env.NODE_ENV === 'staging'
+    (process.env.NODE_ENV as unknown) === 'staging'
   ) {
     return true
   }
