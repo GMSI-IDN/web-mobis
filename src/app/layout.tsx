@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import React from 'react'
 
-import { getPublicURL } from '@/utilities/getURL'
+import { getPublicURL, isStagingEnvironment } from '@/utilities/getURL'
 
 const siteURL = getPublicURL()
+const isStaging = isStagingEnvironment()
 const siteName = 'Rental MOBIS'
 const socialImagePath =
   'https://admin.rentalmobis.com/api/media/file/banner-bebas_pilih_aplikasi-1-1200x630.webp'
@@ -42,17 +43,31 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-      'max-video-preview': -1,
-    },
-  },
+  robots: isStaging
+    ? {
+        index: false,
+        follow: false,
+        nocache: true,
+        googleBot: {
+          index: false,
+          follow: false,
+          noimageindex: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'none',
+          'max-snippet': -1,
+        },
+      }
+    : {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+          'max-video-preview': -1,
+        },
+      },
   icons: {
     icon: [{ url: '/favicon.ico' }, { url: '/favicon.svg', type: 'image/svg+xml' }],
     shortcut: ['/favicon.ico'],

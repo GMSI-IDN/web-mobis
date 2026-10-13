@@ -7,6 +7,7 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
 import React from 'react'
+import { isStagingEnvironment } from '@/utilities/getURL'
 import PageClient from './page.client'
 
 // Doesn't call draftMode()/cookies()/headers(), so ISR works normally here
@@ -91,7 +92,7 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
     },
     robots: {
       index: false,
-      follow: true,
+      follow: isStagingEnvironment() ? false : true,
     },
   }
 }

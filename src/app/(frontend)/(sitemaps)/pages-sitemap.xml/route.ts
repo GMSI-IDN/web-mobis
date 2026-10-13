@@ -2,7 +2,7 @@ import { getServerSideSitemap } from 'next-sitemap'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { unstable_cache } from 'next/cache'
-import { getPublicURL } from '@/utilities/getURL'
+import { getPublicURL, isStagingEnvironment } from '@/utilities/getURL'
 import { isMissingRelationError } from '@/utilities/isMissingRelationError'
 
 export const dynamic = 'force-dynamic'
@@ -66,6 +66,10 @@ const getPagesSitemap = unstable_cache(
 )
 
 export async function GET() {
+  if (isStagingEnvironment()) {
+    return new Response('Not Found', { status: 404 })
+  }
+
   const sitemap = await getPagesSitemap()
 
   return getServerSideSitemap(sitemap)

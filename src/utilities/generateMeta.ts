@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import type { Media, Page, Post, Config } from '../payload-types'
 
 import { mergeOpenGraph } from './mergeOpenGraph'
-import { getPublicURL } from './getURL'
+import { getPublicURL, isStagingEnvironment } from './getURL'
 import { getMediaUrl } from './getMediaUrl'
 
 const HOMEPAGE_TITLE = 'Sewa Mobil & Rental Driver Online'
@@ -70,10 +70,15 @@ export const generateMeta = async (args: {
     alternates: {
       canonical: canonicalPath,
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    robots: isStagingEnvironment()
+      ? {
+          index: false,
+          follow: false,
+        }
+      : {
+          index: true,
+          follow: true,
+        },
     openGraph: mergeOpenGraph({
       type: isPost ? 'article' : 'website',
       description,

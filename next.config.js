@@ -40,6 +40,27 @@ const isHttpsProduction =
   (process.env.NODE_ENV === 'production' &&
     Boolean(process.env.VERCEL || (process.env.NEXT_PUBLIC_SERVER_URL && process.env.NEXT_PUBLIC_SERVER_URL.startsWith('https://'))))
 
+const isStaging =
+  process.env.NEXT_PUBLIC_NO_INDEX === 'true' ||
+  process.env.NO_INDEX === 'true' ||
+  process.env.NEXT_PUBLIC_IS_STAGING === 'true' ||
+  process.env.IS_STAGING === 'true' ||
+  process.env.APP_ENV === 'staging' ||
+  process.env.NEXT_PUBLIC_APP_ENV === 'staging' ||
+  process.env.NODE_ENV === 'staging' ||
+  [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.NEXT_PUBLIC_SERVER_URL,
+    process.env.PAYLOAD_PUBLIC_SERVER_URL,
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BRANCH_URL,
+  ].some(
+    (url) =>
+      url &&
+      (/(^|\/\/)(stg\.|staging\.|dev\.|test\.)/i.test(url) ||
+        url.toLowerCase().includes('stg.rentalmobis.com')),
+  )
+
 const FRONTEND_CSP_DIRECTIVES = [
   `default-src 'self'`,
   `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://*.facebook.net https://analytics.tiktok.com https://*.tiktok.com https://*.tiktokcdn.com https://*.byteoversea.com https://*.ibytedtos.com https://www.googletagmanager.com https://*.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.google.com https://*.google.co.id https://tagmanager.google.com https://tagassistant.google.com https://*.googleadservices.com https://*.googlesyndication.com https://*.g.doubleclick.net`,
@@ -65,6 +86,14 @@ const SECURITY_HEADERS = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
   ...(isHttpsProduction ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000' }] : []),
+  ...(isStaging
+    ? [
+        {
+          key: 'X-Robots-Tag',
+          value: 'noindex, nofollow, noarchive, nosnippet',
+        },
+      ]
+    : []),
 ]
 
 /** @type {import('next').NextConfig} */

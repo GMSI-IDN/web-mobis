@@ -7,6 +7,7 @@ import React from 'react'
 import { Search } from '@/search/Component'
 import PageClient from './page.client'
 import { CardPostData } from '@/components/Card'
+import { isStagingEnvironment } from '@/utilities/getURL'
 
 type Args = {
   searchParams: Promise<{
@@ -90,7 +91,7 @@ export function generateMetadata(): Metadata {
     },
     robots: {
       index: false,
-      follow: true,
+      follow: isStagingEnvironment() ? false : true,
     },
   }
 }
