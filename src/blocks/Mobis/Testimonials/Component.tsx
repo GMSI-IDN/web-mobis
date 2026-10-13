@@ -89,11 +89,14 @@ export const Testimonials: React.FC<Props> = ({ title, items, intervalMs }) => {
   const checkScroll = () => {
     if (!trackRef.current) return
     const { scrollLeft, scrollWidth, clientWidth } = trackRef.current
-    setCanScrollLeft(scrollLeft > 10)
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10)
+    setCanScrollLeft(scrollLeft > 5)
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5)
   }
 
   useEffect(() => {
+    if (trackRef.current) {
+      trackRef.current.scrollLeft = 0
+    }
     checkScroll()
     const el = trackRef.current
     if (!el) return
