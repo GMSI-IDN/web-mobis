@@ -59,8 +59,31 @@ END $$;
   await payload.db.drizzle.execute(sql)
 }
 
+export async function ensurePostgresSchemaCompatibility(payload: Payload): Promise<void> {
+  const sql = `
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'pages_blocks_units_available_units') THEN
+    ALTER TABLE "pages_blocks_units_available_units" ADD COLUMN IF NOT EXISTS "is_new" boolean DEFAULT false;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = '_pages_v_blocks_units_available_units') THEN
+    ALTER TABLE "_pages_v_blocks_units_available_units" ADD COLUMN IF NOT EXISTS "is_new" boolean DEFAULT false;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'customers') THEN
+    ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "car_unit" varchar;
+  END IF;
+END $$;
+`
+  try {
+    await payload.db.drizzle.execute(sql)
+  } catch (error) {
+    payload.logger.warn({ err: error }, 'Failed to ensure Postgres schema compatibility on init')
+  }
+}
+
 export async function resyncPostgresSequencesOnInit(payload: Payload): Promise<void> {
   try {
+    await ensurePostgresSchemaCompatibility(payload)
     await resyncAllPostgresSequences(payload)
   } catch (error) {
     payload.logger.warn({ err: error }, 'Failed to resync all Postgres sequences on init')
