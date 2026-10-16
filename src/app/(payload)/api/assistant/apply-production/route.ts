@@ -153,9 +153,10 @@ export async function POST(req: Request) {
 
     // A. JIKA ACTION === 'commit': EKSEKUSI SINKRONISASI DATABASE KE PRODUCTION
     if (payloadData.action === 'commit') {
-      let syncResults: any[] = []
+      let syncResponse
       try {
-        syncResults = await applyStagingToProduction(channel, uuid)
+        const triggeredBy = payloadData.triggeredBy || 'CMS_GLOBAL_APPLY_CONFIRMED'
+        syncResponse = await applyStagingToProduction(channel, uuid, triggeredBy)
       } catch (dbErr: any) {
         console.error('[Apply Production] Error commit DB:', dbErr)
         return NextResponse.json(
@@ -164,19 +165,26 @@ export async function POST(req: Request) {
         )
       }
 
-      const totalCount = syncResults.reduce((acc, curr) => acc + curr.syncedCount, 0)
+      const totalCount = syncResponse.results.reduce((acc, curr) => acc + curr.syncedCount, 0)
       let channelLabel = 'Semua Sheet'
       if (channel === 'dm') channelLabel = 'Sheet Direct Message (DM)'
       if (channel === 'comment') channelLabel = 'Sheet Comment'
+
+      const backupInfo = syncResponse.backup
+        ? `\n\n💾 Snapshot backup otomatis telah tersimpan (#${syncResponse.backup.id} - ${syncResponse.backup.backup_name}).`
+        : ''
 
       return NextResponse.json({
         success: true,
         committed: true,
         totalCount,
-        results: syncResults,
+        results: syncResponse.results,
+        backup: syncResponse.backup,
         title: 'Berhasil Disinkronkan ke Production!',
-        subtitle: 'Seluruh data telah aktif di Live Production',
-        feedbackText: `Seluruh data FAQ (${channelLabel}) berhasil disinkronkan ke database Production (${totalCount} baris diperbarui).`,
+        subtitle: syncResponse.backup
+          ? `Data telah aktif di Live Production • Backup #${syncResponse.backup.id} tersimpan`
+          : 'Seluruh data telah aktif di Live Production',
+        feedbackText: `Seluruh data FAQ (${channelLabel}) berhasil disinkronkan ke database Production (${totalCount} baris diperbarui).${backupInfo}`,
         message: `Berhasil menerapkan ${totalCount} FAQ ${channelLabel} ke database Production!`,
       })
     }

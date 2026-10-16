@@ -83,10 +83,16 @@ export interface ApplyProductionResult {
   syncedCount: number
 }
 
+export interface ApplyProductionResponse {
+  results: ApplyProductionResult[]
+  backup: ChatbotFaqBackupRow | null
+}
+
 export async function applyStagingToProduction(
   channel: 'dm' | 'comment' | 'all' = 'all',
-  uuid?: string
-): Promise<ApplyProductionResult[]> {
+  uuid?: string,
+  triggeredBy: string = 'CMS_ADMIN'
+): Promise<ApplyProductionResponse> {
   const db = getChatbotDbPool()
   const results: ApplyProductionResult[] = []
 
@@ -110,6 +116,22 @@ export async function applyStagingToProduction(
   try {
     await client.query('BEGIN')
 
+    // 1. Ambil snapshot penuh sebelum perubahan terjadi dan simpan ke tabel chatbot_faq_backups
+    let backupRecord: ChatbotFaqBackupRow | null = null
+    try {
+      backupRecord = await createFullFaqBackup(
+        client,
+        triggeredBy,
+        `Snapshot sebelum sinkronisasi (${channel.toUpperCase()})`
+      )
+    } catch (backupErr) {
+      console.error('[applyStagingToProduction] Gagal membuat auto-backup:', backupErr)
+      throw new Error(
+        `Gagal membuat snapshot backup: ${backupErr instanceof Error ? backupErr.message : String(backupErr)}`
+      )
+    }
+
+    // 2. Jalankan sinkronisasi Staging ke Production
     for (const pair of pairs) {
       if (uuid) {
         const res = await client.query(
@@ -158,7 +180,7 @@ export async function applyStagingToProduction(
     }
 
     await client.query('COMMIT')
-    return results
+    return { results, backup: backupRecord }
   } catch (err) {
     await client.query('ROLLBACK')
     throw err
@@ -250,4 +272,362 @@ export async function createStagingVectorFaq({
 
   return { uuid: newUuid }
 }
+
+// ==========================================
+// BACKUP & RESTORE SNAPSHOT ENGINE (FASE 1)
+// ==========================================
+
+export interface FaqSnapshotItem {
+  uuid: string
+  channel: 'dm' | 'comment'
+  environment: 'staging' | 'production'
+  question: string
+  answer: string
+  category: string
+  metadata?: any
+}
+
+export interface FaqFullSnapshotData {
+  timestamp: string
+  summary: {
+    total_all: number
+    dm: { staging: number; production: number }
+    comment: { staging: number; production: number }
+  }
+  dm: {
+    staging: FaqSnapshotItem[]
+    production: FaqSnapshotItem[]
+  }
+  comment: {
+    staging: FaqSnapshotItem[]
+    production: FaqSnapshotItem[]
+  }
+}
+
+export interface ChatbotFaqBackupRow {
+  id: number
+  created_at: string
+  backup_name: string
+  triggered_by: string
+  total_items: number
+  total_dm_stg: number
+  total_dm_prod: number
+  total_comment_stg: number
+  total_comment_prod: number
+  snapshot_data: FaqFullSnapshotData
+  metadata?: any
+}
+
+/**
+ * Mengambil snapshot utuh dari seluruh 4 tabel FAQ (DM & Comment, Staging & Production)
+ * dan menyimpannya ke tabel "chatbot_faq_backups" dalam format JSONB.
+ *
+ * Menerima client transaksi (opsional) agar dapat dijalankan secara atomik
+ * dalam transaksi yang sama saat tombol "Ya, Sinkronkan ke Production" ditekan.
+ */
+export async function createFullFaqBackup(
+  client?: pg.PoolClient,
+  triggeredBy: string = 'CMS_ADMIN',
+  customNote?: string,
+): Promise<ChatbotFaqBackupRow> {
+  const executor = client || getChatbotDbPool()
+
+  // 1. Ambil seluruh data dari 4 tabel
+  const tables = [
+    { name: 'n8n_vectors_mobis_dm_stg', channel: 'dm' as const, env: 'staging' as const },
+    { name: 'n8n_vectors_mobis_dm', channel: 'dm' as const, env: 'production' as const },
+    { name: 'n8n_vectors_mobis_comments_stg', channel: 'comment' as const, env: 'staging' as const },
+    { name: 'n8n_vectors_mobis_comments', channel: 'comment' as const, env: 'production' as const },
+  ]
+
+  const snapshot: FaqFullSnapshotData = {
+    timestamp: new Date().toISOString(),
+    summary: {
+      total_all: 0,
+      dm: { staging: 0, production: 0 },
+      comment: { staging: 0, production: 0 },
+    },
+    dm: { staging: [], production: [] },
+    comment: { staging: [], production: [] },
+  }
+
+  for (const t of tables) {
+    const res = await executor.query<VectorRow>(
+      `SELECT id, text, metadata FROM "${t.name}" ORDER BY text ASC`
+    )
+
+    const items: FaqSnapshotItem[] = res.rows.map((row) => ({
+      uuid: row.id,
+      channel: t.channel,
+      environment: t.env,
+      question: (row.text || '').trim(),
+      answer: (row.metadata?.jawaban || '').trim(),
+      category: row.metadata?.kategori ? String(row.metadata.kategori).trim() : 'Umum',
+      metadata: row.metadata || undefined,
+    }))
+
+    if (t.channel === 'dm') {
+      if (t.env === 'staging') {
+        snapshot.dm.staging = items
+        snapshot.summary.dm.staging = items.length
+      } else {
+        snapshot.dm.production = items
+        snapshot.summary.dm.production = items.length
+      }
+    } else {
+      if (t.env === 'staging') {
+        snapshot.comment.staging = items
+        snapshot.summary.comment.staging = items.length
+      } else {
+        snapshot.comment.production = items
+        snapshot.summary.comment.production = items.length
+      }
+    }
+  }
+
+  const totalAll =
+    snapshot.summary.dm.staging +
+    snapshot.summary.dm.production +
+    snapshot.summary.comment.staging +
+    snapshot.summary.comment.production
+
+  snapshot.summary.total_all = totalAll
+
+  // 2. Format nama backup ramah pengguna
+  const now = new Date()
+  const dateStr = new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Jakarta',
+  }).format(now)
+  const backupName = customNote ? `${customNote} (${dateStr} WIB)` : `Snapshot ${dateStr} WIB`
+
+  // 3. Simpan ke tabel chatbot_faq_backups
+  const insertRes = await executor.query<ChatbotFaqBackupRow>(
+    `
+    INSERT INTO "chatbot_faq_backups" (
+      backup_name,
+      triggered_by,
+      total_items,
+      total_dm_stg,
+      total_dm_prod,
+      total_comment_stg,
+      total_comment_prod,
+      snapshot_data,
+      metadata
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb)
+    RETURNING *;
+    `,
+    [
+      backupName,
+      triggeredBy,
+      totalAll,
+      snapshot.summary.dm.staging,
+      snapshot.summary.dm.production,
+      snapshot.summary.comment.staging,
+      snapshot.summary.comment.production,
+      JSON.stringify(snapshot),
+      JSON.stringify({ note: customNote || 'Backup otomatis sinkronisasi CMS', createdAtIso: snapshot.timestamp }),
+    ]
+  )
+
+  return insertRes.rows[0]
+}
+
+/**
+ * Mengambil daftar riwayat backup untuk Tampilan A (ringkasan tanpa muatan JSON penuh agar cepat).
+ */
+export async function getFaqBackupsList(limit: number = 50): Promise<Array<Omit<ChatbotFaqBackupRow, 'snapshot_data'>>> {
+  const db = getChatbotDbPool()
+  const res = await db.query(
+    `
+    SELECT
+      id,
+      created_at,
+      backup_name,
+      triggered_by,
+      total_items,
+      total_dm_stg,
+      total_dm_prod,
+      total_comment_stg,
+      total_comment_prod,
+      metadata
+    FROM "chatbot_faq_backups"
+    ORDER BY created_at DESC
+    LIMIT $1;
+    `,
+    [limit]
+  )
+
+  return res.rows
+}
+
+/**
+ * Mengambil detail satu snapshot backup lengkap berdasarkan ID (termasuk isi JSONB).
+ */
+export async function getFaqBackupById(id: number): Promise<ChatbotFaqBackupRow | null> {
+  const db = getChatbotDbPool()
+  const res = await db.query<ChatbotFaqBackupRow>(
+    `SELECT * FROM "chatbot_faq_backups" WHERE id = $1`,
+    [id]
+  )
+
+  return res.rows[0] || null
+}
+
+export interface RestoreBackupOptions {
+  backupId: number
+  targetEnv: 'staging' | 'production' | 'both'
+  targetChannel: 'dm' | 'comment' | 'all'
+  triggeredBy?: string
+}
+
+export interface RestoreBackupResult {
+  success: boolean
+  backupId: number
+  backupName: string
+  targetEnv: 'staging' | 'production' | 'both'
+  targetChannel: 'dm' | 'comment' | 'all'
+  restoredCounts: Record<string, number>
+  totalRestored: number
+  message: string
+}
+
+/**
+ * Memulihkan data FAQ secara selektif dari suatu snapshot backup (Fase 3):
+ * - Target Environment: 'staging' saja | 'production' saja | 'both' (keduanya)
+ * - Target Channel: 'dm' saja | 'comment' saja | 'all' (keduanya)
+ *
+ * Dijalankan dalam satu transaksi database atomik (BEGIN ... COMMIT).
+ */
+export async function restoreFaqBackup(
+  options: RestoreBackupOptions
+): Promise<RestoreBackupResult> {
+  const { backupId, targetEnv, targetChannel, triggeredBy = 'CMS_ADMIN' } = options
+  const backup = await getFaqBackupById(backupId)
+  if (!backup) {
+    throw new Error(`Data backup dengan ID #${backupId} tidak ditemukan.`)
+  }
+
+  const snapshot = backup.snapshot_data
+  if (!snapshot || !snapshot.dm) {
+    throw new Error(`Struktur data backup #${backupId} tidak valid atau rusak.`)
+  }
+
+  const targetTables: Array<{
+    tableName: string
+    channel: 'dm' | 'comment'
+    env: 'staging' | 'production'
+    items: FaqSnapshotItem[]
+  }> = []
+
+  const shouldRestoreDm = targetChannel === 'dm' || targetChannel === 'all'
+  const shouldRestoreComment = targetChannel === 'comment' || targetChannel === 'all'
+
+  const shouldRestoreStaging = targetEnv === 'staging' || targetEnv === 'both'
+  const shouldRestoreProduction = targetEnv === 'production' || targetEnv === 'both'
+
+  if (shouldRestoreDm) {
+    if (shouldRestoreStaging) {
+      targetTables.push({
+        tableName: 'n8n_vectors_mobis_dm_stg',
+        channel: 'dm',
+        env: 'staging',
+        items: snapshot.dm.staging || [],
+      })
+    }
+    if (shouldRestoreProduction) {
+      targetTables.push({
+        tableName: 'n8n_vectors_mobis_dm',
+        channel: 'dm',
+        env: 'production',
+        items: snapshot.dm.production || [],
+      })
+    }
+  }
+
+  if (shouldRestoreComment) {
+    if (shouldRestoreStaging) {
+      targetTables.push({
+        tableName: 'n8n_vectors_mobis_comments_stg',
+        channel: 'comment',
+        env: 'staging',
+        items: snapshot.comment.staging || [],
+      })
+    }
+    if (shouldRestoreProduction) {
+      targetTables.push({
+        tableName: 'n8n_vectors_mobis_comments',
+        channel: 'comment',
+        env: 'production',
+        items: snapshot.comment.production || [],
+      })
+    }
+  }
+
+  const db = getChatbotDbPool()
+  const client = await db.connect()
+  const restoredCounts: Record<string, number> = {}
+  let totalRestored = 0
+
+  try {
+    await client.query('BEGIN')
+
+    for (const target of targetTables) {
+      // 1. Bersihkan tabel target
+      await client.query(`DELETE FROM "${target.tableName}"`)
+
+      // 2. Masukkan seluruh item dari snapshot
+      let count = 0
+      for (const item of target.items) {
+        const metadata = {
+          jawaban: item.answer || '',
+          kategori: item.category || 'Umum',
+          ...(item.metadata || {}),
+          restoredFromBackupId: backupId,
+          restoredAt: new Date().toISOString(),
+          restoredBy: triggeredBy,
+        }
+
+        await client.query(
+          `
+          INSERT INTO "${target.tableName}" (id, text, metadata)
+          VALUES ($1, $2, $3::jsonb)
+          `,
+          [item.uuid, item.question, JSON.stringify(metadata)]
+        )
+        count++
+      }
+
+      restoredCounts[target.tableName] = count
+      totalRestored += count
+    }
+
+    await client.query('COMMIT')
+
+    const envLabel = targetEnv === 'both' ? 'Staging & Production' : targetEnv.toUpperCase()
+    const channelLabel = targetChannel === 'all' ? 'DM & Comment' : targetChannel.toUpperCase()
+
+    return {
+      success: true,
+      backupId: backup.id,
+      backupName: backup.backup_name,
+      targetEnv,
+      targetChannel,
+      restoredCounts,
+      totalRestored,
+      message: `Berhasil memulihkan ${totalRestored} FAQ (${channelLabel} - ${envLabel}) dari backup #${backup.id}!`,
+    }
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
+  }
+}
+
 

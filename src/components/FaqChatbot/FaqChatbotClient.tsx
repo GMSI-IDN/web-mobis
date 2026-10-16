@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Rocket,
   Loader2,
+  History,
 } from 'lucide-react'
 import type { FaqChannel, FaqEnvironment, FaqItem } from './types'
 import { CATEGORY_LABELS } from './types'
@@ -21,6 +22,7 @@ import EnvironmentTabs from './components/EnvironmentTabs'
 import FaqDetailModal from './components/FaqDetailModal'
 import FaqEditModal from './components/FaqEditModal'
 import ScanFeedbackModal, { type ScanFeedbackData } from './components/ScanFeedbackModal'
+import FaqBackupsModal from './components/FaqBackupsModal'
 import ChatbotFab from './components/ChatbotFab'
 import './index.scss'
 
@@ -53,6 +55,9 @@ export default function FaqChatbotClient({ initialFaqs }: { initialFaqs: FaqItem
   // Modal feedback hasil scan AI n8n (kontradiksi / duplikasi)
   const [scanFeedbackData, setScanFeedbackData] = useState<ScanFeedbackData | null>(null)
   const [isConfirmingSync, setIsConfirmingSync] = useState(false)
+
+  // Modal Riwayat Backup & Restore (Tampilan A)
+  const [isBackupsModalOpen, setIsBackupsModalOpen] = useState(false)
 
   // Bandingkan Staging vs Production untuk mendeteksi apakah ada perubahan
   const diffInfo = useMemo(() => {
@@ -643,6 +648,16 @@ export default function FaqChatbotClient({ initialFaqs }: { initialFaqs: FaqItem
           <button
             type="button"
             className="mobis-btn-secondary"
+            onClick={() => setIsBackupsModalOpen(true)}
+            title="Buka riwayat point-in-time snapshot backup & restore data FAQ"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+          >
+            <History size={15} />
+            <span>Riwayat Backup</span>
+          </button>
+          <button
+            type="button"
+            className="mobis-btn-secondary"
             onClick={() => setChatOpen(true)}
           >
             <MessageSquare size={15} />
@@ -907,6 +922,22 @@ export default function FaqChatbotClient({ initialFaqs }: { initialFaqs: FaqItem
         onClose={() => setScanFeedbackData(null)}
         onConfirmSync={handleConfirmSync}
         isConfirmingSync={isConfirmingSync}
+      />
+
+      {/* 10. MODAL RIWAYAT BACKUP & RESTORE FAQ (TAMPILAN A) */}
+      <FaqBackupsModal
+        isOpen={isBackupsModalOpen}
+        onClose={() => setIsBackupsModalOpen(false)}
+        onRestoreSuccess={(msg) => {
+          setSyncStatus({
+            type: 'success',
+            message: msg || 'Data FAQ berhasil dipulihkan dari backup!',
+          })
+          // Muat ulang halaman setelah 1.5 detik agar seluruh tabel langsung menampilkan data hasil restore
+          setTimeout(() => {
+            window.location.reload()
+          }, 1500)
+        }}
       />
 
       {/* 10. MODAL KONFIRMASI HAPUS FAQ (STAGING) */}

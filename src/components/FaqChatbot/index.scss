@@ -1558,3 +1558,254 @@
   }
 }
 
+/* ======================================================== */
+/* 7. FAQ BACKUPS & SELECTIVE RESTORE MODAL (FASE 4)       */
+/* ======================================================== */
+.mobis-backups-modal-dialog {
+  max-width: 1220px !important;
+  width: 95vw !important;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobis-badge-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.mobis-badge-dm {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(14, 165, 233, 0.12);
+  color: #0ea5e9;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mobis-badge-comment {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(168, 85, 247, 0.12);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mobis-total-faq-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--theme-elevation-150);
+  color: var(--theme-text);
+  opacity: 0.9;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mobis-backup-id-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  font-weight: 700;
+  font-size: 0.82rem;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  letter-spacing: 0.02em;
+}
+
+.mobis-backup-author-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--theme-elevation-100);
+  border: 1px solid var(--theme-elevation-150);
+  color: var(--theme-text);
+  white-space: nowrap;
+}
+
+.mobis-backup-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+
+  th,
+  td {
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  th {
+    padding: 0.85rem 1.1rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.75;
+    background: var(--theme-elevation-50);
+    border-bottom: 1px solid var(--theme-elevation-150);
+  }
+
+  td {
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--theme-elevation-100);
+    font-size: 0.85rem;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: var(--theme-elevation-50);
+  }
+}
+
+.mobis-restore-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobis-restore-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--theme-text);
+}
+
+.mobis-radio-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.mobis-radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-50);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  input[type='radio'] {
+    margin-top: 3px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+  }
+
+  &:hover {
+    border-color: #3b82f6;
+    background: var(--theme-elevation-100);
+  }
+
+  &.is-selected {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.08);
+  }
+}
+
+.mobis-radio-card-content {
+  flex: 1;
+}
+
+.mobis-radio-card-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--theme-text);
+  margin-bottom: 2px;
+}
+
+.mobis-radio-card-desc {
+  font-size: 0.76rem;
+  opacity: 0.7;
+  line-height: 1.35;
+}
+
+.mobis-radio-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-50);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s ease;
+
+  input[type='radio'] {
+    accent-color: #3b82f6;
+    cursor: pointer;
+  }
+
+  &:hover {
+    border-color: #3b82f6;
+    background: var(--theme-elevation-100);
+  }
+
+  &.is-selected {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    font-weight: 700;
+  }
+}
+
+.mobis-subtab-btn {
+  padding: 0.45rem 0.85rem;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-50);
+  color: var(--theme-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--theme-elevation-150);
+  }
+
+  &.is-active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+  }
+}
+
