@@ -17,6 +17,7 @@ import { getServerSideURL, getAllowedOrigins } from './utilities/getURL'
 
 import { CustomerCollections } from './collections/Customers'
 import { VoucherPromoCollections } from './collections/VoucherPromo'
+import { ChatbotFaqs } from './collections/ChatbotFaqs'
 import { MobisWidgetsGlobal } from './components/MobisWidget/payload/MobisWidgets.global'
 import { resyncPostgresSequencesOnInit } from './lib/db/resyncPostgresSequences'
 
@@ -45,6 +46,10 @@ export default buildConfig({
             reports: {
               Component: '@/components/Reports',
               path: '/reports',
+            },
+            faqChatbot: {
+              Component: '@/components/FaqChatbot',
+              path: '/faq-chatbot',
             },
           },
         }
@@ -92,6 +97,7 @@ export default buildConfig({
     Media,
     Categories,
     Users,
+    ChatbotFaqs,
     ...CustomerCollections,
     ...VoucherPromoCollections,
   ],

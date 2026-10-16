@@ -27,6 +27,9 @@ export default function AssistantWidget({
   apiBase,
   isOpen,
   onCloseToButtons,
+  initialStage = 'register',
+  initialUser,
+  appliedQuery,
 }: {
   title: string
   brandText: string
@@ -34,10 +37,13 @@ export default function AssistantWidget({
   apiBase: string
   isOpen: boolean
   onCloseToButtons: () => void
+  initialStage?: 'register' | 'chat'
+  initialUser?: { name: string; phone: string }
+  appliedQuery?: string
 }) {
-  const [stage, setStage] = useState<'register' | 'chat'>('register')
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
+  const [stage, setStage] = useState<'register' | 'chat'>(initialStage)
+  const [name, setName] = useState(initialUser?.name || '')
+  const [phone, setPhone] = useState(initialUser?.phone || '')
   const [token, setToken] = useState('')
 
   const [nameError, setNameError] = useState('')
@@ -97,9 +103,9 @@ export default function AssistantWidget({
   useEffect(() => {
     if (isOpen) return
 
-    setStage('register')
-    setName('')
-    setPhone('')
+    setStage(initialStage)
+    setName(initialUser?.name || '')
+    setPhone(initialUser?.phone || '')
     setToken('')
     setMessages([{ id: uid(), role: 'bot', text: greeting }])
     setInput('')
@@ -114,7 +120,17 @@ export default function AssistantWidget({
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
     if (nameTimerRef.current) clearTimeout(nameTimerRef.current)
     if (phoneTimerRef.current) clearTimeout(phoneTimerRef.current)
-  }, [isOpen, greeting])
+  }, [isOpen, greeting, initialStage, initialUser?.name, initialUser?.phone])
+
+  // Saat appliedQuery diperbarui (misal dari tombol Apply FAQ di admin)
+  useEffect(() => {
+    if (appliedQuery) {
+      setInput(appliedQuery)
+      if (initialStage === 'chat') {
+        setStage('chat')
+      }
+    }
+  }, [appliedQuery, initialStage])
 
   useEffect(() => {
     return () => {
@@ -160,6 +176,10 @@ export default function AssistantWidget({
   function handleFinishChat() {
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
     setShowCountdown(false)
+    if (initialUser) {
+      onCloseToButtons()
+      return
+    }
     setTimeout(() => {
       void bsModalShow(ratingModalRef.current)
     }, 300)
@@ -235,7 +255,7 @@ export default function AssistantWidget({
         setTimeout(() => startEndCountdown(), 800)
       }
     } catch {
-      replaceLoading(loadingId, 'Mobis assitent saat ini sedang tidak tersedia, silahkan coba beberapa saat lagi.')
+      replaceLoading(loadingId, 'Mobis assistant saat ini sedang tidak tersedia, silakan coba beberapa saat lagi.')
     }
   }
 
@@ -280,23 +300,28 @@ export default function AssistantWidget({
       <div className={`${inter.className} ${inter.variable} mobis-chat-portal`}>
         {/* CHAT BOX */}
         <div className="bg-white mobis-chatbox border">
-          <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
-            <div className="d-flex align-items-center gap-2">
-              <h5 className="mb-0">{title}</h5>
-              <span className="fw-bold text-success">{brandText}</span>
+          <div className="d-flex align-items-center justify-content-between p-3 border-bottom mobis-chat-header">
+            <div className="d-flex align-items-center gap-2 mobis-chat-header-title-wrap">
+              <h5 className="mb-0 mobis-chat-title">{title}</h5>
+              <span className="fw-bold text-success mobis-chat-brand">{brandText}</span>
             </div>
-            <div className="d-flex gap-2">
+            <div className="d-flex gap-2 mobis-chat-header-actions">
               {/* minimize */}
-              <button className="btn btn-light btn-sm" type="button" onClick={onCloseToButtons}>
+              <button className="btn btn-light btn-sm mobis-chat-header-btn" type="button" onClick={onCloseToButtons} aria-label="Minimize">
                 —
               </button>
               {/* close -> confirm */}
               <button
-                className="btn btn-light btn-sm"
+                className="btn btn-light btn-sm mobis-chat-header-btn"
                 type="button"
                 onClick={async () => {
-                  await bsModalShow(endConfirmModalRef.current)
+                  if (initialUser) {
+                    onCloseToButtons()
+                  } else {
+                    await bsModalShow(endConfirmModalRef.current)
+                  }
                 }}
+                aria-label="Tutup"
               >
                 ×
               </button>
@@ -304,7 +329,7 @@ export default function AssistantWidget({
           </div>
 
           {stage === 'register' ? (
-            <div className="p-3">
+            <div className="p-3 mobis-chat-register-body">
               <div className="mb-3">
                 <label className="form-label">Nama</label>
                 <input
@@ -361,7 +386,7 @@ export default function AssistantWidget({
               </button>
             </div>
           ) : (
-            <div className="p-3 d-flex flex-column h-100">
+            <div className="p-3 d-flex flex-column h-100 mobis-chat-body">
               <div ref={scrollRef} className="mobis-chat-scroll d-flex flex-column gap-2">
                 {messages.map((m) => {
                   if (m.role === 'loading') {
@@ -440,9 +465,9 @@ export default function AssistantWidget({
                 )}
               </div>
 
-              <div className="d-flex gap-2 mt-3">
+              <div className="d-flex gap-2 mt-3 mobis-chat-input-row">
                 <input
-                  className="form-control"
+                  className="form-control mobis-chat-input"
                   value={input}
                   maxLength={2000}
                   onChange={(e) => setInput(e.target.value)}
@@ -451,7 +476,12 @@ export default function AssistantWidget({
                     if (e.key === 'Enter') send()
                   }}
                 />
-                <button className="btn btn-success d-inline-flex align-items-center justify-content-center" type="button" onClick={send} aria-label="Kirim pesan">
+                <button
+                  className="btn btn-success d-inline-flex align-items-center justify-content-center mobis-chat-send-btn"
+                  type="button"
+                  onClick={send}
+                  aria-label="Kirim pesan"
+                >
                   <Send size={18} />
                 </button>
               </div>

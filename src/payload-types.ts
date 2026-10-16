@@ -72,6 +72,7 @@ export interface Config {
     media: Media;
     categories: Category;
     users: User;
+    'chatbot-faqs': ChatbotFaq;
     customers: Customer;
     voucher_categories: VoucherCategory;
     vouchers: Voucher;
@@ -98,6 +99,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    'chatbot-faqs': ChatbotFaqsSelect<false> | ChatbotFaqsSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
     voucher_categories: VoucherCategoriesSelect<false> | VoucherCategoriesSelect<true>;
     vouchers: VouchersSelect<false> | VouchersSelect<true>;
@@ -1135,6 +1137,35 @@ export interface FaqAccordionBlock {
   blockType: 'faqAccordion';
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chatbot-faqs".
+ */
+export interface ChatbotFaq {
+  id: number;
+  /**
+   * ID UUID pada tabel n8n_vectors (chatBotMobisLocal)
+   */
+  uuid?: string | null;
+  question: string;
+  answer: string;
+  /**
+   * Tentukan lingkungan database vector (stg atau production).
+   */
+  environment: 'staging' | 'production' | 'all';
+  /**
+   * Tentukan tipe asisten (DM atau Komentar).
+   */
+  channel: 'dm' | 'comment' | 'all';
+  category?: ('lepas-kunci' | 'driver' | 'tarif-promo' | 'persyaratan' | 'area-jadwal' | 'umum') | null;
+  status?: ('active' | 'draft' | 'archived') | null;
+  /**
+   * Urutan angka lebih kecil akan tampil lebih awal.
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Data user yang sudah mendaftar melalui form pendaftaran Mobis.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1458,6 +1489,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: number | User;
+      } | null)
+    | ({
+        relationTo: 'chatbot-faqs';
+        value: number | ChatbotFaq;
       } | null)
     | ({
         relationTo: 'customers';
@@ -2152,6 +2187,22 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chatbot-faqs_select".
+ */
+export interface ChatbotFaqsSelect<T extends boolean = true> {
+  uuid?: T;
+  question?: T;
+  answer?: T;
+  environment?: T;
+  channel?: T;
+  category?: T;
+  status?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

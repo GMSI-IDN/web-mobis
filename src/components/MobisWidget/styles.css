@@ -112,6 +112,23 @@ body {
   padding: 0;
 }
 
+.mobis-chat-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobis-chat-input {
+  flex: 1;
+}
+
+.mobis-chat-send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 /* Loading dots */
 .mobis-dots {
   display: inline-flex;
